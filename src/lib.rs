@@ -1,5 +1,7 @@
 extern crate image;
 use printpdf::*;
+mod spells;
+mod phb_spells;
 
 pub fn printpdf_test() -> Result<(), Box<dyn std::error::Error>>
 {
@@ -11,7 +13,7 @@ pub fn printpdf_test() -> Result<(), Box<dyn std::error::Error>>
     let img = Image::from_dynamic_image(&img_data);
 
     // Create PDF document
-    let (document, page1, layer1) = PdfDocument::new("My Document", Mm(210.0), Mm(297.0), "Layer 1");
+    let (document, page1, layer1) = PdfDocument::new("Spellbook", Mm(210.0), Mm(297.0), "Layer 1");
 
     // Embed the custom font into the document
     let font = document.add_external_font(&*font_data)?;
@@ -34,7 +36,7 @@ pub fn printpdf_test() -> Result<(), Box<dyn std::error::Error>>
 
     // Set font properties
     let font_size = 48.0;
-    let text = "Hello!";
+    let text = "Hello! The quick brown fox jumped over the lazy dog. Peter Piper picked a prickly patch of purple pickle peppers.";
 
     // Add text using the custom font to the page
     layer1_ref.use_text(text, font_size, Mm(10.0), Mm(200.0), &font);
