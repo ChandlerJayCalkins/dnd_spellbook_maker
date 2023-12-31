@@ -24,12 +24,19 @@ fn calc_text_width(font_size_data: &Font, font_scale: &Scale, text: &str) -> f32
 	width
 }
 
+// Calculates the height of a font with a certain font size
+fn calc_text_height(font_size_data: &Font, font_scale: &Scale) -> f32
+{
+	let v_metrics = font_size_data.v_metrics(*font_scale);
+	v_metrics.ascent - v_metrics.descent
+}
+
 pub fn printpdf_test() -> Result<(), Box<dyn std::error::Error>>
 {
     // Load custom font
     let regular_font_data = std::fs::read("fonts/Bookman/Bookman-Regular.otf")?;
 	let font_size_data = Font::try_from_bytes(&regular_font_data as &[u8]).unwrap();
-	let font_scale = Scale::uniform(48.0);
+	let font_scale = Scale::uniform(32.0);
 
 	// Load image
 	let img_data = image::open("img/parchment.jpg")?;
@@ -61,7 +68,7 @@ pub fn printpdf_test() -> Result<(), Box<dyn std::error::Error>>
 	img1.add_to_layer(layer1_ref.clone(), img_transform);
 
     // Set font properties
-    let font_size = 48.0;
+    let font_size = 32.0;
     let text = "Hello! The quick brown fox jumped over the lazy dog. Peter Piper picked a prickly patch of purple pickle peppers.";
 	let width = calc_text_width(&font_size_data, &font_scale, &text);
 
