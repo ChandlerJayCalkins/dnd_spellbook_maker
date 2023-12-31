@@ -1,6 +1,6 @@
 // The level of a spell
 // 0 is a cantrip, max level is 9
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Level
 {
 	Cantrip,
@@ -40,7 +40,7 @@ impl TryFrom<u8> for Level
 }
 
 // The school of magic a spell belongs to
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum MagicSchool
 {
 	Abjuration,
@@ -54,7 +54,7 @@ pub enum MagicSchool
 }
 
 // The amount of time it takes to cast a spell
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum CastingTime
 {
 	Seconds(u16),
@@ -72,7 +72,7 @@ pub enum CastingTime
 
 // Area of Effect
 // The shape of the area in which targets of a spell need to be in to be affected by the spell
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum AOE
 {
 	// No AOE
@@ -94,7 +94,7 @@ pub enum AOE
 }
 
 // The farthest distance a target can be from the caster of a spell
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Range
 {
 	Yourself(AOE),
@@ -104,7 +104,7 @@ pub enum Range
 }
 
 // How long a spell's effect lasts
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Duration
 {
 	Instant,
@@ -121,7 +121,7 @@ pub enum Duration
 }
 
 // Data containing all of the information about a spell
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Spell<'a>
 {
 	pub name: &'a str,
