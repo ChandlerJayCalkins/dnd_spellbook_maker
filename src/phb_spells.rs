@@ -6,7 +6,7 @@ static fireball: Spell = Spell
 	level: Level::Level3,
 	school: MagicSchool::Evocation,
 	is_ritual: false,
-	casting_time: CastingTime::Action(1),
+	casting_time: CastingTime::Actions(1),
 	range: Range::Feet(150),
 	has_verbal_component: true,
 	has_somantic_component: true,

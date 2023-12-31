@@ -59,7 +59,7 @@ pub enum CastingTime
 {
 	Seconds(u16),
 	// u16 is number of actions a spell takes to cast
-	Action(u16),
+	Actions(u16),
 	BonusAction,
 	Reaction,
 	Minutes(u16),
