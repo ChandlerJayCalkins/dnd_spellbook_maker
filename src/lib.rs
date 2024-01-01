@@ -195,46 +195,46 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 		// Add text to the page
 
 		// Add the name of the spell as a header
-		add_spell_text(&layer_ref, spell.name, HEADER_FONT_SIZE, X_START, &mut text_height, &regular_font, &regular_font_size_data,
-			&header_font_scale);
+		add_spell_text(&layer_ref, spell.name, HEADER_FONT_SIZE, X_START, &mut text_height, &regular_font,
+			&regular_font_size_data, &header_font_scale);
 		text_height -= LARGE_NEWLINE;
 
 		// Add the level and the spell's school of magic
 		let text = get_level_school_text(spell);
-		add_spell_text(&layer_ref, &text, BODY_FONT_SIZE, X_START, &mut text_height, &italic_font,
-			&italic_font_size_data, &body_font_scale);
+		add_spell_text(&layer_ref, &text, BODY_FONT_SIZE, X_START, &mut text_height, &italic_font, &italic_font_size_data,
+			&body_font_scale);
 		text_height -= LARGE_NEWLINE;
 
 		// Add the casting time of the spell
-		add_spell_field(&layer_ref, "Casting Time: ", &spell.casting_time.to_string(), BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
-			&bold_font_size_data, &regular_font_size_data, &body_font_scale);
+		add_spell_field(&layer_ref, "Casting Time: ", &spell.casting_time.to_string(), BODY_FONT_SIZE, X_START,
+			&mut text_height, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale);
 		text_height -= SMALL_NEWLINE;
 
 		// Add the range of the spell
-		add_spell_field(&layer_ref, "Range: ", &spell.range.to_string(), BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
-			&bold_font_size_data, &regular_font_size_data, &body_font_scale);
+		add_spell_field(&layer_ref, "Range: ", &spell.range.to_string(), BODY_FONT_SIZE, X_START, &mut text_height,
+			&bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale);
 		text_height -= SMALL_NEWLINE;
 
 		// Add the components of the spell
-		add_spell_field(&layer_ref, "Components: ", &spell.get_component_string(), BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
-			&bold_font_size_data, &regular_font_size_data, &body_font_scale);
+		add_spell_field(&layer_ref, "Components: ", &spell.get_component_string(), BODY_FONT_SIZE, X_START,
+			&mut text_height, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale);
 		text_height -= SMALL_NEWLINE;
 
 		// Add the duration of the spell
-		add_spell_field(&layer_ref, "Duration: ", &spell.duration.to_string(), BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
-			&bold_font_size_data, &regular_font_size_data, &body_font_scale);
+		add_spell_field(&layer_ref, "Duration: ", &spell.duration.to_string(), BODY_FONT_SIZE, X_START, &mut text_height,
+			&bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale);
 		text_height -= LARGE_NEWLINE;
 
 		// Add the spell's description
-		add_spell_text(&layer_ref, spell.description, BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &regular_font_size_data,
-			&body_font_scale);
+		add_spell_text(&layer_ref, spell.description, BODY_FONT_SIZE, X_START, &mut text_height, &regular_font,
+			&regular_font_size_data, &body_font_scale);
 		text_height -= SMALL_NEWLINE;
 
 		// If the spell has an upcast description
 		if let Some(description) = spell.upcast_description
 		{
-			add_spell_field(&layer_ref, "At Higher Levels. ", description, BODY_FONT_SIZE, X_START, &mut text_height, &bold_italic_font, &regular_font,
-			&bold_italic_font_size_data, &regular_font_size_data, &body_font_scale);
+			add_spell_field(&layer_ref, "At Higher Levels. ", description, BODY_FONT_SIZE, X_START, &mut text_height,
+				&bold_italic_font, &regular_font, &bold_italic_font_size_data, &regular_font_size_data, &body_font_scale);
 		}
 
 		// Increment the layer counter
