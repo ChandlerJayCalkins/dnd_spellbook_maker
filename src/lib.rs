@@ -5,8 +5,8 @@ pub mod spells;
 pub mod phb_spells;
 
 // width and height of each page in millimeters
-const page_width: f64 = 210.0;
-const page_height: f64 = 297.0;
+const PAGE_WIDTH: f64 = 210.0;
+const PAGE_HEIGHT: f64 = 297.0;
 
 // Calculates the width of some text give the font and the font size it uses
 fn calc_text_width(font_size_data: &Font, font_scale: &Scale, text: &str) -> f32
@@ -42,14 +42,14 @@ fn get_level_school_text(spell: &spells::Spell) -> String
 }
 
 // Adds text to a spell page
-fn add_spell_text(layer: &PdfLayerReference, text: &str, font_size: f32, x: f64, y: f64, font: &IndirectFontRef,
+fn add_spell_text(layer: &PdfLayerReference, text: &str, font_size: f32, x: f64, y: &mut f64, font: &IndirectFontRef,
 font_size_data: &Font, font_scale: &Scale)
 {
 	// Begins a text section
 	layer.begin_text_section();
 	// Sets the font and cursor location
 	layer.set_font(&font, font_size as f64);
-	layer.set_text_cursor(Mm(x), Mm(y));
+	layer.set_text_cursor(Mm(x), Mm(*y));
 	// Calculate the width of the text
 	let width = calc_text_width(&font_size_data, &font_scale, &text);
 	// Add spell text to the page
@@ -59,7 +59,7 @@ font_size_data: &Font, font_scale: &Scale)
 }
 
 // Adds spell field text to a spell page
-fn add_spell_field(layer: &PdfLayerReference, field: &str, text: &str, font_size: f32, x: f64, y: f64,
+fn add_spell_field(layer: &PdfLayerReference, field: &str, text: &str, font_size: f32, x: f64, y: &mut f64,
 field_font: &IndirectFontRef, text_font: &IndirectFontRef, field_font_size_data: &Font, text_font_size_data: &Font,
 font_scale: &Scale)
 {
@@ -68,7 +68,7 @@ font_scale: &Scale)
 	// Sets the font to the field font
 	layer.set_font(&field_font, font_size as f64);
 	// Sets the cursor location
-	layer.set_text_cursor(Mm(x), Mm(y));
+	layer.set_text_cursor(Mm(x), Mm(*y));
 	// Calculate the width of the text
 	let field_width = calc_text_width(&field_font_size_data, &font_scale, &field);
 	let text_width = calc_text_width(&text_font_size_data, &font_scale, &text);
@@ -87,14 +87,14 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
     // Load custom font
 
 	// File path to font
-	const font_name: &str = "Bookman";
-	let font_directory = format!("fonts/{}", font_name.clone());
+	const FONT_NAME: &str = "Bookman";
+	let font_directory = format!("fonts/{}", FONT_NAME);
 
 	// Read the data from the font files
-    let regular_font_data = std::fs::read(format!("{}/{}-Regular.otf", font_directory.clone(), font_name))?;
-	let italic_font_data = std::fs::read(format!("{}/{}-Italic.otf", font_directory.clone(), font_name))?;
-	let bold_font_data = std::fs::read(format!("{}/{}-Bold.otf", font_directory.clone(), font_name))?;
-	let bold_italic_font_data = std::fs::read(format!("{}/{}-BoldItalic.otf", font_directory.clone(), font_name))?;
+    let regular_font_data = std::fs::read(format!("{}/{}-Regular.otf", font_directory.clone(), FONT_NAME))?;
+	let italic_font_data = std::fs::read(format!("{}/{}-Italic.otf", font_directory.clone(), FONT_NAME))?;
+	let bold_font_data = std::fs::read(format!("{}/{}-Bold.otf", font_directory.clone(), FONT_NAME))?;
+	let bold_italic_font_data = std::fs::read(format!("{}/{}-BoldItalic.otf", font_directory.clone(), FONT_NAME))?;
 
 	// Create font size data for each font style
 	let regular_font_size_data = Font::try_from_bytes(&regular_font_data as &[u8]).unwrap();
@@ -103,14 +103,14 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 	let bold_italic_font_size_data = Font::try_from_bytes(&bold_italic_font_data as &[u8]).unwrap();
 
 	// Define font sizes
-	const title_font_size: f32 = 32.0;
-	const header_font_size: f32 = 24.0;
-	const body_font_size: f32 = 12.0;
+	const TITLE_FONT_SIZE: f32 = 32.0;
+	const HEADER_FONT_SIZE: f32 = 24.0;
+	const BODY_FONT_SIZE: f32 = 12.0;
 
 	// Create font scale objects for each font size
-	let title_font_scale = Scale::uniform(title_font_size);
-	let header_font_scale = Scale::uniform(header_font_size);
-	let body_font_scale = Scale::uniform(body_font_size);
+	let title_font_scale = Scale::uniform(TITLE_FONT_SIZE);
+	let header_font_scale = Scale::uniform(HEADER_FONT_SIZE);
+	let body_font_scale = Scale::uniform(BODY_FONT_SIZE);
 
 	// Calculate text heights
 	let title_text_height = calc_text_height(&regular_font_size_data, &title_font_scale) as f64;
@@ -135,7 +135,7 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 	};
 
     // Create PDF document
-    let (doc, cover_page, cover_layer) = PdfDocument::new(title, Mm(page_width), Mm(page_height), "Cover Layer");
+    let (doc, cover_page, cover_layer) = PdfDocument::new(title, Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), "Cover Layer");
 
     // Add all styles of the custom font to the document
     let regular_font = doc.add_external_font(&*regular_font_data)?;
@@ -159,20 +159,17 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 	let width = calc_text_width(&regular_font_size_data, &title_font_scale, &text);
 
     // Add text using the custom font to the page
-    cover_layer_ref.use_text(format!("{} {}", width, text), title_font_size as f64, Mm(10.0), Mm(200.0), &regular_font);
+    cover_layer_ref.use_text(format!("{} {}", width, text), BODY_FONT_SIZE as f64, Mm(10.0), Mm(200.0), &regular_font);
 
 	// Add next pages
 	
 	// Starting x and y positions for text on a page
-	const x_start: f64 = 10.0;
-	const y_start: f64 = 280.0;
-
-	// Text height to mm ratio for scaling vertical text placement
-	const height_mm_ratio: f64 = 4.0;
+	const X_START: f64 = 10.0;
+	const Y_START: f64 = 280.0;
 
 	// Number of millimeters to go downwards for newlines
-	const large_newline: f64 = 8.0;
-	const small_newline: f64 = 5.0;
+	const LARGE_NEWLINE: f64 = 8.0;
+	const SMALL_NEWLINE: f64 = 5.0;
 
 	// Counter variable for naming each layer incrementally
 	let mut layer_count = 1;
@@ -185,7 +182,7 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 		// Create a new image since cloning the old one isn't allowed for some reason
 		let img = Image::from_dynamic_image(&img_data.clone());
 		// Create a new page
-		let (page, layer) = doc.add_page(Mm(page_width), Mm(page_height), format!("Layer {}", layer_count));
+		let (page, layer) = doc.add_page(Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), format!("Layer {}", layer_count));
 		// Create a new bookmark for this page
 		doc.add_bookmark(spell.name, page);
 		// Get a reference to the layer for this page
@@ -193,50 +190,50 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 		// Add the background image to the page
 		img.add_to_layer(layer_ref.clone(), img_transform);
 		// Keeps track of the current height to place text at
-		let mut text_height: f64 = y_start;
+		let mut text_height: f64 = Y_START;
 
 		// Add text to the page
 
 		// Add the name of the spell as a header
-		add_spell_text(&layer_ref, spell.name, header_font_size, x_start, y_start, &regular_font, &regular_font_size_data,
+		add_spell_text(&layer_ref, spell.name, HEADER_FONT_SIZE, X_START, &mut text_height, &regular_font, &regular_font_size_data,
 			&header_font_scale);
-		text_height -= large_newline;
+		text_height -= LARGE_NEWLINE;
 
 		// Add the level and the spell's school of magic
 		let text = get_level_school_text(spell);
-		add_spell_text(&layer_ref, &text, body_font_size, x_start, text_height, &italic_font,
+		add_spell_text(&layer_ref, &text, BODY_FONT_SIZE, X_START, &mut text_height, &italic_font,
 			&italic_font_size_data, &body_font_scale);
-		text_height -= large_newline;
+		text_height -= LARGE_NEWLINE;
 
 		// Add the casting time of the spell
-		add_spell_field(&layer_ref, "Casting Time: ", &spell.casting_time.to_string(), body_font_size, x_start, text_height, &bold_font, &regular_font,
+		add_spell_field(&layer_ref, "Casting Time: ", &spell.casting_time.to_string(), BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
 			&bold_font_size_data, &regular_font_size_data, &body_font_scale);
-		text_height -= small_newline;
+		text_height -= SMALL_NEWLINE;
 
 		// Add the range of the spell
-		add_spell_field(&layer_ref, "Range: ", &spell.range.to_string(), body_font_size, x_start, text_height, &bold_font, &regular_font,
+		add_spell_field(&layer_ref, "Range: ", &spell.range.to_string(), BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
 			&bold_font_size_data, &regular_font_size_data, &body_font_scale);
-		text_height -= small_newline;
+		text_height -= SMALL_NEWLINE;
 
 		// Add the components of the spell
-		add_spell_field(&layer_ref, "Components: ", &spell.get_component_string(), body_font_size, x_start, text_height, &bold_font, &regular_font,
+		add_spell_field(&layer_ref, "Components: ", &spell.get_component_string(), BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
 			&bold_font_size_data, &regular_font_size_data, &body_font_scale);
-		text_height -= small_newline;
+		text_height -= SMALL_NEWLINE;
 
 		// Add the duration of the spell
-		add_spell_field(&layer_ref, "Duration: ", &spell.duration.to_string(), body_font_size, x_start, text_height, &bold_font, &regular_font,
+		add_spell_field(&layer_ref, "Duration: ", &spell.duration.to_string(), BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
 			&bold_font_size_data, &regular_font_size_data, &body_font_scale);
-		text_height -= large_newline;
+		text_height -= LARGE_NEWLINE;
 
 		// Add the spell's description
-		add_spell_text(&layer_ref, spell.description, body_font_size, x_start, text_height, &regular_font, &regular_font_size_data,
+		add_spell_text(&layer_ref, spell.description, BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &regular_font_size_data,
 			&body_font_scale);
-		text_height -= small_newline;
+		text_height -= SMALL_NEWLINE;
 
 		// If the spell has an upcast description
 		if let Some(description) = spell.upcast_description
 		{
-			add_spell_field(&layer_ref, "At Higher Levels. ", description, body_font_size, x_start, text_height, &bold_italic_font, &regular_font,
+			add_spell_field(&layer_ref, "At Higher Levels. ", description, BODY_FONT_SIZE, X_START, &mut text_height, &bold_italic_font, &regular_font,
 			&bold_italic_font_size_data, &regular_font_size_data, &body_font_scale);
 		}
 
