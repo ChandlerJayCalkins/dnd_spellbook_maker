@@ -31,6 +31,7 @@ fn calc_text_height(font_size_data: &Font, font_scale: &Scale) -> f32
 	v_metrics.ascent - v_metrics.descent
 }
 
+// Gets the school and level info from a spell and turns it into text that says something like "nth-Level School-Type"
 fn get_level_school_text(spell: &spells::Spell) -> String
 {
 	match spell.level
@@ -42,6 +43,47 @@ fn get_level_school_text(spell: &spells::Spell) -> String
 		spells::Level::Level4 | spells::Level::Level5 | spells::Level::Level6 | spells::Level::Level7 |
 		spells::Level::Level8 | spells::Level::Level9 => format!("{}th-Level {}", u8::from(spell.level), spell.school.to_string())
 	}
+}
+
+// Adds text to a spell page
+fn add_spell_text(layer: &PdfLayerReference, text: &str, font_size: f32, x: f64, y: f64, font: &IndirectFontRef,
+font_size_data: &Font, font_scale: &Scale)
+{
+	// Begins a text section
+	layer.begin_text_section();
+	// Sets the font and cursor location
+	layer.set_font(&font, font_size as f64);
+	layer.set_text_cursor(Mm(x), Mm(y));
+	// Calculate the width of the text
+	let width = calc_text_width(&font_size_data, &font_scale, &text);
+	// Add spell text to the page
+	layer.write_text(text, &font);
+	// Ends the text section
+	layer.end_text_section();
+}
+
+// Adds spell field text to a spell page
+fn add_spell_field(layer: &PdfLayerReference, field: &str, text: &str, font_size: f32, x: f64, y: f64,
+field_font: &IndirectFontRef, text_font: &IndirectFontRef, field_font_size_data: &Font, text_font_size_data: &Font,
+font_scale: &Scale)
+{
+	// Begins a text section
+	layer.begin_text_section();
+	// Sets the font to the field font
+	layer.set_font(&field_font, font_size as f64);
+	// Sets the cursor location
+	layer.set_text_cursor(Mm(x), Mm(y));
+	// Calculate the width of the text
+	let field_width = calc_text_width(&field_font_size_data, &font_scale, &field);
+	let text_width = calc_text_width(&text_font_size_data, &font_scale, &text);
+	// Add the field text to the page
+	layer.write_text(field, &field_font);
+	// Set the font to the text font
+	layer.set_font(&text_font, font_size as f64);
+	// Add the spell text to the page
+	layer.write_text(text, &text_font);
+	// Ends the text section
+	layer.end_text_section();
 }
 
 pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells::Spell>) -> Result<(), Box<dyn std::error::Error>>
@@ -154,62 +196,22 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 		// Keeps track of the current height to place text at
 		let mut text_height: f64 = y_start;
 
-		// Begins a text section
-		layer_ref.begin_text_section();
-		// Sets the font, line height, and cursor location
-		layer_ref.set_font(&regular_font, header_font_size as f64);
-		////////layer_ref.set_line_height(header_font_size);
-		layer_ref.set_text_cursor(Mm(x_start), Mm(y_start));
-		// Calculate the text width of the spell's name
-		let width = calc_text_width(&regular_font_size_data, &header_font_scale, &spell.name);
-		// Add spell name to the page
-		//layer_ref.use_text(spell.name, header_font_size as f64, Mm(x_start), Mm(y_start), &regular_font);
-		layer_ref.write_text(spell.name, &regular_font);
-		// Decrease text height so next text gets placed lower
+		add_spell_text(&layer_ref, spell.name, header_font_size, x_start, y_start, &regular_font,
+			&regular_font_size_data, &header_font_scale);
 		text_height -= height_dec1;
-		// Ends the text section
-		layer_ref.end_text_section();
 
-		// Begins a text section
-		layer_ref.begin_text_section();
-		// Set the font, line height, and cursor location
-		layer_ref.set_font(&italic_font, body_font_size as f64);
-		layer_ref.set_text_cursor(Mm(x_start), Mm(text_height));
-		// get level + school text
 		let text = get_level_school_text(spell);
-		// Calculate text width of level and school
-		let width = calc_text_width(&italic_font_size_data, &body_font_scale, &text);
-		// Add level + school text to the page
-		//layer_ref.use_text(text, body_font_size as f64, Mm(x_start), Mm(text_height), &italic_font);
-		layer_ref.write_text(text, &italic_font);
-		// Decrease text height so next text gets placed lower
+		add_spell_text(&layer_ref, &text, body_font_size, x_start, text_height, &italic_font,
+			&italic_font_size_data, &body_font_scale);
 		text_height -= height_dec1;
-		// Ends the text section
-		layer_ref.end_text_section();
 
-		// Begins a text section
-		layer_ref.begin_text_section();
-		layer_ref.set_font(&bold_font, body_font_size as f64);
-		layer_ref.set_text_cursor(Mm(x_start), Mm(text_height));
-		let field_text = "Casting Time: ";
-		let width = calc_text_width(&bold_font_size_data, &body_font_scale, &field_text);
-		//layer_ref.use_text(text, body_font_size as f64, Mm(x_start), Mm(text_height), &bold_font);
-		layer_ref.write_text(field_text, &bold_font);
+		add_spell_field(&layer_ref, "Casting Time: ", "Test text", body_font_size, x_start, text_height, &bold_font, &regular_font,
+			&bold_font_size_data, &regular_font_size_data, &body_font_scale);
 		text_height -= height_dec2;
-		// Ends the text section
-		layer_ref.end_text_section();
 
-		// Begins a text section
-		layer_ref.begin_text_section();
-		layer_ref.set_font(&bold_font, body_font_size as f64);
-		layer_ref.set_text_cursor(Mm(x_start), Mm(text_height));
-		let field_text = "Range: ";
-		let width = calc_text_width(&bold_font_size_data, &body_font_scale, &field_text);
-		//layer_ref.use_text(text, body_font_size as f64, Mm(x_start), Mm(text_height), &bold_font);
-		layer_ref.write_text(field_text, &bold_font);
+		add_spell_field(&layer_ref, "Range: ", "Test text", body_font_size, x_start, text_height, &bold_font, &regular_font,
+			&bold_font_size_data, &regular_font_size_data, &body_font_scale);
 		text_height -= height_dec2;
-		// Ends the text section
-		layer_ref.end_text_section();
 
 		// Increment the layer counter
 		layer_count += 1;
