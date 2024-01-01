@@ -145,6 +145,7 @@ mod tests
 	{
 		// Create vec of spells for testing
 		let spell_list = vec![&phb_spells::fire_bolt, &phb_spells::fireball];
+		// Create spellbook
 		let _ = generate_spellbook("Spellbook", "Spellbook.pdf", spell_list);
 	}
 }
