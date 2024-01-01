@@ -77,18 +77,14 @@ pub enum AOE
 {
 	// No AOE
 	None,
-	// Range defines length of line, u16 defines width
-	Line(u16),
-	// Range defines how far away the origin of the cone (pointy end) can be created
+	// u16 tuple defines length and width of line (respectively)
+	Line(u16, u16),
 	// u16 defines length / height and diameter of cone
 	Cone(u16),
-	// Range defines how far away the origin of the cube (center of one of the faces) can be created
 	// u16 defines the length of the edges of the cube
 	Cube(u16),
-	// Range defines how far away the origin of the sphere (center of sphere) can be created
 	// u16 defines radius of sphere
 	Sphere(u16),
-	// Range defines how far away the origin of the cylinder (center of the top or bottom) can be created
 	// u16 tuple defines radius and height of cylinder (respectively)
 	Cylinder(u16, u16)
 }
