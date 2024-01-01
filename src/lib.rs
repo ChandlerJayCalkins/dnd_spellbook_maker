@@ -34,9 +34,32 @@ fn calc_text_height(font_size_data: &Font, font_scale: &Scale) -> f32
 pub fn printpdf_test() -> Result<(), Box<dyn std::error::Error>>
 {
     // Load custom font
-    let regular_font_data = std::fs::read("fonts/Bookman/Bookman-Regular.otf")?;
-	let font_size_data = Font::try_from_bytes(&regular_font_data as &[u8]).unwrap();
-	let font_scale = Scale::uniform(32.0);
+
+	// File path to font
+	const font_name: &str = "Bookman";
+	let font_directory = format!("fonts/{}", font_name.clone());
+
+	// Read the data from the font files
+    let regular_font_data = std::fs::read(format!("{}/{}-Regular.otf", font_directory.clone(), font_name))?;
+	let italic_font_data = std::fs::read(format!("{}/{}-Italic.otf", font_directory.clone(), font_name))?;
+	let bold_font_data = std::fs::read(format!("{}/{}-Bold.otf", font_directory.clone(), font_name))?;
+	let bold_italic_font_data = std::fs::read(format!("{}/{}-BoldItalic.otf", font_directory.clone(), font_name))?;
+
+	// Create font size data for each font style
+	let regular_font_size_data = Font::try_from_bytes(&regular_font_data as &[u8]).unwrap();
+	let italic_font_size_data = Font::try_from_bytes(&italic_font_data as &[u8]).unwrap();
+	let bold_font_size_data = Font::try_from_bytes(&bold_font_data as &[u8]).unwrap();
+	let bold_italic_size_data = Font::try_from_bytes(&bold_italic_font_data as &[u8]).unwrap();
+
+	// Define font sizes
+	const title_font_size: f32 = 32.0;
+	const header_font_size: f32 = 24.0;
+	const body_font_size: f32 = 12.0;
+
+	// Create font scale objects for each font size
+	let title_font_scale = Scale::uniform(title_font_size);
+	let header_font_scale = Scale::uniform(header_font_size);
+	let body_font_scale = Scale::uniform(body_font_size);
 
 	// Load image
 	let img_data = image::open("img/parchment.jpg")?;
@@ -53,31 +76,35 @@ pub fn printpdf_test() -> Result<(), Box<dyn std::error::Error>>
 	};
 
     // Create PDF document
-    let (doc, page1, layer1) = PdfDocument::new("Spellbook", Mm(page_width), Mm(page_height), "Layer 1");
+    let (doc, cover_page, cover_layer) = PdfDocument::new("Spellbook", Mm(page_width), Mm(page_height), "Cover Layer");
 
-    // Embed the custom font into the document
-    let font = doc.add_external_font(&*regular_font_data)?;
+    // Add all styles of the custom font to the document
+    let regular_font = doc.add_external_font(&*regular_font_data)?;
+	let italic_font = doc.add_external_font(&*italic_font_data)?;
+	let bold_font = doc.add_external_font(&*bold_font_data)?;
+	let bold_italic_font = doc.add_external_font(&*bold_italic_font_data)?;
 
-	// Create bookmark for first page
-	doc.add_bookmark("Cover", page1);
+	// Create bookmark for cover page
+	doc.add_bookmark("Cover", cover_page);
 
     // Get PdfLayerReference from PdfLayerIndex
-	let layer1_ref = doc.get_page(page1).get_layer(layer1);
+	let cover_layer_ref = doc.get_page(cover_page).get_layer(cover_layer);
 
 	// Add image to document layer
-	img1.add_to_layer(layer1_ref.clone(), img_transform);
+	img1.add_to_layer(cover_layer_ref.clone(), img_transform);
 
-    // Set font properties
-    let font_size = 32.0;
+    // Define text
     let text = "Hello! The quick brown fox jumped over the lazy dog. Peter Piper picked a prickly patch of purple pickle peppers.";
-	let width = calc_text_width(&font_size_data, &font_scale, &text);
+
+	// Calculate width of text
+	let width = calc_text_width(&regular_font_size_data, &title_font_scale, &text);
 
     // Add text using the custom font to the page
-    layer1_ref.use_text(format!("{} {}", width, text), font_size, Mm(10.0), Mm(200.0), &font);
+    cover_layer_ref.use_text(format!("{} {}", width, text), title_font_size as f64, Mm(10.0), Mm(200.0), &regular_font);
 
 	// Add next pages
 	let spell_list = vec![&phb_spells::fire_bolt, &phb_spells::fireball];
-	let mut layer_count = 2;
+	let mut layer_count = 1;
 	for spell in spell_list
 	{
 		let img = Image::from_dynamic_image(&img_data.clone());
@@ -85,8 +112,8 @@ pub fn printpdf_test() -> Result<(), Box<dyn std::error::Error>>
 		doc.add_bookmark(spell.name, page);
 		let layer_ref = doc.get_page(page).get_layer(layer);
 		img.add_to_layer(layer_ref.clone(), img_transform);
-		let width = calc_text_width(&font_size_data, &font_scale, &spell.name);
-		layer_ref.use_text(format!("{} {}", width, spell.name), font_size, Mm(10.0), Mm(280.0), &font);
+		let width = calc_text_width(&regular_font_size_data, &header_font_scale, &spell.name);
+		layer_ref.use_text(format!("{} {}", width, spell.name), header_font_size as f64, Mm(10.0), Mm(280.0), &regular_font);
 		layer_count += 1;
 	}
 
