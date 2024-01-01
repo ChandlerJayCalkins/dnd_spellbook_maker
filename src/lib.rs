@@ -31,7 +31,7 @@ fn calc_text_height(font_size_data: &Font, font_scale: &Scale) -> f32
 	v_metrics.ascent - v_metrics.descent
 }
 
-pub fn printpdf_test() -> Result<(), Box<dyn std::error::Error>>
+pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells::Spell>) -> Result<(), Box<dyn std::error::Error>>
 {
     // Load custom font
 
@@ -76,7 +76,7 @@ pub fn printpdf_test() -> Result<(), Box<dyn std::error::Error>>
 	};
 
     // Create PDF document
-    let (doc, cover_page, cover_layer) = PdfDocument::new("Spellbook", Mm(page_width), Mm(page_height), "Cover Layer");
+    let (doc, cover_page, cover_layer) = PdfDocument::new(title, Mm(page_width), Mm(page_height), "Cover Layer");
 
     // Add all styles of the custom font to the document
     let regular_font = doc.add_external_font(&*regular_font_data)?;
@@ -103,9 +103,6 @@ pub fn printpdf_test() -> Result<(), Box<dyn std::error::Error>>
     cover_layer_ref.use_text(format!("{} {}", width, text), title_font_size as f64, Mm(10.0), Mm(200.0), &regular_font);
 
 	// Add next pages
-
-	// Create vec of spells for testing
-	let spell_list = vec![&phb_spells::fire_bolt, &phb_spells::fireball];
 	
 	// Counter variable for naming each layer incrementally
 	let mut layer_count = 1;
@@ -132,7 +129,7 @@ pub fn printpdf_test() -> Result<(), Box<dyn std::error::Error>>
 	}
 
     // Save the document to a file
-    let file = std::fs::File::create("Spellbook.pdf")?;
+    let file = std::fs::File::create(file_name)?;
     doc.save(&mut std::io::BufWriter::new(file))?;
 
     Ok(())
@@ -144,8 +141,10 @@ mod tests
 	use super::*;
 
 	#[test]
-	fn it_works()
+	fn the_test()
 	{
-		let _ = printpdf_test();
+		// Create vec of spells for testing
+		let spell_list = vec![&phb_spells::fire_bolt, &phb_spells::fireball];
+		let _ = generate_spellbook("Spellbook", "Spellbook.pdf", spell_list);
 	}
 }
