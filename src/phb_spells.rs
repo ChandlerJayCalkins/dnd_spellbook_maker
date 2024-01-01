@@ -12,8 +12,7 @@ pub static fire_bolt: Spell = Spell
 	has_somantic_component: true,
 	material_components: None,
 	duration: Duration::Instant,
-	requires_concentration: false,
-	description: "Vou hurl a mote of fire at a ereature or object within 
+	description: "You hurl a mote of fire at a creature or object within 
 	range. Make a ranged spell attack against the 
 	target. On a hit, the target takes 1dlO fire damage. A 
 	flammable object hit by this spell ignites if it isn't being 
@@ -35,7 +34,6 @@ pub static fireball: Spell = Spell
 	has_somantic_component: true,
 	material_components: Some("a tiny ball of bat guano and sulfur"),
 	duration: Duration::Instant,
-	requires_concentration: false,
 	description: "A bright streak flashes from your pointing finger to a 
 	point you choose within range and then blossoms with 
 	a low roar into an explosion of flame. Each creature 

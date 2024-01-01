@@ -143,37 +143,25 @@ pub enum CastingTime<'a>
 	Years(u16)
 }
 
-// Converts a time and a unit of time into a string (Ex: '2' and 'minute' becomes '2 minutes')
-fn get_time_string(time: u16, unit: &str) -> String
-{
-	if time == 1
-	{
-		return format!("1 {}", unit);
-	}
-	else
-	{
-		return format!("{} {}s", time, unit);
-	}
-}
-
 // Converts casting times into strings
-impl ToString for CastingTime<'_>
+impl<'a> fmt::Display for CastingTime<'a>
 {
-	fn to_string(&self) -> String
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
 	{
-		match self
+		let text = match self
 		{
-			Self::Seconds(t) => get_time_string(*t, "second"),
-			Self::Actions(t) => get_time_string(*t, "action"),
+			Self::Seconds(t) => get_amount_string(*t, "second"),
+			Self::Actions(t) => get_amount_string(*t, "action"),
 			Self::BonusAction => String::from("1 bonus action"),
-			Self::Reaction(e) => format!("1 reaction, which you take when {}", e),
-			Self::Minutes(t) => get_time_string(*t, "minute"),
-			Self::Hours(t) => get_time_string(*t, "hour"),
-			Self::Days(t) => get_time_string(*t, "day"),
-			Self::Weeks(t) => get_time_string(*t, "week"),
-			Self::Months(t) => get_time_string(*t, "month"),
-			Self::Years(t) => get_time_string(*t, "year")
-		}
+			Self::Reaction(e) => format!("1 reaction, which you take when {}", *e),
+			Self::Minutes(t) => get_amount_string(*t, "minute"),
+			Self::Hours(t) => get_amount_string(*t, "hour"),
+			Self::Days(t) => get_amount_string(*t, "day"),
+			Self::Weeks(t) => get_amount_string(*t, "week"),
+			Self::Months(t) => get_amount_string(*t, "month"),
+			Self::Years(t) => get_amount_string(*t, "year")
+		};
+		write!(f, "{}", text)
 	}
 }
 
@@ -184,16 +172,34 @@ pub enum AOE
 {
 	// No AOE
 	None,
-	// u16 tuple defines length and width of line (respectively)
-	Line(u16, u16),
-	// u16 defines length / height and diameter of cone
+	// u16 defines length of line in feet (width should be in spell description)
+	Line(u16),
+	// u16 defines length / height and diameter of cone in feet
 	Cone(u16),
-	// u16 defines the length of the edges of the cube
+	// u16 defines the length of the edges of the cube in feet
 	Cube(u16),
-	// u16 defines radius of sphere
+	// u16 defines radius of sphere in feet
 	Sphere(u16),
-	// u16 tuple defines radius and height of cylinder (respectively)
+	// u16 tuple defines radius and height of cylinder in feet (respectively)
 	Cylinder(u16, u16)
+}
+
+// Converts AOEs into strings
+impl fmt::Display for AOE
+{
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
+	{
+		let text = match self
+		{
+			Self::None => String::from(""),
+			Self::Line(l) => format!(" ({}-foot line)", l),
+			Self::Cone(l) => format!(" ({}-foot cone)", l),
+			Self::Cube(l) => format!(" ({}-foot cube)", l),
+			Self::Sphere(r) => format!(" ({}-foot sphere)", r),
+			Self::Cylinder(r, h) => format!(" ({}-foot radius, {}-foot tall cylinder)", r, h)
+		};
+		write!(f, "{}", text)
+	}
 }
 
 // The farthest distance a target can be from the caster of a spell
@@ -206,21 +212,128 @@ pub enum Range
 	Miles(u16)
 }
 
+// Converts spell ranges into strings
+impl fmt::Display for Range
+{
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
+	{
+		let text = match self
+		{
+			Self::Yourself(a) => format!("Self{}", a),
+			Self::Touch => String::from("Touch"),
+			Self::Feet(r) => if *r == 1 { String::from("1 foot") } else { format!("{} feet", r) },
+			Self::Miles(r) => get_amount_string(*r, "mile")
+		};
+		write!(f, "{}", text)
+	}
+}
+
 // How long a spell's effect lasts
+// u16 values are the number of units the spell can last
+// Bool values are whether or not the spell requires concentration
 #[derive(Clone, Copy, Debug)]
 pub enum Duration
 {
 	Instant,
-	Seconds(u16),
-	Rounds(u16),
-	Minutes(u16),
-	Hours(u16),
-	Days(u16),
-	Weeks(u16),
-	Months(u16),
-	Years(u16),
-	UntilDispelled,
+	Seconds(u16, bool),
+	Rounds(u16, bool),
+	Minutes(u16, bool),
+	Hours(u16, bool),
+	Days(u16, bool),
+	Weeks(u16, bool),
+	Months(u16, bool),
+	Years(u16, bool),
+	DispelledOrTriggered(bool),
+	UntilDispelled(bool),
 	Permanent
+}
+
+// Converts spell durations into strings
+impl fmt::Display for Duration
+{
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
+	{
+		let text = match self
+		{
+			Self::Instant => String::from("Instantaneous"),
+			Self::Seconds(t, c) =>
+			{
+				let s = get_amount_string(*t, "second");
+				if *c { format!("Concentration, up to {}", s) }
+				else { s }
+			},
+			Self::Rounds(t, c) =>
+			{
+				let s = get_amount_string(*t, "round");
+				if *c { format!("Concentration, up to {}", s) }
+				else { s }
+			},
+			Self::Minutes(t, c) =>
+			{
+				let s = get_amount_string(*t, "minute");
+				if *c { format!("Concentration, up to {}", s) }
+				else { s }
+			},
+			Self::Hours(t, c) =>
+			{
+				let s = get_amount_string(*t, "hour");
+				if *c { format!("Concentration, up to {}", s) }
+				else { s }
+			},
+			Self::Days(t, c) =>
+			{
+				let s = get_amount_string(*t, "day");
+				if *c { format!("Concentration, up to {}", s) }
+				else { s }
+			},
+			Self::Weeks(t, c) =>
+			{
+				let s = get_amount_string(*t, "week");
+				if *c { format!("Concentration, up to {}", s) }
+				else { s }
+			},
+			Self::Months(t, c) =>
+			{
+				let s = get_amount_string(*t, "month");
+				if *c { format!("Concentration, up to {}", s) }
+				else { s }
+			},
+			Self::Years(t, c) =>
+			{
+				let s = get_amount_string(*t, "year");
+				if *c { format!("Concentration, up to {}", s) }
+				else { s }
+			},
+			Self::DispelledOrTriggered(c) =>
+			{
+				let s = String::from("Until dispelled or triggered");
+				if *c { format!("Concentration, up {}", s) }
+				else { s }
+			}
+			Self::UntilDispelled(c) =>
+			{
+				let s = String::from("Until dispelled");
+				if *c { format!("Concentration, up {}", s) }
+				else { s }
+			}
+			Self::Permanent => String::from("Permanent")
+		};
+		write!(f, "{}", text)
+	}
+}
+
+// Gets a string of an amount of something like "1 minute", "5 minutes", "1 hour", or "3 hours"
+// Note: the unit should be singular, not plural because an 's' will be added to the end of it if num is anything besides 1
+fn get_amount_string(num: u16, unit: &str) -> String
+{
+	if num == 1
+	{
+		format!("1 {}", unit)
+	}
+	else
+	{
+		format!("{} {}s", num, unit)
+	}
 }
 
 // Data containing all of the information about a spell
@@ -241,11 +354,40 @@ pub struct Spell<'a>
 	// Optional text that lists all of the material components a spell might need to be cast
 	pub material_components: Option<&'a str>,
 	pub duration: Duration,
-	// Whether or not the effect of this spell requires concentration
-	pub requires_concentration: bool,
 	// Text that describes the effects of the spell
 	pub description: &'a str,
 	// Optional text that describes the benefits a spell gains from being upcast
 	// (being cast at a level higher than its base level)
 	pub upcast_description: Option<&'a str>
+}
+
+impl<'a> Spell<'a>
+{
+	// Gets a string of the required components for a spell
+	// Ex: "V, S, M (a bit of sulfur and some wood bark)", "V, S", "V, M (a piece of hair)"
+	pub fn get_component_string(&self) -> String
+	{
+		let mut component_string = String::from("");
+		if self.has_verbal_component
+		{
+			component_string += "V";
+		}
+		if self.has_somantic_component
+		{
+			if component_string.len() > 0
+			{
+				component_string += ", ";
+			}
+			component_string += "S";
+		}
+		if let Some(m) = self.material_components
+		{
+			if component_string.len() > 0
+			{
+				component_string += ", ";
+			}
+			component_string += format!("M ({})", m).as_str();
+		}
+		component_string
+	}
 }

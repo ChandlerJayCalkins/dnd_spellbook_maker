@@ -209,22 +209,22 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 		text_height -= large_newline;
 
 		// Add the casting time of the spell
-		add_spell_field(&layer_ref, "Casting Time: ", "Test text", body_font_size, x_start, text_height, &bold_font, &regular_font,
+		add_spell_field(&layer_ref, "Casting Time: ", &spell.casting_time.to_string(), body_font_size, x_start, text_height, &bold_font, &regular_font,
 			&bold_font_size_data, &regular_font_size_data, &body_font_scale);
 		text_height -= small_newline;
 
 		// Add the range of the spell
-		add_spell_field(&layer_ref, "Range: ", "Test text", body_font_size, x_start, text_height, &bold_font, &regular_font,
+		add_spell_field(&layer_ref, "Range: ", &spell.range.to_string(), body_font_size, x_start, text_height, &bold_font, &regular_font,
 			&bold_font_size_data, &regular_font_size_data, &body_font_scale);
 		text_height -= small_newline;
 
 		// Add the components of the spell
-		add_spell_field(&layer_ref, "Components: ", "Test text", body_font_size, x_start, text_height, &bold_font, &regular_font,
+		add_spell_field(&layer_ref, "Components: ", &spell.get_component_string(), body_font_size, x_start, text_height, &bold_font, &regular_font,
 			&bold_font_size_data, &regular_font_size_data, &body_font_scale);
 		text_height -= small_newline;
 
 		// Add the duration of the spell
-		add_spell_field(&layer_ref, "Duration: ", "Test text", body_font_size, x_start, text_height, &bold_font, &regular_font,
+		add_spell_field(&layer_ref, "Duration: ", &spell.duration.to_string(), body_font_size, x_start, text_height, &bold_font, &regular_font,
 			&bold_font_size_data, &regular_font_size_data, &body_font_scale);
 		text_height -= large_newline;
 
