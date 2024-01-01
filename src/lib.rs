@@ -1,8 +1,8 @@
 extern crate image;
 use printpdf::*;
 use rusttype::{Font, Scale};
-mod spells;
-mod phb_spells;
+pub mod spells;
+pub mod phb_spells;
 
 // width and height of each page in millimeters
 const page_width: f64 = 210.0;
