@@ -31,6 +31,19 @@ fn calc_text_height(font_size_data: &Font, font_scale: &Scale) -> f32
 	v_metrics.ascent - v_metrics.descent
 }
 
+fn get_level_school_text(spell: &spells::Spell) -> String
+{
+	match spell.level
+	{
+		spells::Level::Cantrip => format!("{} Cantrip", spell.school.to_string()),
+		spells::Level::Level1 => format!("1st-Level {}", spell.school.to_string()),
+		spells::Level::Level2 => format!("2nd-Level {}", spell.school.to_string()),
+		spells::Level::Level3 => format!("3rd-Level {}", spell.school.to_string()),
+		spells::Level::Level4 | spells::Level::Level5 | spells::Level::Level6 | spells::Level::Level7 |
+		spells::Level::Level8 | spells::Level::Level9 => format!("{}th-Level {}", u8::from(spell.level), spell.school.to_string())
+	}
+}
+
 pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells::Spell>) -> Result<(), Box<dyn std::error::Error>>
 {
     // Load custom font
@@ -49,7 +62,7 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 	let regular_font_size_data = Font::try_from_bytes(&regular_font_data as &[u8]).unwrap();
 	let italic_font_size_data = Font::try_from_bytes(&italic_font_data as &[u8]).unwrap();
 	let bold_font_size_data = Font::try_from_bytes(&bold_font_data as &[u8]).unwrap();
-	let bold_italic_size_data = Font::try_from_bytes(&bold_italic_font_data as &[u8]).unwrap();
+	let bold_italic_font_size_data = Font::try_from_bytes(&bold_italic_font_data as &[u8]).unwrap();
 
 	// Define font sizes
 	const title_font_size: f32 = 32.0;
@@ -61,7 +74,15 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 	let header_font_scale = Scale::uniform(header_font_size);
 	let body_font_scale = Scale::uniform(body_font_size);
 
-	// Load image
+	// Calculate text heights
+	let title_text_height = calc_text_height(&regular_font_size_data, &title_font_scale) as f64;
+	let header_text_height = calc_text_height(&regular_font_size_data, &header_font_scale) as f64;
+	let level_school_text_height = calc_text_height(&italic_font_size_data, &body_font_scale) as f64;
+	let spell_field_text_height = calc_text_height(&bold_font_size_data, &body_font_scale) as f64;
+	let body_text_height = calc_text_height(&regular_font_size_data, &body_font_scale) as f64;
+	let upcast_text_height = calc_text_height(&bold_italic_font_size_data, &body_font_scale) as f64;
+
+	// Load background image
 	let img_data = image::open("img/parchment.jpg")?;
     let img1 = Image::from_dynamic_image(&img_data.clone());
 
@@ -104,6 +125,16 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 
 	// Add next pages
 	
+	// Starting x and y positions for text on a page
+	const x_start: f64 = 10.0;
+	const y_start: f64 = 280.0;
+
+	// Text height to mm ratio for scaling vertical text placement
+	const height_mm_ratio: f64 = 4.0;
+
+	const height_dec1: f64 = 8.0;
+	const height_dec2: f64 = 5.0;
+
 	// Counter variable for naming each layer incrementally
 	let mut layer_count = 1;
 
@@ -120,10 +151,66 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 		let layer_ref = doc.get_page(page).get_layer(layer);
 		// Add the background image to the page
 		img.add_to_layer(layer_ref.clone(), img_transform);
+		// Keeps track of the current height to place text at
+		let mut text_height: f64 = y_start;
+
+		// Begins a text section
+		layer_ref.begin_text_section();
+		// Sets the font, line height, and cursor location
+		layer_ref.set_font(&regular_font, header_font_size as f64);
+		////////layer_ref.set_line_height(header_font_size);
+		layer_ref.set_text_cursor(Mm(x_start), Mm(y_start));
 		// Calculate the text width of the spell's name
 		let width = calc_text_width(&regular_font_size_data, &header_font_scale, &spell.name);
-		// Add text to the page
-		layer_ref.use_text(format!("{} {}", width, spell.name), header_font_size as f64, Mm(10.0), Mm(280.0), &regular_font);
+		// Add spell name to the page
+		//layer_ref.use_text(spell.name, header_font_size as f64, Mm(x_start), Mm(y_start), &regular_font);
+		layer_ref.write_text(spell.name, &regular_font);
+		// Decrease text height so next text gets placed lower
+		text_height -= height_dec1;
+		// Ends the text section
+		layer_ref.end_text_section();
+
+		// Begins a text section
+		layer_ref.begin_text_section();
+		// Set the font, line height, and cursor location
+		layer_ref.set_font(&italic_font, body_font_size as f64);
+		layer_ref.set_text_cursor(Mm(x_start), Mm(text_height));
+		// get level + school text
+		let text = get_level_school_text(spell);
+		// Calculate text width of level and school
+		let width = calc_text_width(&italic_font_size_data, &body_font_scale, &text);
+		// Add level + school text to the page
+		//layer_ref.use_text(text, body_font_size as f64, Mm(x_start), Mm(text_height), &italic_font);
+		layer_ref.write_text(text, &italic_font);
+		// Decrease text height so next text gets placed lower
+		text_height -= height_dec1;
+		// Ends the text section
+		layer_ref.end_text_section();
+
+		// Begins a text section
+		layer_ref.begin_text_section();
+		layer_ref.set_font(&bold_font, body_font_size as f64);
+		layer_ref.set_text_cursor(Mm(x_start), Mm(text_height));
+		let field_text = "Casting Time: ";
+		let width = calc_text_width(&bold_font_size_data, &body_font_scale, &field_text);
+		//layer_ref.use_text(text, body_font_size as f64, Mm(x_start), Mm(text_height), &bold_font);
+		layer_ref.write_text(field_text, &bold_font);
+		text_height -= height_dec2;
+		// Ends the text section
+		layer_ref.end_text_section();
+
+		// Begins a text section
+		layer_ref.begin_text_section();
+		layer_ref.set_font(&bold_font, body_font_size as f64);
+		layer_ref.set_text_cursor(Mm(x_start), Mm(text_height));
+		let field_text = "Range: ";
+		let width = calc_text_width(&bold_font_size_data, &body_font_scale, &field_text);
+		//layer_ref.use_text(text, body_font_size as f64, Mm(x_start), Mm(text_height), &bold_font);
+		layer_ref.write_text(field_text, &bold_font);
+		text_height -= height_dec2;
+		// Ends the text section
+		layer_ref.end_text_section();
+
 		// Increment the layer counter
 		layer_count += 1;
 	}

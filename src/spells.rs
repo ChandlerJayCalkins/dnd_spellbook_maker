@@ -39,6 +39,27 @@ impl TryFrom<u8> for Level
 	}
 }
 
+// Converts spell levels into integers (u8)
+impl From<Level> for u8
+{
+	fn from(level: Level) -> Self
+	{
+		match level
+		{
+			Level::Cantrip => 0,
+			Level::Level1 => 1,
+			Level::Level2 => 2,
+			Level::Level3 => 3,
+			Level::Level4 => 4,
+			Level::Level5 => 5,
+			Level::Level6 => 6,
+			Level::Level7 => 7,
+			Level::Level8 => 8,
+			Level::Level9 => 9
+		}
+	}
+}
+
 // The school of magic a spell belongs to
 #[derive(Clone, Copy, Debug)]
 pub enum MagicSchool
@@ -53,21 +74,77 @@ pub enum MagicSchool
 	Transmutation
 }
 
+// Converts magic schools into strings
+impl ToString for MagicSchool
+{
+	fn to_string(&self) -> String
+	{
+		match self
+		{
+			Self::Abjuration => String::from("Abjuration"),
+			Self::Conjuration => String::from("Conjuration"),
+			Self::Divination => String::from("Divination"),
+			Self::Enchantment => String::from("Enchantment"),
+			Self::Evocation => String::from("Evocation"),
+			Self::Illusion => String::from("Illusion"),
+			Self::Necromancy => String::from("Necromancy"),
+			Self::Transmutation => String::from("Transmutation")
+		}
+	}
+}
+
 // The amount of time it takes to cast a spell
 #[derive(Clone, Copy, Debug)]
-pub enum CastingTime
+pub enum CastingTime<'a>
 {
 	Seconds(u16),
 	// u16 is number of actions a spell takes to cast
 	Actions(u16),
 	BonusAction,
-	Reaction,
+	// &str is the circumstance in which the reaction can be triggered
+	// Ex: "you or a creature within 60 feet of you falls" or "you see a creature within 60 feet of you casting a spell"
+	// Note: whatever you put for this, it will come after the string "1 reaction, which you take when" on the spell page
+	Reaction(&'a str),
 	Minutes(u16),
 	Hours(u16),
 	Days(u16),
 	Weeks(u16),
 	Months(u16),
 	Years(u16)
+}
+
+// Converts a time and a unit of time into a string (Ex: '2' and 'minute' becomes '2 minutes')
+fn get_time_string(time: u16, unit: &str) -> String
+{
+	if time == 1
+	{
+		return format!("1 {}", unit);
+	}
+	else
+	{
+		return format!("{} {}s", time, unit);
+	}
+}
+
+// Converts casting times into strings
+impl ToString for CastingTime<'_>
+{
+	fn to_string(&self) -> String
+	{
+		match self
+		{
+			Self::Seconds(t) => get_time_string(*t, "second"),
+			Self::Actions(t) => get_time_string(*t, "action"),
+			Self::BonusAction => String::from("1 bonus action"),
+			Self::Reaction(e) => format!("1 reaction, which you take when {}", e),
+			Self::Minutes(t) => get_time_string(*t, "minute"),
+			Self::Hours(t) => get_time_string(*t, "hour"),
+			Self::Days(t) => get_time_string(*t, "day"),
+			Self::Weeks(t) => get_time_string(*t, "week"),
+			Self::Months(t) => get_time_string(*t, "month"),
+			Self::Years(t) => get_time_string(*t, "year")
+		}
+	}
 }
 
 // Area of Effect
@@ -125,7 +202,7 @@ pub struct Spell<'a>
 	pub school: MagicSchool,
 	// Whether or not the spell can be casted as a ritual
 	pub is_ritual: bool,
-	pub casting_time: CastingTime,
+	pub casting_time: CastingTime<'a>,
 	pub range: Range,
 	// Whether or not the spell requires a verbal component to be cast
 	pub has_verbal_component: bool,
