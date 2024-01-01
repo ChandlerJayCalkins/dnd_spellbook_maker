@@ -36,12 +36,8 @@ fn get_level_school_text(spell: &spells::Spell) -> String
 {
 	match spell.level
 	{
-		spells::Level::Cantrip => format!("{} Cantrip", spell.school.to_string()),
-		spells::Level::Level1 => format!("1st-Level {}", spell.school.to_string()),
-		spells::Level::Level2 => format!("2nd-Level {}", spell.school.to_string()),
-		spells::Level::Level3 => format!("3rd-Level {}", spell.school.to_string()),
-		spells::Level::Level4 | spells::Level::Level5 | spells::Level::Level6 | spells::Level::Level7 |
-		spells::Level::Level8 | spells::Level::Level9 => format!("{}th-Level {}", u8::from(spell.level), spell.school.to_string())
+		spells::Level::Cantrip => format!("{} {}", spell.school, spell.level),
+		_ => format!("{} {}", spell.level, spell.school)
 	}
 }
 
@@ -174,8 +170,9 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 	// Text height to mm ratio for scaling vertical text placement
 	const height_mm_ratio: f64 = 4.0;
 
-	const height_dec1: f64 = 8.0;
-	const height_dec2: f64 = 5.0;
+	// Number of millimeters to go downwards for newlines
+	const large_newline: f64 = 8.0;
+	const small_newline: f64 = 5.0;
 
 	// Counter variable for naming each layer incrementally
 	let mut layer_count = 1;
@@ -183,6 +180,8 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 	// Loop through each spell
 	for spell in spell_list
 	{
+		// Initialize the page
+
 		// Create a new image since cloning the old one isn't allowed for some reason
 		let img = Image::from_dynamic_image(&img_data.clone());
 		// Create a new page
@@ -196,22 +195,50 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 		// Keeps track of the current height to place text at
 		let mut text_height: f64 = y_start;
 
-		add_spell_text(&layer_ref, spell.name, header_font_size, x_start, y_start, &regular_font,
-			&regular_font_size_data, &header_font_scale);
-		text_height -= height_dec1;
+		// Add text to the page
 
+		// Add the name of the spell as a header
+		add_spell_text(&layer_ref, spell.name, header_font_size, x_start, y_start, &regular_font, &regular_font_size_data,
+			&header_font_scale);
+		text_height -= large_newline;
+
+		// Add the level and the spell's school of magic
 		let text = get_level_school_text(spell);
 		add_spell_text(&layer_ref, &text, body_font_size, x_start, text_height, &italic_font,
 			&italic_font_size_data, &body_font_scale);
-		text_height -= height_dec1;
+		text_height -= large_newline;
 
+		// Add the casting time of the spell
 		add_spell_field(&layer_ref, "Casting Time: ", "Test text", body_font_size, x_start, text_height, &bold_font, &regular_font,
 			&bold_font_size_data, &regular_font_size_data, &body_font_scale);
-		text_height -= height_dec2;
+		text_height -= small_newline;
 
+		// Add the range of the spell
 		add_spell_field(&layer_ref, "Range: ", "Test text", body_font_size, x_start, text_height, &bold_font, &regular_font,
 			&bold_font_size_data, &regular_font_size_data, &body_font_scale);
-		text_height -= height_dec2;
+		text_height -= small_newline;
+
+		// Add the components of the spell
+		add_spell_field(&layer_ref, "Components: ", "Test text", body_font_size, x_start, text_height, &bold_font, &regular_font,
+			&bold_font_size_data, &regular_font_size_data, &body_font_scale);
+		text_height -= small_newline;
+
+		// Add the duration of the spell
+		add_spell_field(&layer_ref, "Duration: ", "Test text", body_font_size, x_start, text_height, &bold_font, &regular_font,
+			&bold_font_size_data, &regular_font_size_data, &body_font_scale);
+		text_height -= large_newline;
+
+		// Add the spell's description
+		add_spell_text(&layer_ref, spell.description, body_font_size, x_start, text_height, &regular_font, &regular_font_size_data,
+			&body_font_scale);
+		text_height -= small_newline;
+
+		// If the spell has an upcast description
+		if let Some(description) = spell.upcast_description
+		{
+			add_spell_field(&layer_ref, "At Higher Levels. ", description, body_font_size, x_start, text_height, &bold_italic_font, &regular_font,
+			&bold_italic_font_size_data, &regular_font_size_data, &body_font_scale);
+		}
 
 		// Increment the layer counter
 		layer_count += 1;

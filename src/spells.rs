@@ -1,6 +1,8 @@
+use std::fmt;
+
 // The level of a spell
 // 0 is a cantrip, max level is 9
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Level
 {
 	Cantrip,
@@ -13,6 +15,45 @@ pub enum Level
 	Level7,
 	Level8,
 	Level9
+}
+
+// Spell Level methods
+impl Level
+{
+	// Converts spell levels into integers (u8)
+	pub fn as_num(&self) -> u8
+	{
+		match self
+		{
+			Self::Cantrip => 0,
+			Self::Level1 => 1,
+			Self::Level2 => 2,
+			Self::Level3 => 3,
+			Self::Level4 => 4,
+			Self::Level5 => 5,
+			Self::Level6 => 6,
+			Self::Level7 => 7,
+			Self::Level8 => 8,
+			Self::Level9 => 9
+		}
+	}
+}
+
+// Converts levels into strings
+impl fmt::Display for Level
+{
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
+	{
+		let text = match self
+		{
+			Self::Cantrip => String::from("Cantrip"),
+			Self::Level1 => String::from("1st-Level"),
+			Self::Level2 => String::from("2nd-Level"),
+			Self::Level3 => String::from("3rd-Level"),
+			_ => format!("{}th-Level", u8::from(*self))
+		};
+		write!(f, "{}", text)
+	}
 }
 
 // Allows Levels to be created from integers (u8) for easier usage
@@ -44,24 +85,12 @@ impl From<Level> for u8
 {
 	fn from(level: Level) -> Self
 	{
-		match level
-		{
-			Level::Cantrip => 0,
-			Level::Level1 => 1,
-			Level::Level2 => 2,
-			Level::Level3 => 3,
-			Level::Level4 => 4,
-			Level::Level5 => 5,
-			Level::Level6 => 6,
-			Level::Level7 => 7,
-			Level::Level8 => 8,
-			Level::Level9 => 9
-		}
+		level.as_num()
 	}
 }
 
 // The school of magic a spell belongs to
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum MagicSchool
 {
 	Abjuration,
@@ -75,11 +104,11 @@ pub enum MagicSchool
 }
 
 // Converts magic schools into strings
-impl ToString for MagicSchool
+impl fmt::Display for MagicSchool
 {
-	fn to_string(&self) -> String
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
 	{
-		match self
+		let text = match self
 		{
 			Self::Abjuration => String::from("Abjuration"),
 			Self::Conjuration => String::from("Conjuration"),
@@ -89,7 +118,8 @@ impl ToString for MagicSchool
 			Self::Illusion => String::from("Illusion"),
 			Self::Necromancy => String::from("Necromancy"),
 			Self::Transmutation => String::from("Transmutation")
-		}
+		};
+		write!(f, "{}", text)
 	}
 }
 
