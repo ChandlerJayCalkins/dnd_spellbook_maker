@@ -17,6 +17,10 @@ const BODY_NEWLINE: f64 = 5.0;
 const X_START: f64 = 10.0;
 const Y_START: f64 = 280.0;
 
+// Ending x and y positions for text on a page
+const X_END: f64 = 190.0;
+const Y_END: f64 = 10.0;
+
 // Calculates the width of some text give the font and the font size it uses
 fn calc_text_width(font_size_data: &Font, font_scale: &Scale, text: &str) -> f32
 {
@@ -100,7 +104,7 @@ font_size_data: &Font, font_scale: &Scale, newline_amount: f64, x_start_offset: 
 			let width = calc_text_width(&font_size_data, &font_scale, &new_line);
 			println!("{}: {}", width, new_line);
 			// If the line is too long with this token added
-			if width as f64 > 190.0 - x_offset
+			if width as f64 > X_END - x_offset
 			{
 				// Write the line without the current token
 				layer_ref.write_text(line, &font);
@@ -111,7 +115,7 @@ font_size_data: &Font, font_scale: &Scale, newline_amount: f64, x_start_offset: 
 				*y -= newline_amount;
 				layer_ref.set_text_cursor(Mm(x), Mm(*y));
 				// If the cursor is too low
-				if *y < 10.0
+				if *y < Y_END
 				{
 					// End the current text section
 					layer_ref.end_text_section();
@@ -159,12 +163,18 @@ font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, newline_amoun
 	layer.set_font(&font, font_size as f64);
 	layer.set_text_cursor(Mm(x), Mm(*y));
 	// Add spell text to the page
-	let new_layer = safe_write(doc, &layer, layer_count, background, img_transform, &text, x, y, &font, &font_size_data,
+	let mut new_layer = safe_write(doc, &layer, layer_count, background.clone(), img_transform, &text, x, y, &font, &font_size_data,
 		&font_scale, newline_amount, 0.0);
 	// Ends the text section
 	new_layer.end_text_section();
 	// Decrement y value by the ending newine amount
 	*y -= ending_newline;
+	// If the y value is too low
+	if *y < Y_END
+	{
+		// Create a new page
+		(_, new_layer) = make_new_page(doc, layer_count, background.clone(), img_transform);
+	}
 	// Return the current layer (will be different if the text spilled into a new page)
 	new_layer
 }
@@ -189,12 +199,18 @@ text_font_size_data: &Font, font_scale: &Scale, newline_amount: f64, ending_newl
 	// Set the font to the text font
 	layer.set_font(&text_font, font_size as f64);
 	// Add the spell text to the page
-	let new_layer = safe_write(doc, &layer, layer_count, background, img_transform, &text, x, y, &text_font,
+	let mut new_layer = safe_write(doc, &layer, layer_count, background.clone(), img_transform, &text, x, y, &text_font,
 		&text_font_size_data, &font_scale, newline_amount, field_width as f64 + x_start_offset);
 	// Ends the text section
 	new_layer.end_text_section();
 	// Decrement y value by the ending newine amount
 	*y -= ending_newline;
+	// If the y value is too low
+	if *y < Y_END
+	{
+		// Create a new page
+		(_, new_layer) = make_new_page(doc, layer_count, background.clone(), img_transform);
+	}
 	// Return the current layer (will be different if the text spilled into a new page)
 	new_layer
 }
