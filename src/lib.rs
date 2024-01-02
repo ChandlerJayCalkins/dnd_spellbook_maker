@@ -8,6 +8,10 @@ pub mod phb_spells;
 const PAGE_WIDTH: f64 = 210.0;
 const PAGE_HEIGHT: f64 = 297.0;
 
+// Number of millimeters to go downwards for newlines
+const LARGE_NEWLINE: f64 = 8.0;
+const SMALL_NEWLINE: f64 = 5.0;
+
 // Calculates the width of some text give the font and the font size it uses
 fn calc_text_width(font_size_data: &Font, font_scale: &Scale, text: &str) -> f32
 {
@@ -41,12 +45,60 @@ fn get_level_school_text(spell: &spells::Spell) -> String
 	}
 }
 
-// 
-fn safe_write(layer: &PdfLayerReference, text: &str, x: f64, y: &mut f64, font: &IndirectFontRef, font_size_data: &Font,
-font_scale: &Scale) -> PdfLayerReference
+// Writes text onto multiple lines / pages so it doesn't go off the side or bottom of the page
+fn safe_write(layer: &PdfLayerReference, text: &str, font_size: f32, x: f64, y: &mut f64, font: &IndirectFontRef, font_size_data: &Font,
+font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
 {
-	let lines = text.split('\n');
-	let tokens = text.split_whitespace();
+	// Number of millimeters to shift the text over by at the start of a new paragraph
+	let mut x_offset: f64 = 0.0;
+	// Split the text into paragraphs by newlines
+	let paragraphs = text.split('\n');
+	// Loop through each paragraph
+	for paragraph in paragraphs
+	{
+		// Split the paragraph into tokens by whitespace
+		let tokens = paragraph.split_whitespace();
+		let tokens_vec = tokens.collect::<Vec<&str>>();
+		// If there are no tokens, skip to next paragraph
+		if tokens_vec.len() < 1 { continue }
+		// Create a string that will become a line to add to the page made up of tokens
+		let mut line = tokens_vec[0].to_string();
+		// Loop through each token after the first
+		for token in &tokens_vec[1..]
+		{
+			// Create a new line to test if the current line is long enough for a newline
+			let new_line = format!("{} {}", line, token);
+			// Calculate the width of the line with this token added
+			let width = calc_text_width(&font_size_data, &font_scale, &new_line);
+			// If the line is too long with this token added
+			println!("{}", width * font_size);
+			if width * font_size > 200000.0
+			{
+				// Write the line without the current token
+				layer.write_text(line, &font);
+				layer.end_text_section();
+				layer.begin_text_section();
+				// Set the x_offset to 0 so newlines after the first don't have any offset
+				x_offset = 0.0;
+				// Move the cursor down a line
+				*y -= newline_amount;
+				layer.set_text_cursor(Mm(x + x_offset), Mm(*y));
+				// Reset the line to the current token
+				line = token.to_string();
+			}
+			// If this line still isn't long enough, add the current token to the line
+			else { line = new_line; }
+		}
+		// Write any remaining text into its own line
+		layer.write_text(line, &font);
+		layer.end_text_section();
+		layer.begin_text_section();
+		// Move the cursor down a line
+		*y -= newline_amount;
+		layer.set_text_cursor(Mm(x + x_offset), Mm(*y));
+		// Set the x offset to 10 mm so the first paragraph doesn't have any offset but all following ones do
+		x_offset = 10.0;
+	}
 	layer.clone()
 }
 
@@ -62,7 +114,8 @@ font_size_data: &Font, font_scale: &Scale) -> PdfLayerReference
 	// Calculate the width of the text
 	let width = calc_text_width(&font_size_data, &font_scale, &text);
 	// Add spell text to the page
-	layer.write_text(text, &font);
+	//layer.write_text(text, &font);
+	let new_layer = safe_write(&layer, &text, font_size, x, y, &font, &font_size_data, &font_scale, SMALL_NEWLINE);
 	// Ends the text section
 	layer.end_text_section();
 	layer.clone()
@@ -177,10 +230,6 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 	// Starting x and y positions for text on a page
 	const X_START: f64 = 10.0;
 	const Y_START: f64 = 280.0;
-
-	// Number of millimeters to go downwards for newlines
-	const LARGE_NEWLINE: f64 = 8.0;
-	const SMALL_NEWLINE: f64 = 5.0;
 
 	// Counter variable for naming each layer incrementally
 	let mut layer_count = 1;
