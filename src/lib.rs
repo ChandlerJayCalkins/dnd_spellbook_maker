@@ -13,6 +13,10 @@ const TITLE_NEWLINE: f64 = 12.0;
 const HEADER_NEWLINE: f64 = 8.0;
 const BODY_NEWLINE: f64 = 5.0;
 
+// Starting x and y positions for text on a page
+const X_START: f64 = 10.0;
+const Y_START: f64 = 280.0;
+
 // Calculates the width of some text give the font and the font size it uses
 fn calc_text_width(font_size_data: &Font, font_scale: &Scale, text: &str) -> f32
 {
@@ -30,11 +34,11 @@ fn calc_text_width(font_size_data: &Font, font_scale: &Scale, text: &str) -> f32
 }
 
 // Calculates the height of a font with a certain font size
-fn calc_text_height(font_size_data: &Font, font_scale: &Scale) -> f32
+/*fn calc_text_height(font_size_data: &Font, font_scale: &Scale) -> f32
 {
 	let v_metrics = font_size_data.v_metrics(*font_scale);
 	v_metrics.ascent - v_metrics.descent
-}
+}*/
 
 // Converts rusttype font units to printpdf millimeters (Mm)
 fn font_units_to_mm(font_unit_width: f32) -> f32
@@ -54,9 +58,12 @@ fn get_level_school_text(spell: &spells::Spell) -> String
 }
 
 // Writes text onto multiple lines / pages so it doesn't go off the side or bottom of the page
-fn safe_write(layer: &PdfLayerReference, text: &str, x: f64, y: &mut f64, font: &IndirectFontRef, font_size_data: &Font,
-font_scale: &Scale, newline_amount: f64, x_start_offset: f64) -> PdfLayerReference
+fn safe_write(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
+background: image::DynamicImage, img_transform: &ImageTransform, text: &str, x: f64, y: &mut f64, font: &IndirectFontRef,
+font_size_data: &Font, font_scale: &Scale, newline_amount: f64, x_start_offset: f64) -> PdfLayerReference
 {
+	// The layer that gets returned
+	let mut layer_ref = (*layer).clone();
 	// Number of millimeters to shift the text over by at the start of a new paragraph
 	let mut x_offset: f64 = x_start_offset;
 	// Split the text into paragraphs by newlines
@@ -67,7 +74,7 @@ font_scale: &Scale, newline_amount: f64, x_start_offset: f64) -> PdfLayerReferen
 	for paragraph in paragraphs
 	{
 		// Only reset the cursor if it's not the first paragraph
-		if set_cursor { layer.set_text_cursor(Mm(x + x_offset), Mm(*y)); }
+		if set_cursor { layer_ref.set_text_cursor(Mm(x + x_offset), Mm(*y)); }
 		else { set_cursor = true; }
 
 		// Split the paragraph into tokens by whitespace
@@ -86,17 +93,37 @@ font_scale: &Scale, newline_amount: f64, x_start_offset: f64) -> PdfLayerReferen
 			let width = calc_text_width(&font_size_data, &font_scale, &new_line);
 			println!("{}: {}", width, new_line);
 			// If the line is too long with this token added
-			// 4900.0
-			// x_offset * (3.0 * font_size) as f64
 			if width as f64 > 190.0 - x_offset
 			{
 				// Write the line without the current token
-				layer.write_text(line, &font);
+				layer_ref.write_text(line, &font);
+				// Begin a new text section
+				layer_ref.end_text_section();
+				layer_ref.begin_text_section();
 				// Move the cursor down a line
-				layer.end_text_section();
-				layer.begin_text_section();
 				*y -= newline_amount;
-				layer.set_text_cursor(Mm(x), Mm(*y));
+				layer_ref.set_text_cursor(Mm(x), Mm(*y));
+				// If the cursor is too low
+				if *y < 10.0
+				{
+					// Create a new image since cloning the old one isn't allowed for some reason
+					let img = Image::from_dynamic_image(&background.clone());
+					// End the current text section
+					layer_ref.end_text_section();
+					// Create a new page
+					let (page, layer) = doc.add_page(Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), format!("Layer {}", layer_count));
+					// Increment the layer / page count
+					*layer_count += 1;
+					// Get the new layer
+					layer_ref = doc.get_page(page).get_layer(layer);
+					// Add the background image to the page
+					img.add_to_layer(layer_ref.clone(), *img_transform);
+					// Create a new text section
+					layer_ref.begin_text_section();
+					// Set the cursor to the top of the page
+					*y = Y_START;
+					layer_ref.set_text_cursor(Mm(x), Mm(*y));
+				}
 				// Reset the x_offset to 0 in case the last line already used it
 				x_offset = 0.0;
 				// Reset the line to the current token
@@ -106,10 +133,10 @@ font_scale: &Scale, newline_amount: f64, x_start_offset: f64) -> PdfLayerReferen
 			else { line = new_line; }
 		}
 		// Write any remaining text into its own line
-		layer.write_text(line, &font);
+		layer_ref.write_text(line, &font);
 		// End the text section of this paragraph
-		layer.end_text_section();
-		layer.begin_text_section();
+		layer_ref.end_text_section();
+		layer_ref.begin_text_section();
 		// Set the x offset to 10 mm so the first paragraph doesn't have any offset but all following ones do
 		x_offset = 10.0;
 		// Move the cursor down a line
@@ -117,13 +144,14 @@ font_scale: &Scale, newline_amount: f64, x_start_offset: f64) -> PdfLayerReferen
 	}
 	// Move the cursor back up to be level with the last line of text so the text can be moved down a custom amount
 	*y += newline_amount;
-	// Return the current layer (will return different layers when page wrapping is working)
-	layer.clone()
+	// Return the current layer (will be different if the text spilled into a new page)
+	layer_ref
 }
 
 // Adds text to a spell page
-fn add_spell_text(layer: &PdfLayerReference, text: &str, font_size: f32, x: f64, y: &mut f64, font: &IndirectFontRef,
-font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
+fn add_spell_text(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
+background: image::DynamicImage, img_transform: &ImageTransform, text: &str, font_size: f32, x: f64, y: &mut f64,
+font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
 {
 	// Begins a text section
 	layer.begin_text_section();
@@ -131,18 +159,19 @@ font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLayerRefer
 	layer.set_font(&font, font_size as f64);
 	layer.set_text_cursor(Mm(x), Mm(*y));
 	// Add spell text to the page
-	//layer.write_text(text, &font);
-	let new_layer = safe_write(&layer, &text, x, y, &font, &font_size_data, &font_scale, newline_amount, 0.0);
+	let new_layer = safe_write(doc, &layer, layer_count, background, img_transform, &text, x, y, &font, &font_size_data,
+		&font_scale, newline_amount, 0.0);
 	// Ends the text section
 	new_layer.end_text_section();
 	// Return the current layer (will return different layers when page wrapping is working)
-	layer.clone()
+	new_layer
 }
 
 // Adds spell field text to a spell page
-fn add_spell_field(layer: &PdfLayerReference, field: &str, text: &str, font_size: f32, x: f64, y: &mut f64,
-field_font: &IndirectFontRef, text_font: &IndirectFontRef, field_font_size_data: &Font, text_font_size_data: &Font,
-font_scale: &Scale, newline_amount: f64, x_start_offset: f64) -> PdfLayerReference
+fn add_spell_field(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
+background: image::DynamicImage, img_transform: &ImageTransform, field: &str, text: &str, font_size: f32, x: f64,
+y: &mut f64, field_font: &IndirectFontRef, text_font: &IndirectFontRef, field_font_size_data: &Font,
+text_font_size_data: &Font, font_scale: &Scale, newline_amount: f64, x_start_offset: f64) -> PdfLayerReference
 {
 	// Begins a text section
 	layer.begin_text_section();
@@ -157,15 +186,16 @@ font_scale: &Scale, newline_amount: f64, x_start_offset: f64) -> PdfLayerReferen
 	// Set the font to the text font
 	layer.set_font(&text_font, font_size as f64);
 	// Add the spell text to the page
-	let new_layer = safe_write(&layer, &text, x, y, &text_font, &text_font_size_data, &font_scale,
-		newline_amount, field_width as f64 + x_start_offset);
+	let new_layer = safe_write(doc, &layer, layer_count, background, img_transform, &text, x, y, &text_font,
+		&text_font_size_data, &font_scale, newline_amount, field_width as f64 + x_start_offset);
 	// Ends the text section
 	new_layer.end_text_section();
 	// Return the current layer (will return different layers when page wrapping is working)
-	new_layer.clone()
+	new_layer
 }
 
-pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells::Spell>) -> Result<(), Box<dyn std::error::Error>>
+pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells::Spell>)
+-> Result<(), Box<dyn std::error::Error>>
 {
     // Load custom font
 
@@ -235,21 +265,17 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 	// Add the background image to the page
 	img1.add_to_layer(cover_layer_ref.clone(), img_transform);
 
+	// Counter variable for naming each layer incrementally
+	let mut layer_count = 1;
+
     // Define text
     let text = "Hello! The quick fox jumped over the lazy brown dog. Peter Piper picked a patch of prickly purple pickle peppers.";
 
     // Add text using the custom font to the page
-	let _ = add_spell_text(&cover_layer_ref, text, TITLE_FONT_SIZE, X_START, &mut 200.0, &regular_font, &regular_font_size_data,
-		&title_font_scale, TITLE_NEWLINE);
+	let _ = add_spell_text(&doc, &cover_layer_ref, &mut layer_count, img_data.clone(), &img_transform, text,
+		TITLE_FONT_SIZE, X_START, &mut 200.0, &regular_font, &regular_font_size_data, &title_font_scale, TITLE_NEWLINE);
 
 	// Add next pages
-	
-	// Starting x and y positions for text on a page
-	const X_START: f64 = 10.0;
-	const Y_START: f64 = 280.0;
-
-	// Counter variable for naming each layer incrementally
-	let mut layer_count = 1;
 
 	// Loop through each spell
 	for spell in spell_list
@@ -272,51 +298,55 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 		// Add text to the page
 
 		// Add the name of the spell as a header
-		layer_ref = add_spell_text(&layer_ref, spell.name, HEADER_FONT_SIZE, X_START, &mut text_height, &regular_font,
-			&regular_font_size_data, &header_font_scale, HEADER_NEWLINE);
+		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, spell.name,
+			HEADER_FONT_SIZE, X_START, &mut text_height, &regular_font, &regular_font_size_data, &header_font_scale,
+			HEADER_NEWLINE);
 		text_height -= HEADER_NEWLINE;
 
 		// Add the level and the spell's school of magic
 		let text = get_level_school_text(spell);
-		layer_ref = add_spell_text(&layer_ref, &text, BODY_FONT_SIZE, X_START, &mut text_height, &italic_font,
-			&italic_font_size_data, &body_font_scale, BODY_NEWLINE);
+		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text,
+			BODY_FONT_SIZE, X_START, &mut text_height, &italic_font, &italic_font_size_data, &body_font_scale,
+			BODY_NEWLINE);
 		text_height -= HEADER_NEWLINE;
 
 		// Add the casting time of the spell
-		layer_ref = add_spell_field(&layer_ref, "Casting Time: ", &spell.casting_time.to_string(), BODY_FONT_SIZE, X_START,
-			&mut text_height, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
-			BODY_NEWLINE, 0.0);
+		layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
+			"Casting Time: ", &spell.casting_time.to_string(), BODY_FONT_SIZE, X_START, &mut text_height, &bold_font,
+			&regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, 0.0);
 		text_height -= BODY_NEWLINE;
 
 		// Add the range of the spell
-		layer_ref = add_spell_field(&layer_ref, "Range: ", &spell.range.to_string(), BODY_FONT_SIZE, X_START,
-			&mut text_height, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
-			BODY_NEWLINE, 0.0);
+		layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, "Range: ",
+			&spell.range.to_string(), BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
+			&bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, 0.0);
 		text_height -= BODY_NEWLINE;
 
 		// Add the components of the spell
-		layer_ref = add_spell_field(&layer_ref, "Components: ", &spell.get_component_string(), BODY_FONT_SIZE, X_START,
-			&mut text_height, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
-			BODY_NEWLINE, 0.0);
+		layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, "Components: ",
+			&spell.get_component_string(), BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
+			&bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, 0.0);
 		text_height -= BODY_NEWLINE;
 
 		// Add the duration of the spell
-		layer_ref = add_spell_field(&layer_ref, "Duration: ", &spell.duration.to_string(), BODY_FONT_SIZE, X_START,
-			&mut text_height, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
-			BODY_NEWLINE, 0.0);
+		layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, "Duration: ",
+			&spell.duration.to_string(), BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
+			&bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, 0.0);
 		text_height -= HEADER_NEWLINE;
 
 		// Add the spell's description
-		layer_ref = add_spell_text(&layer_ref, spell.description, BODY_FONT_SIZE, X_START, &mut text_height, &regular_font,
-			&regular_font_size_data, &body_font_scale, BODY_NEWLINE);
+		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, spell.description,
+			BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &regular_font_size_data, &body_font_scale,
+			BODY_NEWLINE);
 		text_height -= BODY_NEWLINE;
 
 		// If the spell has an upcast description
 		if let Some(description) = spell.upcast_description
 		{
-			layer_ref = add_spell_field(&layer_ref, "At Higher Levels. ", description, BODY_FONT_SIZE, X_START,
-				&mut text_height, &bold_italic_font, &regular_font, &bold_italic_font_size_data, &regular_font_size_data,
-				&body_font_scale, BODY_NEWLINE, 10.0);
+			layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
+				"At Higher Levels. ", description, BODY_FONT_SIZE, X_START, &mut text_height, &bold_italic_font,
+				&regular_font, &bold_italic_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE,
+				10.0);
 		}
 
 		// Increment the layer counter
