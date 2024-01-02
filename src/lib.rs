@@ -41,9 +41,18 @@ fn get_level_school_text(spell: &spells::Spell) -> String
 	}
 }
 
+// 
+fn safe_write(layer: &PdfLayerReference, text: &str, x: f64, y: &mut f64, font: &IndirectFontRef, font_size_data: &Font,
+font_scale: &Scale) -> PdfLayerReference
+{
+	let lines = text.split('\n');
+	let tokens = text.split_whitespace();
+	layer.clone()
+}
+
 // Adds text to a spell page
 fn add_spell_text(layer: &PdfLayerReference, text: &str, font_size: f32, x: f64, y: &mut f64, font: &IndirectFontRef,
-font_size_data: &Font, font_scale: &Scale)
+font_size_data: &Font, font_scale: &Scale) -> PdfLayerReference
 {
 	// Begins a text section
 	layer.begin_text_section();
@@ -56,12 +65,13 @@ font_size_data: &Font, font_scale: &Scale)
 	layer.write_text(text, &font);
 	// Ends the text section
 	layer.end_text_section();
+	layer.clone()
 }
 
 // Adds spell field text to a spell page
 fn add_spell_field(layer: &PdfLayerReference, field: &str, text: &str, font_size: f32, x: f64, y: &mut f64,
 field_font: &IndirectFontRef, text_font: &IndirectFontRef, field_font_size_data: &Font, text_font_size_data: &Font,
-font_scale: &Scale)
+font_scale: &Scale) -> PdfLayerReference
 {
 	// Begins a text section
 	layer.begin_text_section();
@@ -80,6 +90,7 @@ font_scale: &Scale)
 	layer.write_text(text, &text_font);
 	// Ends the text section
 	layer.end_text_section();
+	layer.clone()
 }
 
 pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells::Spell>) -> Result<(), Box<dyn std::error::Error>>
@@ -159,7 +170,7 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 	let width = calc_text_width(&regular_font_size_data, &title_font_scale, &text);
 
     // Add text using the custom font to the page
-    cover_layer_ref.use_text(format!("{} {}", width, text), BODY_FONT_SIZE as f64, Mm(10.0), Mm(200.0), &regular_font);
+    cover_layer_ref.use_text(format!("{} {}", width, text), TITLE_FONT_SIZE as f64, Mm(10.0), Mm(200.0), &regular_font);
 
 	// Add next pages
 	
@@ -186,7 +197,7 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 		// Create a new bookmark for this page
 		doc.add_bookmark(spell.name, page);
 		// Get a reference to the layer for this page
-		let layer_ref = doc.get_page(page).get_layer(layer);
+		let mut layer_ref = doc.get_page(page).get_layer(layer);
 		// Add the background image to the page
 		img.add_to_layer(layer_ref.clone(), img_transform);
 		// Keeps track of the current height to place text at
@@ -195,45 +206,45 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 		// Add text to the page
 
 		// Add the name of the spell as a header
-		add_spell_text(&layer_ref, spell.name, HEADER_FONT_SIZE, X_START, &mut text_height, &regular_font,
+		layer_ref = add_spell_text(&layer_ref, spell.name, HEADER_FONT_SIZE, X_START, &mut text_height, &regular_font,
 			&regular_font_size_data, &header_font_scale);
 		text_height -= LARGE_NEWLINE;
 
 		// Add the level and the spell's school of magic
 		let text = get_level_school_text(spell);
-		add_spell_text(&layer_ref, &text, BODY_FONT_SIZE, X_START, &mut text_height, &italic_font, &italic_font_size_data,
+		layer_ref = add_spell_text(&layer_ref, &text, BODY_FONT_SIZE, X_START, &mut text_height, &italic_font, &italic_font_size_data,
 			&body_font_scale);
 		text_height -= LARGE_NEWLINE;
 
 		// Add the casting time of the spell
-		add_spell_field(&layer_ref, "Casting Time: ", &spell.casting_time.to_string(), BODY_FONT_SIZE, X_START,
+		layer_ref = add_spell_field(&layer_ref, "Casting Time: ", &spell.casting_time.to_string(), BODY_FONT_SIZE, X_START,
 			&mut text_height, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale);
 		text_height -= SMALL_NEWLINE;
 
 		// Add the range of the spell
-		add_spell_field(&layer_ref, "Range: ", &spell.range.to_string(), BODY_FONT_SIZE, X_START, &mut text_height,
+		layer_ref = add_spell_field(&layer_ref, "Range: ", &spell.range.to_string(), BODY_FONT_SIZE, X_START, &mut text_height,
 			&bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale);
 		text_height -= SMALL_NEWLINE;
 
 		// Add the components of the spell
-		add_spell_field(&layer_ref, "Components: ", &spell.get_component_string(), BODY_FONT_SIZE, X_START,
+		layer_ref = add_spell_field(&layer_ref, "Components: ", &spell.get_component_string(), BODY_FONT_SIZE, X_START,
 			&mut text_height, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale);
 		text_height -= SMALL_NEWLINE;
 
 		// Add the duration of the spell
-		add_spell_field(&layer_ref, "Duration: ", &spell.duration.to_string(), BODY_FONT_SIZE, X_START, &mut text_height,
+		layer_ref = add_spell_field(&layer_ref, "Duration: ", &spell.duration.to_string(), BODY_FONT_SIZE, X_START, &mut text_height,
 			&bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale);
 		text_height -= LARGE_NEWLINE;
 
 		// Add the spell's description
-		add_spell_text(&layer_ref, spell.description, BODY_FONT_SIZE, X_START, &mut text_height, &regular_font,
+		layer_ref = add_spell_text(&layer_ref, spell.description, BODY_FONT_SIZE, X_START, &mut text_height, &regular_font,
 			&regular_font_size_data, &body_font_scale);
 		text_height -= SMALL_NEWLINE;
 
 		// If the spell has an upcast description
 		if let Some(description) = spell.upcast_description
 		{
-			add_spell_field(&layer_ref, "At Higher Levels. ", description, BODY_FONT_SIZE, X_START, &mut text_height,
+			layer_ref = add_spell_field(&layer_ref, "At Higher Levels. ", description, BODY_FONT_SIZE, X_START, &mut text_height,
 				&bold_italic_font, &regular_font, &bold_italic_font_size_data, &regular_font_size_data, &body_font_scale);
 		}
 
