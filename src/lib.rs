@@ -102,7 +102,6 @@ font_size_data: &Font, font_scale: &Scale, newline_amount: f64, x_start_offset: 
 			let new_line = format!("{} {}", line, token);
 			// Calculate the width of the line with this token added
 			let width = calc_text_width(&font_size_data, &font_scale, &new_line);
-			println!("{}: {}", width, new_line);
 			// If the line is too long with this token added
 			if width as f64 > X_END - x_offset
 			{
