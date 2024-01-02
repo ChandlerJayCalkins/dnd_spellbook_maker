@@ -25,7 +25,7 @@ fn calc_text_width(font_size_data: &Font, font_scale: &Scale, text: &str) -> f32
 		// Add this width to the total
 		width += glyph.scaled(*font_scale).h_metrics().advance_width;
 	}
-	width
+	font_units_to_mm(width, font_scale)
 }
 
 // Calculates the height of a font with a certain font size
@@ -33,6 +33,13 @@ fn calc_text_height(font_size_data: &Font, font_scale: &Scale) -> f32
 {
 	let v_metrics = font_size_data.v_metrics(*font_scale);
 	v_metrics.ascent - v_metrics.descent
+}
+
+// Converts rusttype font units to printpdf millimeters (Mm)
+fn font_units_to_mm(font_unit_width: f32, font_scale: &Scale) -> f32
+{
+	let mm_per_font_unit = 5.6;
+	(font_unit_width * (mm_per_font_unit / font_scale.x))
 }
 
 // Gets the school and level info from a spell and turns it into text that says something like "nth-Level School-Type"
@@ -78,8 +85,11 @@ font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
 			let new_line = format!("{} {}", line, token);
 			// Calculate the width of the line with this token added
 			let width = calc_text_width(&font_size_data, &font_scale, &new_line);
+			println!("{}: {}", width, new_line);
 			// If the line is too long with this token added
-			if (width * font_size) as f64 > 4900.0 - x_offset * (3.0 * font_size) as f64
+			// 4900.0
+			// x_offset * (3.0 * font_size) as f64
+			if width as f64 > 190.0 - x_offset
 			{
 				// Write the line without the current token
 				layer.write_text(line, &font);
