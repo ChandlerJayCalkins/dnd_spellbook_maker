@@ -71,18 +71,15 @@ font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
 			// Calculate the width of the line with this token added
 			let width = calc_text_width(&font_size_data, &font_scale, &new_line);
 			// If the line is too long with this token added
-			println!("{}", width * font_size);
-			if width * font_size > 200000.0
+			if width * font_size > 4900.0
 			{
 				// Write the line without the current token
 				layer.write_text(line, &font);
 				layer.end_text_section();
 				layer.begin_text_section();
-				// Set the x_offset to 0 so newlines after the first don't have any offset
-				x_offset = 0.0;
 				// Move the cursor down a line
 				*y -= newline_amount;
-				layer.set_text_cursor(Mm(x + x_offset), Mm(*y));
+				layer.set_text_cursor(Mm(x), Mm(*y));
 				// Reset the line to the current token
 				line = token.to_string();
 			}
@@ -93,11 +90,11 @@ font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
 		layer.write_text(line, &font);
 		layer.end_text_section();
 		layer.begin_text_section();
+		// Set the x offset to 10 mm so the first paragraph doesn't have any offset but all following ones do
+		x_offset = 10.0;
 		// Move the cursor down a line
 		*y -= newline_amount;
 		layer.set_text_cursor(Mm(x + x_offset), Mm(*y));
-		// Set the x offset to 10 mm so the first paragraph doesn't have any offset but all following ones do
-		x_offset = 10.0;
 	}
 	layer.clone()
 }
