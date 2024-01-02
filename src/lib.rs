@@ -9,8 +9,9 @@ const PAGE_WIDTH: f64 = 210.0;
 const PAGE_HEIGHT: f64 = 297.0;
 
 // Number of millimeters to go downwards for newlines
-const LARGE_NEWLINE: f64 = 8.0;
-const SMALL_NEWLINE: f64 = 5.0;
+const TITLE_NEWLINE: f64 = 12.0;
+const HEADER_NEWLINE: f64 = 8.0;
+const BODY_NEWLINE: f64 = 5.0;
 
 // Calculates the width of some text give the font and the font size it uses
 fn calc_text_width(font_size_data: &Font, font_scale: &Scale, text: &str) -> f32
@@ -25,7 +26,7 @@ fn calc_text_width(font_size_data: &Font, font_scale: &Scale, text: &str) -> f32
 		// Add this width to the total
 		width += glyph.scaled(*font_scale).h_metrics().advance_width;
 	}
-	font_units_to_mm(width, font_scale)
+	font_units_to_mm(width)
 }
 
 // Calculates the height of a font with a certain font size
@@ -36,10 +37,10 @@ fn calc_text_height(font_size_data: &Font, font_scale: &Scale) -> f32
 }
 
 // Converts rusttype font units to printpdf millimeters (Mm)
-fn font_units_to_mm(font_unit_width: f32, font_scale: &Scale) -> f32
+fn font_units_to_mm(font_unit_width: f32) -> f32
 {
-	let mm_per_font_unit = 5.6;
-	font_unit_width * (mm_per_font_unit / font_scale.x)
+	let mm_to_font_ratio = 0.47;
+	font_unit_width * mm_to_font_ratio
 }
 
 // Gets the school and level info from a spell and turns it into text that says something like "nth-Level School-Type"
@@ -53,13 +54,14 @@ fn get_level_school_text(spell: &spells::Spell) -> String
 }
 
 // Writes text onto multiple lines / pages so it doesn't go off the side or bottom of the page
-fn safe_write(layer: &PdfLayerReference, text: &str, font_size: f32, x: f64, y: &mut f64, font: &IndirectFontRef, font_size_data: &Font,
-font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
+fn safe_write(layer: &PdfLayerReference, text: &str, x: f64, y: &mut f64, font: &IndirectFontRef, font_size_data: &Font,
+font_scale: &Scale, newline_amount: f64, x_start_offset: f64) -> PdfLayerReference
 {
 	// Number of millimeters to shift the text over by at the start of a new paragraph
-	let mut x_offset: f64 = 0.0;
+	let mut x_offset: f64 = x_start_offset;
 	// Split the text into paragraphs by newlines
 	let paragraphs = text.split('\n');
+	// Flag to make sure the cursor doesn't get reset on the first paragraph
 	let mut set_cursor = false;
 	// Loop through each paragraph
 	for paragraph in paragraphs
@@ -130,9 +132,9 @@ font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLayerRefer
 	layer.set_text_cursor(Mm(x), Mm(*y));
 	// Add spell text to the page
 	//layer.write_text(text, &font);
-	let new_layer = safe_write(&layer, &text, font_size, x, y, &font, &font_size_data, &font_scale, SMALL_NEWLINE);
+	let new_layer = safe_write(&layer, &text, x, y, &font, &font_size_data, &font_scale, newline_amount, 0.0);
 	// Ends the text section
-	layer.end_text_section();
+	new_layer.end_text_section();
 	// Return the current layer (will return different layers when page wrapping is working)
 	layer.clone()
 }
@@ -150,15 +152,17 @@ font_scale: &Scale, newline_amount: f64, x_start_offset: f64) -> PdfLayerReferen
 	layer.set_text_cursor(Mm(x + x_start_offset), Mm(*y));
 	// Add the field text to the page
 	layer.write_text(field, &field_font);
+	// Calculate the width of the field text
+	let field_width = calc_text_width(field_font_size_data, font_scale, field);
 	// Set the font to the text font
 	layer.set_font(&text_font, font_size as f64);
 	// Add the spell text to the page
-	let new_layer = safe_write(&layer, &text, font_size, x, y, &text_font, &text_font_size_data, &font_scale,
-		SMALL_NEWLINE);
+	let new_layer = safe_write(&layer, &text, x, y, &text_font, &text_font_size_data, &font_scale,
+		newline_amount, field_width as f64 + x_start_offset);
 	// Ends the text section
-	layer.end_text_section();
+	new_layer.end_text_section();
 	// Return the current layer (will return different layers when page wrapping is working)
-	layer.clone()
+	new_layer.clone()
 }
 
 pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells::Spell>) -> Result<(), Box<dyn std::error::Error>>
@@ -192,12 +196,12 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 	let body_font_scale = Scale::uniform(BODY_FONT_SIZE);
 
 	// Calculate text heights
-	let title_text_height = calc_text_height(&regular_font_size_data, &title_font_scale) as f64;
+	/*let title_text_height = calc_text_height(&regular_font_size_data, &title_font_scale) as f64;
 	let header_text_height = calc_text_height(&regular_font_size_data, &header_font_scale) as f64;
 	let level_school_text_height = calc_text_height(&italic_font_size_data, &body_font_scale) as f64;
 	let spell_field_text_height = calc_text_height(&bold_font_size_data, &body_font_scale) as f64;
 	let body_text_height = calc_text_height(&regular_font_size_data, &body_font_scale) as f64;
-	let upcast_text_height = calc_text_height(&bold_italic_font_size_data, &body_font_scale) as f64;
+	let upcast_text_height = calc_text_height(&bold_italic_font_size_data, &body_font_scale) as f64;*/
 
 	// Load background image
 	let img_data = image::open("img/parchment.jpg")?;
@@ -232,15 +236,11 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 	img1.add_to_layer(cover_layer_ref.clone(), img_transform);
 
     // Define text
-    let text = "Hello! The quick fox jumped over the lazy brown dog. Peter Piper picked a prickly patch of purple pickle peppers.";
-
-	// Calculate width of text
-	let width = calc_text_width(&regular_font_size_data, &title_font_scale, &text);
+    let text = "Hello! The quick fox jumped over the lazy brown dog. Peter Piper picked a patch of prickly purple pickle peppers.";
 
     // Add text using the custom font to the page
-    //cover_layer_ref.use_text(format!("{} {}", width, text), TITLE_FONT_SIZE as f64, Mm(10.0), Mm(200.0), &regular_font);
 	let _ = add_spell_text(&cover_layer_ref, text, TITLE_FONT_SIZE, X_START, &mut 200.0, &regular_font, &regular_font_size_data,
-		&header_font_scale, 00.0);
+		&title_font_scale, TITLE_NEWLINE);
 
 	// Add next pages
 	
@@ -273,50 +273,50 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 
 		// Add the name of the spell as a header
 		layer_ref = add_spell_text(&layer_ref, spell.name, HEADER_FONT_SIZE, X_START, &mut text_height, &regular_font,
-			&regular_font_size_data, &header_font_scale, LARGE_NEWLINE);
-		text_height -= LARGE_NEWLINE;
+			&regular_font_size_data, &header_font_scale, HEADER_NEWLINE);
+		text_height -= HEADER_NEWLINE;
 
 		// Add the level and the spell's school of magic
 		let text = get_level_school_text(spell);
 		layer_ref = add_spell_text(&layer_ref, &text, BODY_FONT_SIZE, X_START, &mut text_height, &italic_font,
-			&italic_font_size_data, &body_font_scale, SMALL_NEWLINE);
-		text_height -= LARGE_NEWLINE;
+			&italic_font_size_data, &body_font_scale, BODY_NEWLINE);
+		text_height -= HEADER_NEWLINE;
 
 		// Add the casting time of the spell
 		layer_ref = add_spell_field(&layer_ref, "Casting Time: ", &spell.casting_time.to_string(), BODY_FONT_SIZE, X_START,
 			&mut text_height, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
-			SMALL_NEWLINE, 0.0);
-		text_height -= SMALL_NEWLINE;
+			BODY_NEWLINE, 0.0);
+		text_height -= BODY_NEWLINE;
 
 		// Add the range of the spell
 		layer_ref = add_spell_field(&layer_ref, "Range: ", &spell.range.to_string(), BODY_FONT_SIZE, X_START,
 			&mut text_height, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
-			SMALL_NEWLINE, 0.0);
-		text_height -= SMALL_NEWLINE;
+			BODY_NEWLINE, 0.0);
+		text_height -= BODY_NEWLINE;
 
 		// Add the components of the spell
 		layer_ref = add_spell_field(&layer_ref, "Components: ", &spell.get_component_string(), BODY_FONT_SIZE, X_START,
 			&mut text_height, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
-			SMALL_NEWLINE, 0.0);
-		text_height -= SMALL_NEWLINE;
+			BODY_NEWLINE, 0.0);
+		text_height -= BODY_NEWLINE;
 
 		// Add the duration of the spell
 		layer_ref = add_spell_field(&layer_ref, "Duration: ", &spell.duration.to_string(), BODY_FONT_SIZE, X_START,
 			&mut text_height, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
-			SMALL_NEWLINE, 0.0);
-		text_height -= LARGE_NEWLINE;
+			BODY_NEWLINE, 0.0);
+		text_height -= HEADER_NEWLINE;
 
 		// Add the spell's description
 		layer_ref = add_spell_text(&layer_ref, spell.description, BODY_FONT_SIZE, X_START, &mut text_height, &regular_font,
-			&regular_font_size_data, &body_font_scale, SMALL_NEWLINE);
-		text_height -= SMALL_NEWLINE;
+			&regular_font_size_data, &body_font_scale, BODY_NEWLINE);
+		text_height -= BODY_NEWLINE;
 
 		// If the spell has an upcast description
 		if let Some(description) = spell.upcast_description
 		{
 			layer_ref = add_spell_field(&layer_ref, "At Higher Levels. ", description, BODY_FONT_SIZE, X_START,
 				&mut text_height, &bold_italic_font, &regular_font, &bold_italic_font_size_data, &regular_font_size_data,
-				&body_font_scale, SMALL_NEWLINE, 10.0);
+				&body_font_scale, BODY_NEWLINE, 10.0);
 		}
 
 		// Increment the layer counter
