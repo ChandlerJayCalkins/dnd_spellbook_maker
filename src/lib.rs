@@ -47,14 +47,21 @@ fn font_units_to_mm(font_unit_width: f32) -> f32
 	font_unit_width * mm_to_font_ratio
 }
 
-// Gets the school and level info from a spell and turns it into text that says something like "nth-Level School-Type"
-fn get_level_school_text(spell: &spells::Spell) -> String
+// Creates a new page and returns the layer for it
+fn make_new_page(doc: &PdfDocumentReference, layer_count: &mut i32, background: image::DynamicImage,
+img_transform: &ImageTransform) -> (PdfPageIndex, PdfLayerReference)
 {
-	match spell.level
-	{
-		spells::Level::Cantrip => format!("{} {}", spell.school, spell.level),
-		_ => format!("{} {}", spell.level, spell.school)
-	}
+	// Create a new image since cloning the old one isn't allowed for some reason
+	let img = Image::from_dynamic_image(&background.clone());
+	// Create a new page
+	let (page, layer) = doc.add_page(Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), format!("Layer {}", layer_count));
+	// Increment the layer / page count
+	*layer_count += 1;
+	// Get the new layer
+	let layer_ref = doc.get_page(page).get_layer(layer);
+	// Add the background image to the page
+	img.add_to_layer(layer_ref.clone(), *img_transform);
+	(page, layer_ref)
 }
 
 // Writes text onto multiple lines / pages so it doesn't go off the side or bottom of the page
@@ -106,18 +113,10 @@ font_size_data: &Font, font_scale: &Scale, newline_amount: f64, x_start_offset: 
 				// If the cursor is too low
 				if *y < 10.0
 				{
-					// Create a new image since cloning the old one isn't allowed for some reason
-					let img = Image::from_dynamic_image(&background.clone());
 					// End the current text section
 					layer_ref.end_text_section();
 					// Create a new page
-					let (page, layer) = doc.add_page(Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), format!("Layer {}", layer_count));
-					// Increment the layer / page count
-					*layer_count += 1;
-					// Get the new layer
-					layer_ref = doc.get_page(page).get_layer(layer);
-					// Add the background image to the page
-					img.add_to_layer(layer_ref.clone(), *img_transform);
+					(_, layer_ref) = make_new_page(doc, layer_count, background.clone(), img_transform);
 					// Create a new text section
 					layer_ref.begin_text_section();
 					// Set the cursor to the top of the page
@@ -151,7 +150,8 @@ font_size_data: &Font, font_scale: &Scale, newline_amount: f64, x_start_offset: 
 // Adds text to a spell page
 fn add_spell_text(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, text: &str, font_size: f32, x: f64, y: &mut f64,
-font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
+font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, newline_amount: f64, ending_newline: f64)
+-> PdfLayerReference
 {
 	// Begins a text section
 	layer.begin_text_section();
@@ -163,7 +163,9 @@ font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, newline_amoun
 		&font_scale, newline_amount, 0.0);
 	// Ends the text section
 	new_layer.end_text_section();
-	// Return the current layer (will return different layers when page wrapping is working)
+	// Decrement y value by the ending newine amount
+	*y -= ending_newline;
+	// Return the current layer (will be different if the text spilled into a new page)
 	new_layer
 }
 
@@ -171,7 +173,8 @@ font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, newline_amoun
 fn add_spell_field(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, field: &str, text: &str, font_size: f32, x: f64,
 y: &mut f64, field_font: &IndirectFontRef, text_font: &IndirectFontRef, field_font_size_data: &Font,
-text_font_size_data: &Font, font_scale: &Scale, newline_amount: f64, x_start_offset: f64) -> PdfLayerReference
+text_font_size_data: &Font, font_scale: &Scale, newline_amount: f64, ending_newline: f64, x_start_offset: f64)
+-> PdfLayerReference
 {
 	// Begins a text section
 	layer.begin_text_section();
@@ -190,8 +193,20 @@ text_font_size_data: &Font, font_scale: &Scale, newline_amount: f64, x_start_off
 		&text_font_size_data, &font_scale, newline_amount, field_width as f64 + x_start_offset);
 	// Ends the text section
 	new_layer.end_text_section();
-	// Return the current layer (will return different layers when page wrapping is working)
+	// Decrement y value by the ending newine amount
+	*y -= ending_newline;
+	// Return the current layer (will be different if the text spilled into a new page)
 	new_layer
+}
+
+// Gets the school and level info from a spell and turns it into text that says something like "nth-Level School-Type"
+fn get_level_school_text(spell: &spells::Spell) -> String
+{
+	match spell.level
+	{
+		spells::Level::Cantrip => format!("{} {}", spell.school, spell.level),
+		_ => format!("{} {}", spell.level, spell.school)
+	}
 }
 
 pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells::Spell>)
@@ -273,7 +288,8 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 
     // Add text using the custom font to the page
 	let _ = add_spell_text(&doc, &cover_layer_ref, &mut layer_count, img_data.clone(), &img_transform, text,
-		TITLE_FONT_SIZE, X_START, &mut 200.0, &regular_font, &regular_font_size_data, &title_font_scale, TITLE_NEWLINE);
+		TITLE_FONT_SIZE, X_START, &mut 200.0, &regular_font, &regular_font_size_data, &title_font_scale, TITLE_NEWLINE,
+		0.0);
 
 	// Add next pages
 
@@ -285,13 +301,9 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 		// Create a new image since cloning the old one isn't allowed for some reason
 		let img = Image::from_dynamic_image(&img_data.clone());
 		// Create a new page
-		let (page, layer) = doc.add_page(Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), format!("Layer {}", layer_count));
+		let (page, mut layer_ref) = make_new_page(&doc, &mut layer_count, img_data.clone(), &img_transform);
 		// Create a new bookmark for this page
 		doc.add_bookmark(spell.name, page);
-		// Get a reference to the layer for this page
-		let mut layer_ref = doc.get_page(page).get_layer(layer);
-		// Add the background image to the page
-		img.add_to_layer(layer_ref.clone(), img_transform);
 		// Keeps track of the current height to place text at
 		let mut text_height: f64 = Y_START;
 
@@ -300,52 +312,46 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 		// Add the name of the spell as a header
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, spell.name,
 			HEADER_FONT_SIZE, X_START, &mut text_height, &regular_font, &regular_font_size_data, &header_font_scale,
-			HEADER_NEWLINE);
-		text_height -= HEADER_NEWLINE;
+			HEADER_NEWLINE, HEADER_NEWLINE);
 
 		// Add the level and the spell's school of magic
 		let text = get_level_school_text(spell);
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text,
 			BODY_FONT_SIZE, X_START, &mut text_height, &italic_font, &italic_font_size_data, &body_font_scale,
-			BODY_NEWLINE);
-		text_height -= HEADER_NEWLINE;
+			BODY_NEWLINE, HEADER_NEWLINE);
 
 		// Add the casting time of the spell
 		layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
 			"Casting Time: ", &spell.casting_time.to_string(), BODY_FONT_SIZE, X_START, &mut text_height, &bold_font,
-			&regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, 0.0);
-		text_height -= BODY_NEWLINE;
+			&regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, BODY_NEWLINE,
+			0.0);
 
 		// Add the range of the spell
 		layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, "Range: ",
 			&spell.range.to_string(), BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
-			&bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, 0.0);
-		text_height -= BODY_NEWLINE;
+			&bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);
 
 		// Add the components of the spell
 		layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, "Components: ",
 			&spell.get_component_string(), BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
-			&bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, 0.0);
-		text_height -= BODY_NEWLINE;
+			&bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);
 
 		// Add the duration of the spell
 		layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, "Duration: ",
 			&spell.duration.to_string(), BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
-			&bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, 0.0);
-		text_height -= HEADER_NEWLINE;
+			&bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, HEADER_NEWLINE, 0.0);
 
 		// Add the spell's description
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, spell.description,
 			BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &regular_font_size_data, &body_font_scale,
-			BODY_NEWLINE);
-		text_height -= BODY_NEWLINE;
+			BODY_NEWLINE, BODY_NEWLINE);
 
 		// If the spell has an upcast description
 		if let Some(description) = spell.upcast_description
 		{
 			layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
 				"At Higher Levels. ", description, BODY_FONT_SIZE, X_START, &mut text_height, &bold_italic_font,
-				&regular_font, &bold_italic_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE,
+				&regular_font, &bold_italic_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, 0.0,
 				10.0);
 		}
 
