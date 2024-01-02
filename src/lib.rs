@@ -39,7 +39,7 @@ fn calc_text_height(font_size_data: &Font, font_scale: &Scale) -> f32
 fn font_units_to_mm(font_unit_width: f32, font_scale: &Scale) -> f32
 {
 	let mm_per_font_unit = 5.6;
-	(font_unit_width * (mm_per_font_unit / font_scale.x))
+	font_unit_width * (mm_per_font_unit / font_scale.x)
 }
 
 // Gets the school and level info from a spell and turns it into text that says something like "nth-Level School-Type"
@@ -65,11 +65,8 @@ font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
 	for paragraph in paragraphs
 	{
 		// Only reset the cursor if it's not the first paragraph
-		match set_cursor
-		{
-			true => layer.set_text_cursor(Mm(x + x_offset), Mm(*y)),
-			false => set_cursor = true
-		}
+		if set_cursor { layer.set_text_cursor(Mm(x + x_offset), Mm(*y)); }
+		else { set_cursor = true; }
 
 		// Split the paragraph into tokens by whitespace
 		let tokens = paragraph.split_whitespace();
