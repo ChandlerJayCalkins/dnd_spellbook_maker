@@ -445,7 +445,7 @@ pub fn generate_spellbook(title: &str, spell_list: Vec<&spells::Spell>)
 }
 
 // Saves a spellbook to a file
-fn save_spellbook(doc: PdfDocumentReference, file_name: &str) -> Result<(), Box<dyn std::error::Error>>
+pub fn save_spellbook(doc: PdfDocumentReference, file_name: &str) -> Result<(), Box<dyn std::error::Error>>
 {
 	let file = std::fs::File::create(file_name)?;
 	doc.save(&mut std::io::BufWriter::new(file))?;
