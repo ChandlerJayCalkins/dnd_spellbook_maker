@@ -148,6 +148,77 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 	layer_ref
 }
 
+// Adds title text for the cover page
+fn add_title_text(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
+background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32, x: f64,
+font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, newline_amount: f64, ending_newline: f64)
+{
+	// Set the text color
+	layer.set_fill_color(color.clone());
+	// Begins a text section
+	layer.begin_text_section();
+	// Sets the font and cursor location
+	layer.set_font(font, font_size as f64);
+	// Split the text into tokens by whitespace
+	let mut tokens = text.split_whitespace();
+	let mut tokens_vec = tokens.collect::<Vec<&str>>();
+	// If there are no tokens
+	if tokens_vec.len() < 1
+	{
+		// Add the text "Spellbook" to the title text
+		tokens = "Spellbook".split_whitespace();
+		tokens_vec = tokens.collect::<Vec<&str>>();
+	}
+	// Creates a vec of the lines that the title text will be put into
+	let mut lines = Vec::<String>::new();
+	// Create a string that will become a line to add to the page made up of tokens
+	let mut line = tokens_vec[0].to_string();
+	// Loop through each token after the first
+	for token in &tokens_vec[1..]
+	{
+		// Create a new line to test if the current line is long enough for a newline
+		let new_line = format!("{} {}", line, token);
+		// Calculate the width of the line with this token added
+		let width = calc_text_width(&font_size_data, &font_scale, &new_line);
+		// If the line is too long with this token added
+		if width as f64 > X_END
+		{
+			// Add the line without this token to the lines vec
+			lines.push(line);
+			// Reset the current line to just the current token
+			line = token.to_string();
+		}
+		// If this line still isn't long enough, add the current token to the line
+		else { line = new_line; }
+	}
+	// Add the last line to the lines vec
+	lines.push(line);
+	// Calculate the maximum number of lines that can fit on the cover page
+	let max_lines = (PAGE_HEIGHT / newline_amount).floor() as usize;
+	// Only use the first max_lines number of lines if there are too many to fit on the page
+	lines.truncate(max_lines);
+	// Calculate where to start printing the lines based on the number of lines and the height of the lines
+	let mut y = (PAGE_HEIGHT / 2.0) + (lines.len() - 1) as f64 / 2.0 * newline_amount;
+	// Loop through each line in the title text
+	for l in lines
+	{
+		// Calculate the width of text without the new token added
+		let width = calc_text_width(&font_size_data, &font_scale, &l);
+		// Set the cursor so the text gets put in the middle of the page
+		layer.set_text_cursor(Mm((PAGE_WIDTH / 2.0) - (width as f64 / 2.0)), Mm(y));
+		// Write the line without the current token
+		layer.write_text(l, &font);
+		// Begin a new text section
+		layer.end_text_section();
+		layer.begin_text_section();
+		// Move the cursor down a line
+		y -= newline_amount;
+	}
+	// End this text section
+	layer.end_text_section();
+	// Return the current layer (will be different if the text spilled into a new page)
+}
+
 // Adds text to a spell page
 fn add_spell_text(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32, x: f64,
@@ -226,8 +297,8 @@ fn get_level_school_text(spell: &spells::Spell) -> String
 	}
 }
 
-pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells::Spell>)
--> Result<(), Box<dyn std::error::Error>>
+pub fn generate_spellbook(title: &str, spell_list: Vec<&spells::Spell>)
+-> Result<PdfDocumentReference, Box<dyn std::error::Error>>
 {
 	// Text colors
 	let black = Color::Rgb(Rgb
@@ -302,12 +373,9 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 	// Counter variable for naming each layer incrementally
 	let mut layer_count = 1;
 
-    // Define text
-    let text = "Hello! The quick fox jumped over the lazy brown dog. Peter Piper picked a patch of prickly purple pickle peppers.";
-
     // Add text using the custom font to the page
-	let _ = add_spell_text(&doc, &cover_layer_ref, &mut layer_count, img_data.clone(), &img_transform, text, &black,
-		TITLE_FONT_SIZE, X_START, &mut 200.0, &regular_font, &regular_font_size_data, &title_font_scale, TITLE_NEWLINE,
+	add_title_text(&doc, &cover_layer_ref, &mut layer_count, img_data.clone(), &img_transform, title, &black,
+		TITLE_FONT_SIZE, X_START, &regular_font, &regular_font_size_data, &title_font_scale, TITLE_NEWLINE,
 		0.0);
 
 	// Add next pages
@@ -378,11 +446,16 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 		layer_count += 1;
 	}
 
-    // Save the document to a file
-    let file = std::fs::File::create(file_name)?;
-    doc.save(&mut std::io::BufWriter::new(file))?;
+	// Return the pdf document
+    Ok(doc)
+}
 
-    Ok(())
+// Saves a spellbook to a file
+fn save_spellbook(doc: PdfDocumentReference, file_name: &str) -> Result<(), Box<dyn std::error::Error>>
+{
+	let file = std::fs::File::create(file_name)?;
+	doc.save(&mut std::io::BufWriter::new(file))?;
+	Ok(())
 }
 
 #[cfg(test)]
@@ -396,6 +469,7 @@ mod tests
 		// Create vec of spells for testing
 		let spell_list = vec![&phb_spells::fire_bolt, &phb_spells::fireball];
 		// Create spellbook
-		let _ = generate_spellbook("Spellbook", "Spellbook.pdf", spell_list);
+		let doc = generate_spellbook("A Wizard's Very Fancy Spellbook Used for Casting Magical Spells", spell_list).unwrap();
+		let _ = save_spellbook(doc, "Spellbook.pdf");
 	}
 }
