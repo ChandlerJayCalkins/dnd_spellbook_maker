@@ -182,6 +182,52 @@ pub static ANTILIFE_SHELL: Spell = Spell
 	upcast_description: None
 };
 
+pub static ANTIMAGIC_FIELD: Spell = Spell
+{
+	name: "Antimagic Field",
+	level: Level::Level8,
+	school: MagicSchool::Abjuration,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Yourself(AOE::Sphere(10)),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a pinch of powered iron or iron filings"),
+	duration: Duration::Hours(1, true),
+	description: "A 10-foot-radius invisible sphere of antimagic surrounds you. This area is divorced from the magical energy that suffuses the multiverse. Within the sphere, spells can't be cast, summoned creatures disappear, and even magic items become mundane. Until the spell ends, the sphere moves with you, centered on you.
+	Spells and other magical effects, except those created by an artifact or a deity, are suppressed in the sphere and can't protrude into it. A slot expended to cast a suppressed spell is consumed. While an effect is suppressed, it doesn't function, but the time it spends suppressed counts against its duration.
+	Targeted Effects: Spells and other magical effects, such as magic missile and charm person, that target a creature or an object in the sphere have no effect on that target.
+	Areas of Magic: The area of another spell or magical effect, such as fireball, can't extend into the sphere. If the sphere overlaps an area of magic, the part of the area that is covered by the sphere is suppressed. For example, the flames created by a wall of fire are suppressed within the sphere, creating a gap in the wall if the overlap is large enough.
+	Spells: Any active spell or other magical effect on a creature or an object in the sphere is suppressed while the creature or object is in it.
+	Magic Items: The properties and powers of magic items are suppressed in the sphere. For example, a longsword, +1 in the sphere functions as a nonmagical longsword.
+	A magic weapon's properties and powers are suppressed if it is used against a target in the sphere or wielded by an attacker in the sphere. If a magic weapon or a piece of magic ammunition fully leaves the sphere (for example, if you fire a magic arrow or throw a magic spear at a target outside the sphere), the magic of the item ceases to be suppressed as soon as it exits.
+	Magical Travel: Teleportation and planar travel fail to work in the sphere, whether the sphere is the destination or the departure point for such magical travel. A portal to another location, world, or plane of existence, as well as an opening to an extradimensional space such as that created by the rope trick spell, temporarily closes while in the sphere.
+	Creatures and Objects: A creature or object summoned or created by magic temporarily winks out of existence in the sphere. Such a creature instantly reappears once the space the creature occupied is no longer within the sphere.
+	Dispel Magic: Spells and magical effects such as dispel magic have no effect on the sphere. Likewise, the spheres created by different antimagic field spells don't nullify each other.",
+	upcast_description: None
+};
+
+pub static ANTIPATHY_SYMPATHY: Spell = Spell
+{
+	name: "Antipathy / Sympathy",
+	level: Level::Level8,
+	school: MagicSchool::Enchantment,
+	is_ritual: false,
+	casting_time: CastingTime::Hours(1),
+	range: Range::Feet(60),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("either a lump of alum soaked in vinegar for the antipathy effect or a drop of honey for the sympathy effect"),
+	duration: Duration::Days(10, false),
+	description: "This spell attracts or repels creatures of your choice. You target something within range, either a Huge or smaller object or creature or an area that is no larger than a 200-foot cube. Then specify a kind of intelligent creature, such as red dragons, goblins, or vampires. You invest the target with an aura that either attracts or repels the specified creatures for the duration. Choose antipathy or sympathy as the aura's effect.
+	Antipathy: The enchantment causes creatures of the kind you designated to feel an intense urge to leave the area and avoid the target. When such a creature can see the target or comes within 60 feet of it, the creature must succeed on a Wisdom saving throw or become frightened. The creature remains frightened while it can see the target or is within 60 feet of it. While frightened by the target, the creature must use its movement to move to the nearest safe spot from which it can't see the target. If the creature moves more than 60 feet from the target and can't see it, the creature is no longer frightened, but the creature becomes frightened again if it regains sight of the target or moves within 60 feet of it.
+	Sympathy: The enchantment causes the specified creatures to feel an intense urge to approach the target while within 60 feet of it or able to see it. When such a creature can see the target or comes within 60 feet of it, the creature must succeed on a Wisdom saving throw or use its movement on each of its turns to enter the area or move within reach of the target. When the creature has done so, it can't willingly move away from the target.
+	If the target damages or otherwise harms an affected creature, the affected creature can make a Wisdom saving throw to end the effect, as described below.
+	Ending the Effect: If an affected creature ends its turn while not within 60 feet of the target or able to see it, the creature makes a Wisdom saving throw. On a successful save, the creature is no longer affected by the target and recognizes the feeling of repugnance or attraction as magical. In addition, a creature affected by the spell is allowed another Wisdom saving throw every 24 hours while the spell persists.
+	A creature that successfully saves against this effect is immune to it for 1 minute, after which time it can be affected again.",
+	upcast_description: None
+};
+
 // -----------------------------------------------------------------------------------------------------
 // DONT FORGET TO ADD TO THE SPELL LIST
 // -----------------------------------------------------------------------------------------------------
@@ -219,8 +265,8 @@ pub static FIRE_BOLT: Spell = Spell
 	upcast_description: None
 };
 
-pub static SPELL_LIST: [&Spell; 10] =
+pub static SPELL_LIST: [&Spell; 12] =
 [
 	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER, &ANIMAL_SHAPES,
-	&ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL
+	&ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL, &ANTIMAGIC_FIELD, &ANTIPATHY_SYMPATHY
 ];
