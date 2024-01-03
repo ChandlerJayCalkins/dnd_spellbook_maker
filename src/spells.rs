@@ -348,11 +348,11 @@ pub struct Spell<'a>
 	pub casting_time: CastingTime<'a>,
 	pub range: Range,
 	// Whether or not the spell requires a verbal component to be cast
-	pub has_verbal_component: bool,
+	pub has_v_component: bool,
 	// Whether or not the spell requires a somantic component to be cast
-	pub has_somantic_component: bool,
+	pub has_s_component: bool,
 	// Optional text that lists all of the material components a spell might need to be cast
-	pub material_components: Option<&'a str>,
+	pub m_components: Option<&'a str>,
 	pub duration: Duration,
 	// Text that describes the effects of the spell
 	pub description: &'a str,
@@ -368,11 +368,11 @@ impl<'a> Spell<'a>
 	pub fn get_component_string(&self) -> String
 	{
 		let mut component_string = String::from("");
-		if self.has_verbal_component
+		if self.has_v_component
 		{
 			component_string += "V";
 		}
-		if self.has_somantic_component
+		if self.has_s_component
 		{
 			if component_string.len() > 0
 			{
@@ -380,7 +380,7 @@ impl<'a> Spell<'a>
 			}
 			component_string += "S";
 		}
-		if let Some(m) = self.material_components
+		if let Some(m) = self.m_components
 		{
 			if component_string.len() > 0
 			{
