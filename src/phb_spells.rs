@@ -103,7 +103,87 @@ pub static ANIMAL_MESSENGER: Spell = Spell
 	upcast_description: Some("If you cast this spell using a spell slot of 3rd level or higher, the duration of the spell increases by 48 hours for each slot level above 2nd.")
 };
 
+pub static ANIMAL_SHAPES: Spell = Spell
+{
+	name: "Animal Shapes",
+	level: Level::Level8,
+	school: MagicSchool::Transmutation,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(30),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Hours(24, true),
+	description: "Your magic turns others into beasts. Choose any number of willing creatures that you can see within range. You transform each target into the form of a Large or smaller beast with a challenge rating of 4 or lower. On subsequent turns, you can use your action to transform affected creatures into new forms.
+	The transformation lasts for the duration for each target, or until the target drops to 0 hit points or dies. You can choose a different form for each target. A target's game statistics are replaced by the statistics of the chosen beast, though the target retains its alignment and Intelligence, Wisdom, and Charisma scores. The target assumes the hit points of its new form, and when it reverts to its normal form, it returns to the number of hit points it had before it transformed. If it reverts as a result of dropping to 0 hit points, any excess damage carries over to its normal form. As long as the excess damage doesn't reduce the creature's normal form to 0 hit points, it isn't knocked unconscious. The creature is limited in the actions it can perform by the nature of its new form, and it can't speak or cast spells.
+	The target's gear melds into the new form. The target can't activate, wield, or otherwise benefit from any of its equipment.",
+	upcast_description: None
+};
+
+pub static ANIMATE_DEAD: Spell = Spell
+{
+	name: "Animate Dead",
+	level: Level::Level3,
+	school: MagicSchool::Necromancy,
+	is_ritual: false,
+	casting_time: CastingTime::Minutes(1),
+	range: Range::Feet(10),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a drop of blood, a piece of flesh, and a pinch of bone dust"),
+	duration: Duration::Instant,
+	description: "This spell creates an undead servant. Choose a pile of bones or a corpse of a Medium or Small humanoid within range. Your spell imbues the target with a foul mimicry of life, raising it as an undead creature. The target becomes a skeleton if you chose bones or a zombie if you chose a corpse (the GM has the creature's game statistics).
+	On each of your turns, you can use a bonus action to mentally command any creature you made with this spell if the creature is within 60 feet of you (if you control multiple creatures, you can command any or all of them at the same time, issuing the same command to each one). You decide what action the creature will take and where it will move during its next turn, or you can issue a general command, such as to guard a particular chamber or corridor. If you issue no commands, the creature only defends itself against hostile creatures. Once given an order, the creature continues to follow it until its task is complete.
+	The creature is under your control for 24 hours, after which it stops obeying any command you've given it. To maintain control of the creature for another 24 hours, you must cast this spell on the creature again before the current 24-hour period ends. This use of the spell reasserts your control over up to four creatures you have animated with this spell, rather than animating a new one.",
+	upcast_description: Some("When you cast this spell using a spell slot of 4th level or higher, you animate or reassert control over two additional undead creatures for each slot level above 3rd. Each of the creatures must come from a different corpse or pile of bones.")
+};
+
+pub static ANIMATE_OBJECTS: Spell = Spell
+{
+	name: "Animate Objects",
+	level: Level::Level5,
+	school: MagicSchool::Transmutation,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(120),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Minutes(1, true),
+	description: "Objects come to life at your command. Choose up to ten nonmagical objects within range that are not being worn or carried. Medium targets count as two objects, Large targets count as four objects, Huge targets count as eight objects. You can't animate any object larger than Huge. Each target animates and becomes a creature under your control until the spell ends or until reduced to 0 hit points.
+	As a bonus action, you can mentally command any creature you made with this spell if the creature is within 500 feet of you (if you control multiple creatures, you can command any or all of them at the same time, issuing the same command to each one). You decide what action the creature will take and where it will move during its next turn, or you can issue a general command, such as to guard a particular chamber or corridor. If you issue no commands, the creature only defends itself against hostile creatures. Once given an order, the creature continues to follow it until its task is complete.
+	Size | HP | AC | Str | Dex | Attack
+	Tiny | 20 | 18 | 4 | 18 | +8 to hit, 1d4 + 4 damage
+	Small | 25 | 16 | 6 | 14 | +6 to hit, 1d8 + 2 damage
+	Medium | 40 | 13 | 10 | 12 | +5 to hit, 2d6 + 1 damage
+	Large | 50 | 10 | 14 | 10 | +6 to hit, 2d10 + 2 damage
+	Huge | 80 | 10 | 18 | 6 | +8 to hit, 2d12 + 4 damage
+	An animated object is a construct with AC, hit points, attacks, Strength, and Dexterity determined by its size. Its Constitution is 10 and its Intelligence and Wisdom are 3, and its Charisma is 1. Its speed is 30 feet; if the object lacks legs or other appendages it can use for locomotion, it instead has a flying speed of 30 feet and can hover. If the object is securely attached to a surface or a larger object, such as a chain bolted to a wall, its speed is 0. It has blindsight with a radius of 30 feet and is blind beyond that distance. When the animated object drops to 0 hit points, it reverts to its original object form, and any remaining damage carries over to its original object form.
+	If you command an object to attack, it can make a single melee attack against a creature within 5 feet of it. It makes a slam attack with an attack bonus and bludgeoning damage determined by its size. The GM might rule that a specific object inflicts slashing or piercing damage based on its form.",
+	upcast_description: Some("If you cast this spell using a spell slot of 6th level or higher, you can animate two additional objects for each slot level above 5th.")
+};
+
+pub static ANTILIFE_SHELL: Spell = Spell
+{
+	name: "Antilife Shell",
+	level: Level::Level5,
+	school: MagicSchool::Abjuration,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Yourself(AOE::Sphere(10)),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Hours(1, true),
+	description: "A shimmering barrier extends out from you in a 10-foot radius and moves with you, remaining centered on you and hedging out creatures other than undead and constructs. The barrier lasts for the duration.
+	The barrier prevents an affected creature from passing or reaching through. An affected creature can cast spells or make attacks with ranged or reach weapons through the barrier.
+	If you move so that an affected creature is forced to pass through the barrier, the spell ends.",
+	upcast_description: None
+};
+
 // -----------------------------------------------------------------------------------------------------
+// DONT FORGET TO ADD TO THE SPELL LIST
 // -----------------------------------------------------------------------------------------------------
 pub static FIREBALL: Spell = Spell
 {
@@ -139,7 +219,8 @@ pub static FIRE_BOLT: Spell = Spell
 	upcast_description: None
 };
 
-pub static SPELL_LIST: [&Spell; 6] =
+pub static SPELL_LIST: [&Spell; 10] =
 [
-	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER
+	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER, &ANIMAL_SHAPES,
+	&ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL
 ];
