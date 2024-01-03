@@ -228,6 +228,75 @@ pub static ANTIPATHY_SYMPATHY: Spell = Spell
 	upcast_description: None
 };
 
+pub static ARCANE_EYE: Spell = Spell
+{
+	name: "Arcane Eye",
+	level: Level::Level4,
+	school: MagicSchool::Divination,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(30),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a bit of bat fur"),
+	duration: Duration::Hours(1, true),
+	description: "You create an invisible, magical eye within range that hovers in the air for the duration.
+	You mentally receive visual information from the eye, which has normal vision and darkvision out to 30 feet. The eye can look in every direction.
+	As an action, you can move the eye up to 30 feet in any direction. There is no limit to how far away from you the eye can move, but it can't enter another plane of existence. A solid barrier blocks the eye's movement, but the eye can pass through an opening as small as 1 inch in diameter.",
+	upcast_description: None
+};
+
+pub static ARCANE_GATE: Spell = Spell
+{
+	name: "Arcane Gate",
+	level: Level::Level6,
+	school: MagicSchool::Conjuration,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(500),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Minutes(10, true),
+	description: "You create linked teleportation portals that remain open for the duration. Choose two points on the ground that you can see, one point within 500 feet of you. A circular portal, 10 feet in diameter, opens over each point. If the portal would open in the space occupied by a creature, the spell fails, and the casting is lost.
+	The portals are two-dimensional glowing rings filled with mist, hovering inches from the ground and perpendicular to it at the points you choose. A ring is visible only from one side (your choice), which is the side that functions as a portal.
+	Any creature or object entering the portal exits from the other portal as if the two were adjacent to each other; passing through a portal from the nonportal side has no effect. The mist that fills each portal is opaque and blocks vision through it. On your turn, you can rotate the rings as a bonus action so that the active side faces a different direction.",
+	upcast_description: None
+};
+
+pub static ARCANE_LOCK: Spell = Spell
+{
+	name: "Arcane Lock",
+	level: Level::Level2,
+	school: MagicSchool::Abjuration,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Touch,
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("gold dust worth at least 25 gp, which the spell consumes"),
+	duration: Duration::UntilDispelled(false),
+	description: "You touch a closed door, window, gate, chest, or other entryway, and it becomes locked for the duration. You and the creatures you designate when you cast this spell can open the object normally. You can also set a password that, when spoken within 5 feet of the object, suppresses this spell for 1 minute. Otherwise, it is impassable until it is broken or the spell is dispelled or suppressed. Casting knock on the object suppresses arcane lock for 10 minutes.
+	While affected by this spell, the object is more difficult to break or force open; the DC to break it or pick any locks on it increases by 10.",
+	upcast_description: None
+};
+
+pub static ARMOR_OF_AGATHYS: Spell = Spell
+{
+	name: "Armor of Agathys",
+	level: Level::Level1,
+	school: MagicSchool::Abjuration,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Yourself(AOE::None),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a cup of water"),
+	duration: Duration::Hours(1, false),
+	description: "A protective magical force surrounds you, manifesting as a spectral frost that covers you and your gear. You gain 5 temporary hit points for the duration. If a creature hits you with a melee attack while you have these hit points, the creature takes 5 cold damage.",
+	upcast_description: Some("When you cast this spell using a spell slot of 2nd level or higher, both temporary hit points and the cold damage increase by 5 for each slot level above 1st.")
+};
+
 // -----------------------------------------------------------------------------------------------------
 // DONT FORGET TO ADD TO THE SPELL LIST
 // -----------------------------------------------------------------------------------------------------
@@ -265,8 +334,10 @@ pub static FIRE_BOLT: Spell = Spell
 	upcast_description: None
 };
 
-pub static SPELL_LIST: [&Spell; 12] =
+pub static SPELL_LIST: [&Spell; 16] =
 [
-	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER, &ANIMAL_SHAPES,
-	&ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL, &ANTIMAGIC_FIELD, &ANTIPATHY_SYMPATHY
+	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER,
+	&ANIMAL_SHAPES, &ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL,
+	&ANTIMAGIC_FIELD, &ANTIPATHY_SYMPATHY, &ARCANE_EYE, &ARCANE_GATE, &ARCANE_LOCK,
+	&ARMOR_OF_AGATHYS
 ];
