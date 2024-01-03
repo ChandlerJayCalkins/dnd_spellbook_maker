@@ -70,8 +70,9 @@ img_transform: &ImageTransform) -> (PdfPageIndex, PdfLayerReference)
 
 // Writes text onto multiple lines / pages so it doesn't go off the side or bottom of the page
 fn safe_write(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
-background: image::DynamicImage, img_transform: &ImageTransform, text: &str, x: f64, y: &mut f64, font: &IndirectFontRef,
-font_size_data: &Font, font_scale: &Scale, newline_amount: f64, x_start_offset: f64) -> PdfLayerReference
+background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32, x: f64,
+y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, newline_amount: f64, x_start_offset: f64)
+-> PdfLayerReference
 {
 	// The layer that gets returned
 	let mut layer_ref = (*layer).clone();
@@ -125,6 +126,10 @@ font_size_data: &Font, font_scale: &Scale, newline_amount: f64, x_start_offset: 
 					// Set the cursor to the top of the page
 					*y = Y_START;
 					layer_ref.set_text_cursor(Mm(x), Mm(*y));
+					// Reset the font
+					layer_ref.set_font(font, font_size as f64);
+					// Reset the text color
+					layer_ref.set_fill_color(color.clone());
 				}
 				// Reset the x_offset to 0 in case the last line already used it
 				x_offset = 0.0;
@@ -161,11 +166,11 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 	// Begins a text section
 	layer.begin_text_section();
 	// Sets the font and cursor location
-	layer.set_font(&font, font_size as f64);
+	layer.set_font(font, font_size as f64);
 	layer.set_text_cursor(Mm(x), Mm(*y));
 	// Add spell text to the page
-	let mut new_layer = safe_write(doc, &layer, layer_count, background.clone(), img_transform, &text, x, y, &font, &font_size_data,
-		&font_scale, newline_amount, 0.0);
+	let mut new_layer = safe_write(doc, &layer, layer_count, background.clone(), img_transform, &text, color, font_size, x,
+		y, &font, &font_size_data, &font_scale, newline_amount, 0.0);
 	// Ends the text section
 	new_layer.end_text_section();
 	// Decrement y value by the ending newine amount
@@ -192,7 +197,7 @@ text_font_size_data: &Font, font_scale: &Scale, newline_amount: f64, ending_newl
 	// Begins a text section
 	layer.begin_text_section();
 	// Sets the font to the field font
-	layer.set_font(&field_font, font_size as f64);
+	layer.set_font(field_font, font_size as f64);
 	// Sets the cursor location
 	layer.set_text_cursor(Mm(x + x_start_offset), Mm(*y));
 	// Add the field text to the page
@@ -200,10 +205,10 @@ text_font_size_data: &Font, font_scale: &Scale, newline_amount: f64, ending_newl
 	// Calculate the width of the field text
 	let field_width = calc_text_width(field_font_size_data, font_scale, field);
 	// Set the font to the text font
-	layer.set_font(&text_font, font_size as f64);
+	layer.set_font(text_font, font_size as f64);
 	// Add the spell text to the page
-	let mut new_layer = safe_write(doc, &layer, layer_count, background.clone(), img_transform, &text, x, y, &text_font,
-		&text_font_size_data, &font_scale, newline_amount, field_width as f64 + x_start_offset);
+	let mut new_layer = safe_write(doc, &layer, layer_count, background.clone(), img_transform, &text, color, font_size, x,
+		y, &text_font, &text_font_size_data, &font_scale, newline_amount, field_width as f64 + x_start_offset);
 	// Ends the text section
 	new_layer.end_text_section();
 	// Decrement y value by the ending newine amount
