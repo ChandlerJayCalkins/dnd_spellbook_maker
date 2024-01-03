@@ -21,16 +21,6 @@ const Y_START: f64 = 280.0;
 const X_END: f64 = 190.0;
 const Y_END: f64 = 10.0;
 
-// Text colors
-const BLACK: Color = Color::Rgb(Rgb
-{
-	r: 0.0, g: 0.0, b: 0.0, icc_profile: None
-});
-const RED: Color = Color::Rgb(Rgb
-{
-	r: 69.0, g: 13.0, b: 13.0, icc_profile: None
-});
-
 // Calculates the width of some text give the font and the font size it uses
 fn calc_text_width(font_size_data: &Font, font_scale: &Scale, text: &str) -> f32
 {
@@ -162,12 +152,12 @@ font_size_data: &Font, font_scale: &Scale, newline_amount: f64, x_start_offset: 
 
 // Adds text to a spell page
 fn add_spell_text(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
-background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: Color, font_size: f32, x: f64,
+background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32, x: f64,
 y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, newline_amount: f64, ending_newline: f64)
 -> PdfLayerReference
 {
 	// Set the text color
-	layer.set_fill_color(color);
+	layer.set_fill_color(color.clone());
 	// Begins a text section
 	layer.begin_text_section();
 	// Sets the font and cursor location
@@ -192,13 +182,13 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 
 // Adds spell field text to a spell page
 fn add_spell_field(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
-background: image::DynamicImage, img_transform: &ImageTransform, field: &str, text: &str, color: Color, font_size: f32,
+background: image::DynamicImage, img_transform: &ImageTransform, field: &str, text: &str, color: &Color, font_size: f32,
 x: f64, y: &mut f64, field_font: &IndirectFontRef, text_font: &IndirectFontRef, field_font_size_data: &Font,
 text_font_size_data: &Font, font_scale: &Scale, newline_amount: f64, ending_newline: f64, x_start_offset: f64)
 -> PdfLayerReference
 {
 	// Set the text color
-	layer.set_fill_color(color);
+	layer.set_fill_color(color.clone());
 	// Begins a text section
 	layer.begin_text_section();
 	// Sets the font to the field font
@@ -241,6 +231,16 @@ fn get_level_school_text(spell: &spells::Spell) -> String
 pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells::Spell>)
 -> Result<(), Box<dyn std::error::Error>>
 {
+	// Text colors
+	let black = Color::Rgb(Rgb
+	{
+		r: 0.0, g: 0.0, b: 0.0, icc_profile: None
+	});
+	let red: Color = Color::Rgb(Rgb
+	{
+		r: 0.45, g: 0.1, b: 0.1, icc_profile: None
+	});
+	
     // Load custom font
 
 	// File path to font
@@ -316,7 +316,7 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
     let text = "Hello! The quick fox jumped over the lazy brown dog. Peter Piper picked a patch of prickly purple pickle peppers.";
 
     // Add text using the custom font to the page
-	let _ = add_spell_text(&doc, &cover_layer_ref, &mut layer_count, img_data.clone(), &img_transform, text, BLACK,
+	let _ = add_spell_text(&doc, &cover_layer_ref, &mut layer_count, img_data.clone(), &img_transform, text, &black,
 		TITLE_FONT_SIZE, X_START, &mut 200.0, &regular_font, &regular_font_size_data, &title_font_scale, TITLE_NEWLINE,
 		0.0);
 
@@ -339,47 +339,47 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 		// Add text to the page
 
 		// Add the name of the spell as a header
-		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, spell.name, RED,
+		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, spell.name, &red,
 			HEADER_FONT_SIZE, X_START, &mut text_height, &regular_font, &regular_font_size_data, &header_font_scale,
 			HEADER_NEWLINE, HEADER_NEWLINE);
 
 		// Add the level and the spell's school of magic
 		let text = get_level_school_text(spell);
-		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, BLACK,
+		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
 			BODY_FONT_SIZE, X_START, &mut text_height, &italic_font, &italic_font_size_data, &body_font_scale,
 			BODY_NEWLINE, HEADER_NEWLINE);
 
 		// Add the casting time of the spell
 		layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
-			"Casting Time: ", &spell.casting_time.to_string(), BLACK, BODY_FONT_SIZE, X_START, &mut text_height, &bold_font,
+			"Casting Time: ", &spell.casting_time.to_string(), &black, BODY_FONT_SIZE, X_START, &mut text_height, &bold_font,
 			&regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, BODY_NEWLINE,
 			0.0);
 
 		// Add the range of the spell
 		layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, "Range: ",
-			&spell.range.to_string(), BLACK, BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
+			&spell.range.to_string(), &black, BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
 			&bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);
 
 		// Add the components of the spell
 		layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, "Components: ",
-			&spell.get_component_string(), BLACK, BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
+			&spell.get_component_string(), &black, BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
 			&bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);
 
 		// Add the duration of the spell
 		layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, "Duration: ",
-			&spell.duration.to_string(), BLACK, BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
+			&spell.duration.to_string(), &black, BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
 			&bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, HEADER_NEWLINE, 0.0);
 
 		// Add the spell's description
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, spell.description,
-			BLACK, BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &regular_font_size_data, &body_font_scale,
+			&black, BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &regular_font_size_data, &body_font_scale,
 			BODY_NEWLINE, BODY_NEWLINE);
 
 		// If the spell has an upcast description
 		if let Some(description) = spell.upcast_description
 		{
 			layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
-				"At Higher Levels. ", description, BLACK, BODY_FONT_SIZE, X_START, &mut text_height, &bold_italic_font,
+				"At Higher Levels. ", description, &black, BODY_FONT_SIZE, X_START, &mut text_height, &bold_italic_font,
 				&regular_font, &bold_italic_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, 0.0,
 				10.0);
 		}
