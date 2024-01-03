@@ -149,9 +149,8 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 }
 
 // Adds title text for the cover page
-fn add_title_text(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
-background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32, x: f64,
-font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, newline_amount: f64, ending_newline: f64)
+fn add_title_text(layer: &PdfLayerReference, text: &str, color: &Color, font_size: f32, font: &IndirectFontRef,
+font_size_data: &Font, font_scale: &Scale, newline_amount: f64)
 {
 	// Set the text color
 	layer.set_fill_color(color.clone());
@@ -374,19 +373,14 @@ pub fn generate_spellbook(title: &str, spell_list: Vec<&spells::Spell>)
 	let mut layer_count = 1;
 
     // Add text using the custom font to the page
-	add_title_text(&doc, &cover_layer_ref, &mut layer_count, img_data.clone(), &img_transform, title, &black,
-		TITLE_FONT_SIZE, X_START, &regular_font, &regular_font_size_data, &title_font_scale, TITLE_NEWLINE,
-		0.0);
+	add_title_text(&cover_layer_ref, title, &black, TITLE_FONT_SIZE, &regular_font, &regular_font_size_data,
+		&title_font_scale, TITLE_NEWLINE);
 
 	// Add next pages
 
 	// Loop through each spell
 	for spell in spell_list
 	{
-		// Initialize the page
-
-		// Create a new image since cloning the old one isn't allowed for some reason
-		let img = Image::from_dynamic_image(&img_data.clone());
 		// Create a new page
 		let (page, mut layer_ref) = make_new_page(&doc, &mut layer_count, img_data.clone(), &img_transform);
 		// Create a new bookmark for this page
@@ -467,7 +461,7 @@ mod tests
 	fn the_test()
 	{
 		// Create vec of spells for testing
-		let spell_list = vec![&phb_spells::fire_bolt, &phb_spells::fireball];
+		let spell_list = vec![&phb_spells::FIRE_BOLT, &phb_spells::FIREBALL];
 		// Create spellbook
 		let doc = generate_spellbook("A Wizard's Very Fancy Spellbook Used for Casting Magical Spells", spell_list).unwrap();
 		let _ = save_spellbook(doc, "Spellbook.pdf");

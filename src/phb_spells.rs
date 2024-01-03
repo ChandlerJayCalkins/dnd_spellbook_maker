@@ -1,6 +1,6 @@
 use crate::spells::*;
 
-pub static fireball: Spell = Spell
+pub static FIREBALL: Spell = Spell
 {
 	name: "Fireball",
 	level: Level::Level3,
@@ -17,7 +17,7 @@ pub static fireball: Spell = Spell
 	upcast_description: Some("When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for eaeh slot level above 3rd.")
 };
 
-pub static fire_bolt: Spell = Spell
+pub static FIRE_BOLT: Spell = Spell
 {
 	name: "Fire Bolt",
 	level: Level::Cantrip,
