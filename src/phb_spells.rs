@@ -51,6 +51,42 @@ pub static ALARM: Spell = Spell
 	upcast_description: None
 };
 
+pub static ALTER_SELF: Spell = Spell
+{
+	name: "Alter Self",
+	level: Level::Level2,
+	school: MagicSchool::Transmutation,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Yourself(AOE::None),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Hours(1, true),
+	description: "You assume a different form. When you cast the spell, choose one of the following options, the effects of which last for the duration of the spell. While the spell lasts, you can end one option as an action to gain the benefits of a different one.
+	Aquatic Adaptation: You adapt your body to an aquatic environment, sprouting gills and growing webbing between your fingers. You can breathe underwater and gain a swimming speed equal to your walking speed.
+	Change Appearance: You transform your appearance. You decide what you look like, including your height, weight, facial features, sound of your voice, hair length, coloration, and distinguishing characteristics, if any. You can make yourself appear as a member of another race, though none of your statistics change. You also can't appear as a creature of a different size than you, and your basic shape stays the same; if you're bipedal, you can't use this spell to become quadrupedal, for instance. At any time for the duration of the spell, you can use your action to change your appearance in this way again.
+	Natural Weapons: You grow claws, fangs, spines, horns, or a different natural weapon of your choice. Your unarmed strikes deal 1d6 bludgeoning, piercing, or slashing damage, as appropriate to the natural weapon you chose, and you are proficient with your unarmed strikes. Finally, the natural weapon is magic and you have a +1 bonus to the attack and damage rolls you make using it.",
+	upcast_description: None
+};
+
+pub static ANIMAL_FRIENDSHIP: Spell = Spell
+{
+	name: "Animal Friendship",
+	level: Level::Level1,
+	school: MagicSchool::Enchantment,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(30),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a morsel of food"),
+	duration: Duration::Hours(24, false),
+	description: "This spell lets you convince a beast that you mean it no harm. Choose a beast that you can see within range. It must see and hear you. If the beast's Intelligence is 4 or higher, the spell fails. Otherwise, the beast must succeed on a Wisdom saving throw or be charmed by you for the spell's duration. If you or one of your companions harms the target, the spell ends.",
+	upcast_description: Some("When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional beast for each slot level above 1st.")
+};
+
+//
 pub static FIREBALL: Spell = Spell
 {
 	name: "Fireball",
