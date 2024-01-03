@@ -37,13 +37,6 @@ fn calc_text_width(font_size_data: &Font, font_scale: &Scale, text: &str) -> f32
 	font_units_to_mm(width)
 }
 
-// Calculates the height of a font with a certain font size
-/*fn calc_text_height(font_size_data: &Font, font_scale: &Scale) -> f32
-{
-	let v_metrics = font_size_data.v_metrics(*font_scale);
-	v_metrics.ascent - v_metrics.descent
-}*/
-
 // Converts rusttype font units to printpdf millimeters (Mm)
 fn font_units_to_mm(font_unit_width: f32) -> f32
 {
@@ -273,14 +266,6 @@ pub fn generate_spellbook(title: &str, file_name: &str, spell_list: Vec<&spells:
 	let title_font_scale = Scale::uniform(TITLE_FONT_SIZE);
 	let header_font_scale = Scale::uniform(HEADER_FONT_SIZE);
 	let body_font_scale = Scale::uniform(BODY_FONT_SIZE);
-
-	// Calculate text heights
-	/*let title_text_height = calc_text_height(&regular_font_size_data, &title_font_scale) as f64;
-	let header_text_height = calc_text_height(&regular_font_size_data, &header_font_scale) as f64;
-	let level_school_text_height = calc_text_height(&italic_font_size_data, &body_font_scale) as f64;
-	let spell_field_text_height = calc_text_height(&bold_font_size_data, &body_font_scale) as f64;
-	let body_text_height = calc_text_height(&regular_font_size_data, &body_font_scale) as f64;
-	let upcast_text_height = calc_text_height(&bold_italic_font_size_data, &body_font_scale) as f64;*/
 
 	// Load background image
 	let img_data = image::open("img/parchment.jpg")?;
