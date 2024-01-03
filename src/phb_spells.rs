@@ -1,5 +1,22 @@
 use crate::spells::*;
 
+pub static ACID_SPLASH: Spell = Spell
+{
+	name: "Acid Splash",
+	level: Level::Cantrip,
+	school: MagicSchool::Conjuration,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(60),
+	has_verbal_component: true,
+	has_somantic_component: true,
+	material_components: None,
+	duration: Duration::Instant,
+	description: "Vou hurl a bubble of acid. Choose one creature within range, or choose two creatures within range that are within 5 feet of each other. A target must succeed on a Dexterity saving throw or take 1d6 acid damage.
+	This spell's damage increases by 1d6 when you reach 5th level (2d6), 11th level (3d6), and 17th level (4d6).",
+	upcast_description: None
+};
+
 pub static FIREBALL: Spell = Spell
 {
 	name: "Fireball",
