@@ -562,6 +562,73 @@ pub static BIGBYS_HAND: Spell = Spell
 	upcast_description: Some("When you cast this spell using a spell slot of 6th level or higher, the damage from the clenched fist option increases by 2d8 and the damage from the grasping hand increases by 2d6 for each slot level above 5th.")
 };
 
+pub static BLADE_BARRIER: Spell = Spell
+{
+	name: "Blade Barrier",
+	level: Level::Level6,
+	school: MagicSchool::Evocation,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(90),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Minutes(10, true),
+	description: "You create a vertial wall of whirling, razor-sharp blades made of magical energy. The wall appears within range and lasts for the duration. You can make a straight wall up to 100 feet long, 20 feet high, and 5 feet thick, or a ringed wall up to 60 feet in diameter, 20 feet high, and 5 feet thick. The wall provides three-quarters cover to creatures behind it, and its space is difficult terrain.
+	When a creature enters the wall's area for the first time on a turn or starts its turn there, the creature must make a Dexterity saving throw. On a failed save, the creature takes 6d10 slashing damage. On a successful save, the creature takes half as much damage.",
+	upcast_description: None
+};
+
+pub static BLADE_WARD: Spell = Spell
+{
+	name: "Blade Ward",
+	level: Level::Cantrip,
+	school: MagicSchool::Abjuration,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Yourself(AOE::None),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Rounds(1, false),
+	description: "You extend your hand and trace a sigil of warding in the air. Until the end of your next turn, you have resistance against bludgeoning, pi ercing, and slashing damage dealt by weapon attacks.",
+	upcast_description: None
+};
+
+pub static BLESS: Spell = Spell
+{
+	name: "Bless",
+	level: Level::Level1,
+	school: MagicSchool::Enchantment,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(30),
+	has_v_component: true,
+	has_s_component: false,
+	m_components: Some("a sprinkling of holy water"),
+	duration: Duration::Minutes(1, true),
+	description: "You bless up to three creatures of your choice within range. Whenever a target makes an attack roll or a saving throw before the spell ends, the target can roll a d4 and add the number rolled to the attack roll or saving throw.",
+	upcast_description: Some("When you cast this spell using a spell slot 2nd level or higher, you can target one additional creature for each slot level above 1st.")
+};
+
+pub static BLIGHT: Spell = Spell
+{
+	name: "Blight",
+	level: Level::Level4,
+	school: MagicSchool::Necromancy,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(30),
+	has_v_component: true,
+	has_s_component: false,
+	m_components: None,
+	duration: Duration::Instant,
+	description: "Necromatic energy washes over a creature of your choice that you can see within range, draining moisture and vitality from it. The target must make a Constitution saving throw. The target takes 8d8 necrotic damage on a failed save, or half as much damage on a successful one. This spell has no effect on undead or constructs.
+	If you target a plant creature or a magical plant, it makes the saving throw with disadvantage, and the spell deals maximum damage to it.
+	If you target a nonmagical plant that isn't a creature, such as a tree or shrub, it doesn't make a saving throw; it simply withers and dies.",
+	upcast_description: Some("When you cast this spell using a spell slot of 5th level or higher, the damage increases by 1d8 for each slot level above 4th.")
+};
+
 // -----------------------------------------------------------------------------------------------------
 // DONT FORGET TO ADD TO THE SPELL LIST
 // -----------------------------------------------------------------------------------------------------
@@ -599,7 +666,7 @@ pub static FIRE_BOLT: Spell = Spell
 	upcast_description: None
 };
 
-pub static SPELL_LIST: [&Spell; 31] =
+pub static SPELL_LIST: [&Spell; 35] =
 [
 	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER,
 	&ANIMAL_SHAPES, &ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL,
@@ -607,5 +674,5 @@ pub static SPELL_LIST: [&Spell; 31] =
 	&ARMOR_OF_AGATHYS, &ARMS_OF_HADAR, &ASTRAL_PROJECTION, &AUGURY, &AURA_OF_LIFE,
 	&AURA_OF_PURITY, &AURA_OF_VITALITY, &AWAKEN, &BANE, &BANISHING_SMITE,
 	&BANISHMENT, &BARKSKIN, &BEACON_OF_HOPE, &BEAST_SENSE, &BESTOW_CURSE,
-	&BIGBYS_HAND
+	&BIGBYS_HAND, &BLADE_BARRIER, &BLADE_WARD, &BLESS, &BLIGHT
 ];
