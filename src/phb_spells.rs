@@ -728,6 +728,381 @@ pub static BURNING_HANDS: Spell = Spell
 	upcast_description: Some("When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st")
 };
 
+pub static CALL_LIGHTNING: Spell = Spell
+{
+	name: "Call Lightning",
+	level: Level::Level3,
+	school: MagicSchool::Conjuration,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(120),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Minutes(10, true),
+	description: "A storm cloud appears in the shape of a cylinder that is 10 feet tall with a 60-foot radius, centered on a point you can see within range directly above you. The spell fails if you can't see a point in the air where the storm cloud could appear (for example, if you are in a room that can't accommodate the cloud).
+	When you cast the spell, choose a point you can see under the cloud. A bolt of lightning flashes down from the cloud to that point. Each creature within 5 feet of that point must make a Dexterity saving throw. A creature takes 3d10 lightning damage on a failed save, or half as much damage on a successful one. On each of your turns until the spell ends, you can use your action to call down lightning in this way again, targeting the same point or a different one.
+	If you are outdoors in stormy conditions when you cast this spell, the spell gives you control over the existing storm instead of creating a new one. Under such conditions, the spell's damage increases by 1d10.",
+	upcast_description: Some("When you cast this spell using a spell slot of 4th or higher level, the damage increases by 1d10 for each slot level above 3rd.")
+};
+
+pub static CALM_EMOTIONS: Spell = Spell
+{
+	name: "Calm Emotions",
+	level: Level::Level2,
+	school: MagicSchool::Enchantment,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(60),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Minutes(1, true),
+	description: "You attempt to suppress strong emotions in a group of people. Each humanoid in a 20-foot-radius sphere centered on a point you choose within range must make a Charisma saving throw; a creature can choose to fail this saving throw if it wishes. If a creature fails its saving throw, choose one of the following two effects.
+	You can suppress any effect causing a target to be charmed or frightened. When this spell ends, any suppressed effect resumes, provided that its duration has not expired in the meantime.
+	Alternatively, you can make a target indifferent about creatures of your choice that it is hostile toward. This indifference ends if the target is attacked or harmed by a spell or if it witnesses any of its friends being harmed. When the spell ends, the creature becomes hostile again, unless the DM rules otherwise.",
+	upcast_description: None
+};
+
+pub static CHAIN_LIGHTNING: Spell = Spell
+{
+	name: "Chain Lightning",
+	level: Level::Level6,
+	school: MagicSchool::Evocation,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(150),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a bit of fur; a piece of amber, glass, or a crystal rod; and three silver pins"),
+	duration: Duration::Instant,
+	description: "You create a bolt of lightning that arcs toward a target of your choice that you can see within range. Three bolts then leap from that target to as many as three other targets, each of which must be within 30 feet of the first target. A target can be a creature or an object and can be targeted by only one of the bolts.
+	A target must make a Dexterity saving throw. The target takes 10d8 lightning damage on a failed save, or half as much damage on a successful one.",
+	upcast_description: Some("When you cast this spell using a spell slot of 7th level or higher, one additional bolt leaps from the first target to another target for each slot level above 6th.")
+};
+
+pub static CHARM_PERSON: Spell = Spell
+{
+	name: "Charm Person",
+	level: Level::Level1,
+	school: MagicSchool::Enchantment,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(30),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Hours(1, false),
+	description: "You attempt to charm a humanoid you can see within range. It must make a Wisdom saving throw, and does so with advantage if you or your companions are fighting it. If it fails the saving throw, it is charmed by you until the spell ends or until you or your companions do anything harmful to it. The charmed creature regards you as a friendly acquaintance. When the spell ends, the creature knows it was charmed by you.",
+	upcast_description: Some("When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st. The creatures must be within 30 feet of each other when you target them.")
+};
+
+pub static CHILL_TOUCH: Spell = Spell
+{
+	name: "Chill Touch",
+	level: Level::Cantrip,
+	school: MagicSchool::Necromancy,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(120),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Rounds(1, false),
+	description: "You create a ghostly, skeletal hand in the space of a creature within range. Make a ranged spell attack against the creature to assail it with the chill of the grave. On a hit, the target takes 1d8 necrotic damage, and it can't regain hit points until the start of your next turn. Until then, the hand clings to the target. If you hit an undead target, it also has disadvantage on attack rolls against you until the end of your next turn.
+	This spell's damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8).",
+	upcast_description: None
+};
+
+pub static CHROMATIC_ORB: Spell = Spell
+{
+	name: "Chromatic Orb",
+	level: Level::Level1,
+	school: MagicSchool::Evocation,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(90),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a diamond worth at least 50 gp"),
+	duration: Duration::Instant,
+	description: "You hurl a 4-inch-diameter sphere of energy at a creature that you can see within range. You choose acid, cold, fire, lightning, poison, or thunder for the type of orb you create, and then make a ranged spell attack against the target. If the attack hits, the creature takes 3d8 damage of the type you chose.",
+	upcast_description: Some("When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d8 for each slot level above 1st.")
+};
+
+pub static CIRCLE_OF_DEATH: Spell = Spell
+{
+	name: "Circle of Death",
+	level: Level::Level6,
+	school: MagicSchool::Necromancy,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(150),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("the powder of a crushed black pearl worth at least 500 gp"),
+	duration: Duration::Instant,
+	description: "A sphere of negative energy ripples out in a 60-foot-radius sphere from a point within range. Each creature in that area must make a Constitution saving throw. A target takes 8d6 necrotic damage on a failed save, or half as much damage on a successful one.",
+	upcast_description: Some("When you cast this spell using a spell slot of 7th level or higher, the damage increases by 2d6 for each slot level above 6th.")
+};
+
+pub static CIRCLE_OF_POWER: Spell = Spell
+{
+	name: "Circle of Power",
+	level: Level::Level5,
+	school: MagicSchool::Abjuration,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Yourself(Some(AOE::Sphere(30))),
+	has_v_component: true,
+	has_s_component: false,
+	m_components: None,
+	duration: Duration::Minutes(10, true),
+	description: "Divine energy radiates from you, distorting and diffusing magical energy within 30 feet of you. Until the spell ends, the sphere moves with you, centered on you. For the duration, each friendly creature in the area (including you) has advantage on saving throws against spells and other magical effects. Additionally, when an affected creature succeeds on a saving throw made against a spell or magical effect that allows it to make a saving throw to only take half damage, it instead takes no damage if it succeeds on the saving throw.",
+	upcast_description: None
+};
+
+pub static CLAIRVOYANCE: Spell = Spell
+{
+	name: "Clairvoyance",
+	level: Level::Level3,
+	school: MagicSchool::Divination,
+	is_ritual: false,
+	casting_time: CastingTime::Minutes(10),
+	range: Range::Miles(1),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a focus worth at least 100 gp, either a jeweled horn for hearing or a glass eye for seeing"),
+	duration: Duration::Minutes(10, true),
+	description: "You create an invisible sensor within range in a location familiar to you (a place you have visited or seen before) or in an obvious location that is unfamiliar to you (such as behind a door, around a corner, or in a grove of trees). The sensor remains in place for the duration, and it can't be attacked or otherwise interacted with.
+	When you cast the spell, you choose seeing or hearing. You can use the chosen sense through the sensor as if you were in its space. As your action, you can switch between seeing and hearing.
+	A creature that can see the sensor (such as a creature benefiting from see invisibility or truesight) sees a luminous, intangible orb about the size of your fist.",
+	upcast_description: None
+};
+
+pub static CLONE: Spell = Spell
+{
+	name: "Clone",
+	level: Level::Level8,
+	school: MagicSchool::Necromancy,
+	is_ritual: false,
+	casting_time: CastingTime::Hours(1),
+	range: Range::Touch,
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a diamond worth at least 1,000 gp and at least 1 cubic inch of flesh of the creature that is to be cloned, which the spell consumes, and a vessel worth at least 2,000 gp that has a sealable lid and is large enough to hold a Medium creature, such as a huge urn, coffin, mud-filled cyst in the ground, or crystal container filled with salt water"),
+	duration: Duration::Instant,
+	description: "This spell grows an inert duplicate of a living creature as a safeguard against death. This clone forms inside the vessel used in the spell’s casting and grows to full size and maturity after 120 days; you can also choose to have the clone be a younger version of the same creature. It remains inert and endures indefinitely, as long as its vessel remains undisturbed.
+	At any time after the clone matures, if the original creature dies, its soul transfers to the clone, provided that the soul is free and willing to return.
+	The clone is physically identical to the original and has the same personality, memories, and abilities, but none of the original's equipment. The original creature's physical remains, if they still exist, become inert and can't thereafter be restored to life, since the creature's soul is elsewhere.",
+	upcast_description: None
+};
+
+pub static CLOUD_OF_DAGGERS: Spell = Spell
+{
+	name: "Cloud of Daggers",
+	level: Level::Level2,
+	school: MagicSchool::Conjuration,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(60),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a sliver of glass"),
+	duration: Duration::Minutes(1, true),
+	description: "You fill the air with spinning daggers in a cube 5 feet on each side, centered on a point you choose within range. A creature takes 4d4 slashing damage when it enters the spell's area for the first time on a turn or starts its turn there.",
+	upcast_description: Some("When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 2d4 for each slot level above 2nd.")
+};
+
+pub static CLOUDKILL: Spell = Spell
+{
+	name: "Cloudkill",
+	level: Level::Level5,
+	school: MagicSchool::Conjuration,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(120),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Minutes(10, true),
+	description: "You create a 20-foot-radius sphere of poisonous, yellow-green fog centered on a point you choose within range. The fog spreads around corners. It lasts for the duration or until strong wind disperses the fog, ending the spell. Its area is heavily obscured.
+	When a creature enters the spell's area for the first time on a turn or starts its turn there, that creature must make a Constitution saving throw. The creature takes 5d8 poison damage on a failed save, or half as much damage on a successful one. Creatures are affected even if they hold their breath or don't need to breathe.
+	The fog moves 10 feet away from you at the start of each of your turns, rolling along the surface of the ground. The vapors, being heavier than air, sink to the lowest level of the land, even pouring down openings.",
+	upcast_description: Some("When you cast this spell using a spell slot of 6th level or higher, the damage increases by 1d8 for each slot level above 5th.")
+};
+
+pub static COLOR_SPRAY: Spell = Spell
+{
+	name: "Color Spray",
+	level: Level::Level1,
+	school: MagicSchool::Illusion,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Yourself(Some(AOE::Cone(15))),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Rounds(1, false),
+	description: "A dazzling array of flashing, colored light springs from your hand. Roll 6d10; the total is how many hit points of creatures this spell can affect. Creatures in a 15-foot cone originating from you are affected in ascending order of their current hit points (ignoring unconscious creatures and creatures that can't see).
+	Starting with the creature that has the lowest current hit points, each creature affected by this spell is blinded until the end of your next turn. Subtract each creature's hit points from the total before moving on to the creature with the next lowest hit points. A creature's hit points must be equal to or less than the remaining total for that creature to be affected.",
+	upcast_description: Some("When you cast this spell using a spell slot of 2nd level or higher, roll an additional 2d10 for each slot level above 1st.")
+};
+
+pub static COMMAND: Spell = Spell
+{
+	name: "Command",
+	level: Level::Level1,
+	school: MagicSchool::Enchantment,
+	is_ritual: true,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(60),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Rounds(1, false),
+	description: "You speak a one-word command to a creature you can see within range. The target must succeed on a Wisdom saving throw or follow the command on its next turn. The spell has no effect if the target is undead, if it doesn't understand your language, or if your command is directly harmful to it.
+	Some typical commands and their effects follow. You might issue a command other than one described here. If you do so, the DM determines how the target behaves. If the target is prevented from following your command, the spell ends.
+	Approach: The target moves toward you by the shortest and most direct route, ending its turn if it moves within 5 feet of you.
+	Drop: The target drops whatever it is holding and then ends its turn.
+	Flee: The target spends its turn moving away from you by the fastest available means.
+	Grovel: The target falls prone and then ends its turn.
+	Halt. The target stays where it is and takes no actions.",
+	upcast_description: Some("When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional creature for each slot level above 1st. The creatures must be within 30 feet of each other when you target them.")
+};
+
+pub static COMMUNE: Spell = Spell
+{
+	name: "Commune",
+	level: Level::Level5,
+	school: MagicSchool::Divination,
+	is_ritual: true,
+	casting_time: CastingTime::Minutes(1),
+	range: Range::Yourself(None),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("incense and a vial of holy or unholy water"),
+	duration: Duration::Minutes(1, false),
+	description: "You contact your deity or a divine proxy and ask up to three questions that can be answered with a yes or no. You must ask your questions before the spell ends. You receive a correct answer for each question.
+	Divine beings aren't necessarily omniscient, so you might receive \"unclear\" as an answer if a question pertains to information that lies beyond the deity's knowledge. In a case where a one-word answer could be misleading or contrary to the deity's interests, the DM might offer a short phrase as an answer instead.
+	If you cast the spell two or more times before finishing your next long rest, there is a cumulative 25 percent chance for each casting after the first that you get no answer. The DM makes this roll in secret.",
+	upcast_description: None
+};
+
+pub static COMMUNE_WITH_NATURE: Spell = Spell
+{
+	name: "Commune With Nature",
+	level: Level::Level5,
+	school: MagicSchool::Divination,
+	is_ritual: true,
+	casting_time: CastingTime::Minutes(1),
+	range: Range::Yourself(None),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Instant,
+	description: "You briefly become one with nature and gain knowledge of the surrounding territory. In the outdoors, the spell gives you knowledge of the land within 3 miles of you. In caves and other natural underground settings, the radius is limited to 300 feet. The spell doesn't function where nature has been replaced by construction, such as in dungeons and towns.
+	You instantly gain knowledge of up to three facts of your choice about any of the following subjects as they relate to the area:
+	- terrain and bodies of water
+	- prevalent plants, minerals, animals, or peoples
+	- powerful celestials, fey, fiends, elementals, or undead
+	- influence from other planes of existence
+	- buildings
+	For example, you could determine the location of powerful undead in the area, the location of major sources of safe drinking water, and the location of any nearby towns.",
+	upcast_description: None
+};
+
+pub static COMPELLED_DUEL: Spell = Spell
+{
+	name: "Compelled Duel",
+	level: Level::Level1,
+	school: MagicSchool::Enchantment,
+	is_ritual: false,
+	casting_time: CastingTime::BonusAction,
+	range: Range::Feet(30),
+	has_v_component: true,
+	has_s_component: false,
+	m_components: None,
+	duration: Duration::Minutes(1, true),
+	description: "You attempt to compel a creature into a duel. One creature that you can see within range must make a Wisdom saving throw. On a failed save, the creature is drawn to you, compelled by your divine demand. For the duration, it has disadvantage on attack rolls against creatures other than you, and must make a Wisdom saving throw each time it attempts to move to a space that is more than 30 feet away from you; if it succeeds on this saving throw, this spell doesn't restrict the target's movement for that turn.
+	The spell ends if you attack any other creature, if you cast a spell that targets a hostile creature other than the target, if a creature friendly to you damages the target or casts a harmful spell on it, or if you end your turn more than 30 feet away from the target.",
+	upcast_description: None
+};
+
+pub static COMPREHEND_LANGUAGES: Spell = Spell
+{
+	name: "Comprehend Languages",
+	level: Level::Level1,
+	school: MagicSchool::Divination,
+	is_ritual: true,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Yourself(None),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a pinch of soot and salt"),
+	duration: Duration::Hours(1, false),
+	description: "For the duration, you understand the literal meaning of any spoken language that you hear. You also understand any written language that you see, but you must be touching the surface on which the words are written. It takes about 1 minute to read one page of text.
+	This spell doesn't decode secret messages in a text or a glyph, such as an arcane sigil, that isn't part of a written language.",
+	upcast_description: None
+};
+
+pub static COMPULSION: Spell = Spell
+{
+	name: "Compulsion",
+	level: Level::Level4,
+	school: MagicSchool::Enchantment,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(30),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Minutes(1, true),
+	description: "Creatures of your choice that you can see within range and that can hear you must make a Wisdom saving throw. A target automatically succeeds on this saving throw if it can't be charmed. On a failed save, a target is affected by this spell. Until the spell ends, you can use a bonus action on each of your turns to designate a direction that is horizontal to you. Each affected target must use as much of its movement as possible to move in that direction on its next turn. It can take its action before it moves. After moving in this way, it can make another Wisdom saving to try to end the effect.
+	A target isn't compelled to move into an obviously deadly hazard, such as a fire or pit, but it will provoke opportunity attacks to move in the designated direction.",
+	upcast_description: None
+};
+
+pub static CONE_OF_COLD: Spell = Spell
+{
+	name: "Cone of Cold",
+	level: Level::Level5,
+	school: MagicSchool::Evocation,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Yourself(Some(AOE::Cone(60))),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a small crystal or glass cone"),
+	duration: Duration::Instant,
+	description: "A blast of cold air erupts from your hands. Each creature in a 60-foot cone must make a Constitution saving throw. A creature takes 8d8 cold damage on a failed save, or half as much damage on a successful one.
+	A creature killed by this spell becomes a frozen statue until it thaws.",
+	upcast_description: Some("When you cast this spell using a spell slot of 6th level or higher, the damage increases by 1d8 for each slot level above 5th.")
+};
+
+pub static CONFUSION: Spell = Spell
+{
+	name: "Confusion",
+	level: Level::Level4,
+	school: MagicSchool::Enchantment,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(90),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("three nut shells"),
+	duration: Duration::Minutes(1, true),
+	description: "This spell assaults and twists creatures' minds, spawning delusions and provoking uncontrolled action. Each creature in a 10-foot-radius sphere centered on a point you choose within range must succeed on a Wisdom saving throw when you cast this spell or be affected by it.
+	An affected target can't take reactions and must roll a d10 at the start of each of its turns to determine its behavior for that turn.
+	d10 | Behavior
+	1 | The creature uses all its movement to move in a random direction. To determine the direction, roll a d8 and assign a direction to each die face. The creature doesn't take an action this turn.
+	2-6 | The creature doesn't move or take actions this turn.
+	7-8 | The creature uses its action to make a melee attack against a randomly determined creature within its reach. If there is no creature within its reach, the creature does nothing this turn.
+	9-10 | The creature can act and move normally.
+	At the end of each of its turns, an affected target can make a Wisdom saving throw. If it succeeds, this effect ends for that target.",
+	upcast_description: Some("When you cast this spell using a spell slot of 5th level or higher, the radius of the sphere increases by 5 feet for each slot level above 4th.")
+};
+
 // -----------------------------------------------------------------------------------------------------
 // DONT FORGET TO ADD TO THE SPELL LIST
 // -----------------------------------------------------------------------------------------------------
@@ -765,7 +1140,7 @@ pub static FIRE_BOLT: Spell = Spell
 	upcast_description: None
 };
 
-pub static SPELL_LIST: [&Spell; 41] =
+pub static SPELL_LIST: [&Spell; 62] =
 [
 	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER,
 	&ANIMAL_SHAPES, &ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL,
@@ -774,5 +1149,10 @@ pub static SPELL_LIST: [&Spell; 41] =
 	&AURA_OF_PURITY, &AURA_OF_VITALITY, &AWAKEN, &BANE, &BANISHING_SMITE,
 	&BANISHMENT, &BARKSKIN, &BEACON_OF_HOPE, &BEAST_SENSE, &BESTOW_CURSE,
 	&BIGBYS_HAND, &BLADE_BARRIER, &BLADE_WARD, &BLESS, &BLIGHT, &BLINDING_SMITE,
-	&BLINDNESS_DEAFNESS, &BLINK, &BLUR, &BRANDING_SMITE, &BURNING_HANDS
+	&BLINDNESS_DEAFNESS, &BLINK, &BLUR, &BRANDING_SMITE, &BURNING_HANDS,
+	&CALL_LIGHTNING, &CALM_EMOTIONS, &CHAIN_LIGHTNING, &CHARM_PERSON, &CHILL_TOUCH,
+	&CHROMATIC_ORB, &CIRCLE_OF_DEATH, &CIRCLE_OF_POWER, &CLAIRVOYANCE, &CLONE,
+	&CLOUD_OF_DAGGERS, &CLOUDKILL, &COLOR_SPRAY, &COMMAND, &COMMUNE,
+	&COMMUNE_WITH_NATURE, &COMPELLED_DUEL, &COMPREHEND_LANGUAGES, &COMPULSION,
+	&CONE_OF_COLD, &CONFUSION
 ];
