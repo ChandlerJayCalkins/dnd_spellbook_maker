@@ -1831,6 +1831,72 @@ pub static DISPEL_EVIL_AND_GOOD: Spell = Spell
 	upcast_description: None
 };
 
+pub static DISPEL_MAGIC: Spell = Spell
+{
+	name: "Dispel Magic",
+	level: Level::Level3,
+	school: MagicSchool::Abjuration,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(120),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Instant,
+	description: "Choose one creature, object, or magical effect within range. Any spell of 3rd level or lower on the target ends. For each spell of 4th level or higher on the target, make an ability check using your spellcasting ability. The DC equals 10 + the spell's level. On a successful check, the spell ends.",
+	upcast_description: Some("When you cast this spell using a spell slot of 4th level or higher, you automatically end the effects of a spell on the target if the spell's level is equal to or less than the level of the spell slot you used.")
+};
+
+pub static DISSONANT_WHISPERS: Spell = Spell
+{
+	name: "Dissonant Whispers",
+	level: Level::Level1,
+	school: MagicSchool::Enchantment,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(60),
+	has_v_component: true,
+	has_s_component: false,
+	m_components: None,
+	duration: Duration::Instant,
+	description: "You whisper a discordant melody that only one creature of your choice within range can hear, wracking it with terrible pain. The target must make a Wisdom saving throw. On a failed save, it takes 3d6 psychic damage and must immediately use its reaction, if available, to move as far as its speed allows away from you. The creature doesn't move into obviously dangerous ground, such as a fire or a pit. On a successful save, the target takes half as much damage and doesn't have to move away. A deafened creature automatically succeeds on the save.",
+	upcast_description: Some("When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st.")
+};
+
+pub static DIVINATION: Spell = Spell
+{
+	name: "Divination",
+	level: Level::Level4,
+	school: MagicSchool::Divination,
+	is_ritual: true,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Yourself(None),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("incense and a sacrificial offering appropriate to your religion, together worth at least 25 gp, which the spell consumes"),
+	duration: Duration::Instant,
+	description: "Your magic and an offering put you in contact with a god or a god's servants. You ask a single question concerning a specific goal, event, or activity to occur within 7 days. The DM offers a truthful reply. The reply might be a short phrase, a cryptic rhyme, or an omen.
+	The spell doesn't take into account any possible circumstances that might change the outcome, such as the casting of additional spells or the loss or gain of a companion.
+	If you cast the spell two or more times before finishing your next long rest, there is a cumulative 25 percent chance for each casting after the first that you get a random reading. The DM makes this roll in secret.",
+	upcast_description: None
+};
+
+pub static DIVINE_FAVOR: Spell = Spell
+{
+	name: "Divine Favor",
+	level: Level::Level1,
+	school: MagicSchool::Evocation,
+	is_ritual: false,
+	casting_time: CastingTime::BonusAction,
+	range: Range::Yourself(None),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Minutes(1, true),
+	description: "Your prayer empowers you with divine radiance. Until the spell ends, your weapon attacks deal an extra 1d4 radiant damage on a hit.",
+	upcast_description: None
+};
+
 // -----------------------------------------------------------------------------------------------------
 // DONT FORGET TO ADD TO THE SPELL LIST
 // -----------------------------------------------------------------------------------------------------
@@ -1868,7 +1934,7 @@ pub static FIRE_BOLT: Spell = Spell
 	upcast_description: None
 };
 
-pub static SPELL_LIST: [&Spell; 101] =
+pub static SPELL_LIST: [&Spell; 105] =
 [
 	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER,
 	&ANIMAL_SHAPES, &ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL,
@@ -1891,5 +1957,6 @@ pub static SPELL_LIST: [&Spell; 101] =
 	&DANCING_LIGHTS, &DARKNESS, &DARKVISION, &DAYLIGHT, &DEATH_WARD,
 	&DELAYED_BLAST_FIREBALL, &DEMIPLANE, &DESTRUCTIVE_WAVE, &DETECT_EVIL_AND_GOOD,
 	&DETECT_MAGIC, &DETECT_POISON_AND_DISEASE, &DETECT_THOUGHTS, &DIMENSION_DOOR,
-	&DISGUISE_SELF, &DISINTEGRATE, &DISPEL_EVIL_AND_GOOD
+	&DISGUISE_SELF, &DISINTEGRATE, &DISPEL_EVIL_AND_GOOD, &DISPEL_MAGIC,
+	&DISSONANT_WHISPERS, &DIVINATION, &DIVINE_FAVOR
 ];
