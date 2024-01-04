@@ -245,7 +245,8 @@ pub enum Duration
 	Years(u16, bool),
 	DispelledOrTriggered(bool),
 	UntilDispelled(bool),
-	Permanent
+	Permanent,
+	Special(bool)
 }
 
 // Converts spell durations into strings
@@ -316,7 +317,13 @@ impl fmt::Display for Duration
 				if *c { format!("Concentration, up {}", s) }
 				else { s }
 			}
-			Self::Permanent => String::from("Permanent")
+			Self::Permanent => String::from("Permanent"),
+			Self::Special(c) =>
+			{
+				let s = String::from("Special");
+				if *c {format!("Concentration, {}", s) }
+				else { s }
+			}
 		};
 		write!(f, "{}", text)
 	}
