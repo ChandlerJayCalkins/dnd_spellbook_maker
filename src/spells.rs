@@ -170,8 +170,6 @@ impl<'a> fmt::Display for CastingTime<'a>
 #[derive(Clone, Copy, Debug)]
 pub enum AOE
 {
-	// No AOE
-	None,
 	// u16 defines length of line in feet (width should be in spell description)
 	Line(u16),
 	// u16 defines length / height and diameter of cone in feet
@@ -191,12 +189,11 @@ impl fmt::Display for AOE
 	{
 		let text = match self
 		{
-			Self::None => String::from(""),
-			Self::Line(l) => format!(" ({}-foot line)", l),
-			Self::Cone(l) => format!(" ({}-foot cone)", l),
-			Self::Cube(l) => format!(" ({}-foot cube)", l),
-			Self::Sphere(r) => format!(" ({}-foot sphere)", r),
-			Self::Cylinder(r, h) => format!(" ({}-foot radius, {}-foot tall cylinder)", r, h)
+			Self::Line(l) => format!("({}-foot line)", l),
+			Self::Cone(l) => format!("({}-foot cone)", l),
+			Self::Cube(l) => format!("({}-foot cube)", l),
+			Self::Sphere(r) => format!("({}-foot sphere)", r),
+			Self::Cylinder(r, h) => format!("({}-foot radius, {}-foot tall cylinder)", r, h)
 		};
 		write!(f, "{}", text)
 	}
@@ -206,7 +203,7 @@ impl fmt::Display for AOE
 #[derive(Clone, Copy, Debug)]
 pub enum Range
 {
-	Yourself(AOE),
+	Yourself(Option<AOE>),
 	Touch,
 	Feet(u16),
 	Miles(u16)
@@ -219,7 +216,14 @@ impl fmt::Display for Range
 	{
 		let text = match self
 		{
-			Self::Yourself(a) => format!("Self{}", a),
+			Self::Yourself(o) =>
+			{
+				match o
+				{
+					None => String::from("Self"),
+					Some(a) => format!("Self {}", a)
+				}
+			}
 			Self::Touch => String::from("Touch"),
 			Self::Feet(r) => if *r == 1 { String::from("1 foot") } else { format!("{} feet", r) },
 			Self::Miles(r) => get_amount_string(*r, "mile")

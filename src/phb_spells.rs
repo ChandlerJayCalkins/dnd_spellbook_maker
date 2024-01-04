@@ -58,7 +58,7 @@ pub static ALTER_SELF: Spell = Spell
 	school: MagicSchool::Transmutation,
 	is_ritual: false,
 	casting_time: CastingTime::Actions(1),
-	range: Range::Yourself(AOE::None),
+	range: Range::Yourself(None),
 	has_v_component: true,
 	has_s_component: true,
 	m_components: None,
@@ -171,7 +171,7 @@ pub static ANTILIFE_SHELL: Spell = Spell
 	school: MagicSchool::Abjuration,
 	is_ritual: false,
 	casting_time: CastingTime::Actions(1),
-	range: Range::Yourself(AOE::Sphere(10)),
+	range: Range::Yourself(Some(AOE::Sphere(10))),
 	has_v_component: true,
 	has_s_component: true,
 	m_components: None,
@@ -189,7 +189,7 @@ pub static ANTIMAGIC_FIELD: Spell = Spell
 	school: MagicSchool::Abjuration,
 	is_ritual: false,
 	casting_time: CastingTime::Actions(1),
-	range: Range::Yourself(AOE::Sphere(10)),
+	range: Range::Yourself(Some(AOE::Sphere(10))),
 	has_v_component: true,
 	has_s_component: true,
 	m_components: Some("a pinch of powered iron or iron filings"),
@@ -288,7 +288,7 @@ pub static ARMOR_OF_AGATHYS: Spell = Spell
 	school: MagicSchool::Abjuration,
 	is_ritual: false,
 	casting_time: CastingTime::Actions(1),
-	range: Range::Yourself(AOE::None),
+	range: Range::Yourself(None),
 	has_v_component: true,
 	has_s_component: true,
 	m_components: Some("a cup of water"),
@@ -304,7 +304,7 @@ pub static ARMS_OF_HADAR: Spell = Spell
 	school: MagicSchool::Conjuration,
 	is_ritual: false,
 	casting_time: CastingTime::Actions(1),
-	range: Range::Yourself(AOE::Sphere(10)),
+	range: Range::Yourself(Some(AOE::Sphere(10))),
 	has_v_component: true,
 	has_s_component: true,
 	m_components: None,
@@ -341,7 +341,7 @@ pub static AUGURY: Spell = Spell
 	school: MagicSchool::Divination,
 	is_ritual: true,
 	casting_time: CastingTime::Minutes(1),
-	range: Range::Yourself(AOE::None),
+	range: Range::Yourself(None),
 	has_v_component: true,
 	has_s_component: true,
 	m_components: Some("specially marked sticks, bones, or similar tokens worth at least 25 gp"),
@@ -363,7 +363,7 @@ pub static AURA_OF_LIFE: Spell = Spell
 	school: MagicSchool::Abjuration,
 	is_ritual: false,
 	casting_time: CastingTime::Actions(1),
-	range: Range::Yourself(AOE::Sphere(30)),
+	range: Range::Yourself(Some(AOE::Sphere(30))),
 	has_v_component: true,
 	has_s_component: false,
 	m_components: None,
@@ -379,7 +379,7 @@ pub static AURA_OF_PURITY: Spell = Spell
 	school: MagicSchool::Abjuration,
 	is_ritual: false,
 	casting_time: CastingTime::Actions(1),
-	range: Range::Yourself(AOE::Sphere(30)),
+	range: Range::Yourself(Some(AOE::Sphere(30))),
 	has_v_component: true,
 	has_s_component: false,
 	m_components: None,
@@ -395,7 +395,7 @@ pub static AURA_OF_VITALITY: Spell = Spell
 	school: MagicSchool::Evocation,
 	is_ritual: false,
 	casting_time: CastingTime::Actions(1),
-	range: Range::Yourself(AOE::Sphere(30)),
+	range: Range::Yourself(Some(AOE::Sphere(30))),
 	has_v_component: true,
 	has_s_component: false,
 	m_components: None,
@@ -444,7 +444,7 @@ pub static BANISHING_SMITE: Spell = Spell
 	school: MagicSchool::Abjuration,
 	is_ritual: false,
 	casting_time: CastingTime::BonusAction,
-	range: Range::Yourself(AOE::None),
+	range: Range::Yourself(None),
 	has_v_component: true,
 	has_s_component: false,
 	m_components: None,
@@ -586,7 +586,7 @@ pub static BLADE_WARD: Spell = Spell
 	school: MagicSchool::Abjuration,
 	is_ritual: false,
 	casting_time: CastingTime::Actions(1),
-	range: Range::Yourself(AOE::None),
+	range: Range::Yourself(None),
 	has_v_component: true,
 	has_s_component: true,
 	m_components: None,
@@ -629,6 +629,23 @@ pub static BLIGHT: Spell = Spell
 	upcast_description: Some("When you cast this spell using a spell slot of 5th level or higher, the damage increases by 1d8 for each slot level above 4th.")
 };
 
+pub static BLINDING_SMITE: Spell = Spell
+{
+	name: "Blinding Smite",
+	level: Level::Level3,
+	school: MagicSchool::Evocation,
+	is_ritual: false,
+	casting_time: CastingTime::BonusAction,
+	range: Range::Yourself(None),
+	has_v_component: true,
+	has_s_component: false,
+	m_components: None,
+	duration: Duration::Minutes(1, true),
+	description: "The next time you hit a creature with a melee weapon attack during this spell's duration, your weapon flares with bright light, and the attack deals an extra 3d8 radiant damage to the target. Additionally, the target must succeed on a Constitution saving throw or be blinded until the spell ends.
+	A creature blinded by this spell makes another Constitution saving throw at the end of each of its turns. On a successful save, it is no longer blinded.",
+	upcast_description: None
+};
+
 // -----------------------------------------------------------------------------------------------------
 // DONT FORGET TO ADD TO THE SPELL LIST
 // -----------------------------------------------------------------------------------------------------
@@ -666,7 +683,7 @@ pub static FIRE_BOLT: Spell = Spell
 	upcast_description: None
 };
 
-pub static SPELL_LIST: [&Spell; 35] =
+pub static SPELL_LIST: [&Spell; 36] =
 [
 	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER,
 	&ANIMAL_SHAPES, &ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL,
@@ -674,5 +691,5 @@ pub static SPELL_LIST: [&Spell; 35] =
 	&ARMOR_OF_AGATHYS, &ARMS_OF_HADAR, &ASTRAL_PROJECTION, &AUGURY, &AURA_OF_LIFE,
 	&AURA_OF_PURITY, &AURA_OF_VITALITY, &AWAKEN, &BANE, &BANISHING_SMITE,
 	&BANISHMENT, &BARKSKIN, &BEACON_OF_HOPE, &BEAST_SENSE, &BESTOW_CURSE,
-	&BIGBYS_HAND, &BLADE_BARRIER, &BLADE_WARD, &BLESS, &BLIGHT
+	&BIGBYS_HAND, &BLADE_BARRIER, &BLADE_WARD, &BLESS, &BLIGHT, &BLINDING_SMITE
 ];
