@@ -471,6 +471,54 @@ pub static BANISHMENT: Spell = Spell
 	upcast_description: Some("When you cast this spell using a spell slot of 5th level or higher, you can target one additional creature for each slot level above 4th.")
 };
 
+pub static BARKSKIN: Spell = Spell
+{
+	name: "Barkskin",
+	level: Level::Level2,
+	school: MagicSchool::Transmutation,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Touch,
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a handful of oak bark"),
+	duration: Duration::Hours(1, true),
+	description: "You touch a willing creature. Until the spell ends, the target's skin has a rough, bark-like appearance, and the target's AC can't be less than 16, regardless of what kind of armor it is wearing.",
+	upcast_description: None
+};
+
+pub static BEACON_OF_HOPE: Spell = Spell
+{
+	name: "Beacon of Hope",
+	level: Level::Level3,
+	school: MagicSchool::Abjuration,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(30),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Minutes(1, true),
+	description: "This spell bestows hope and vitality. Choose any number of creatures within range. For the duration, each target has advantage on Wisdom saving throws and death saving throws, and regains the maximum number of hit points possible from any healing.",
+	upcast_description: None
+};
+
+pub static BEAST_SENSE: Spell = Spell
+{
+	name: "Beast Sense",
+	level: Level::Level2,
+	school: MagicSchool::Divination,
+	is_ritual: true,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Touch,
+	has_v_component: false,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Hours(1, true),
+	description: "You touch a willing beast. For the duration of the spell, you can use your action to see through the beast's eyes and hear what it hears, and continue to do so until you use your action to return to your normal senses. While perceiving through the beast's senses, you gain the benefits of any special senses possessed by that creature, though you are blinded and deafened to your own surroundings.",
+	upcast_description: None
+};
+
 // -----------------------------------------------------------------------------------------------------
 // DONT FORGET TO ADD TO THE SPELL LIST
 // -----------------------------------------------------------------------------------------------------
@@ -508,12 +556,12 @@ pub static FIRE_BOLT: Spell = Spell
 	upcast_description: None
 };
 
-pub static SPELL_LIST: [&Spell; 26] =
+pub static SPELL_LIST: [&Spell; 29] =
 [
 	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER,
 	&ANIMAL_SHAPES, &ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL,
 	&ANTIMAGIC_FIELD, &ANTIPATHY_SYMPATHY, &ARCANE_EYE, &ARCANE_GATE, &ARCANE_LOCK,
 	&ARMOR_OF_AGATHYS, &ARMS_OF_HADAR, &ASTRAL_PROJECTION, &AUGURY, &AURA_OF_LIFE,
 	&AURA_OF_PURITY, &AURA_OF_VITALITY, &AWAKEN, &BANE, &BANISHING_SMITE,
-	&BANISHMENT
+	&BANISHMENT, &BARKSKIN, &BEACON_OF_HOPE, &BEAST_SENSE
 ];
