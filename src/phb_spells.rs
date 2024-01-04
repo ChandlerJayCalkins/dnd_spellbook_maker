@@ -421,6 +421,56 @@ pub static AWAKEN: Spell = Spell
 	upcast_description: None
 };
 
+pub static BANE: Spell = Spell
+{
+	name: "Bane",
+	level: Level::Level1,
+	school: MagicSchool::Enchantment,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(30),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a drop of blood"),
+	duration: Duration::Minutes(1, true),
+	description: "Up to three creatures of your choice that you can see within range must make Charisma saving throws. Whenever a target the fails this saving throw makes an attack roll or a saving throw before the spell ends, the target must roll a d4 and subtract the number rolled from the attack roll or saving throw.",
+	upcast_description: Some("When you cast this spell using a spell slot of 2nd level or higher, you can target one additional creature for each slot level above 1st.")
+};
+
+pub static BANISHING_SMITE: Spell = Spell
+{
+	name: "Banishing Smite",
+	level: Level::Level5,
+	school: MagicSchool::Abjuration,
+	is_ritual: false,
+	casting_time: CastingTime::BonusAction,
+	range: Range::Yourself(AOE::None),
+	has_v_component: true,
+	has_s_component: false,
+	m_components: None,
+	duration: Duration::Minutes(1, true),
+	description: "The next time you hit a creature with a weapon attack before this spell ends, your weapon crackles with force, and the attack deals an extra 5d10 force damage to the target. Additionally, if this attack reduces the target to 50 hit points or fewer, you banish it. If the target is native to a different plane of existence than the one you're on, the target disappears, returning to its home plane. If the target is native to the plane you're on, the creature vanishes into a harmless demiplane. While there, the target is incapacitated. It remains there until the spell ends, at which point the target reappears in the space if left or in the nearest unoccupied space if that space is occupied.",
+	upcast_description: None
+};
+
+pub static BANISHMENT: Spell = Spell
+{
+	name: "Banishment",
+	level: Level::Level4,
+	school: MagicSchool::Abjuration,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(60),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("an item distasteful to the target"),
+	duration: Duration::Minutes(1, true),
+	description: "You attempt to send one creature that you can see within range to another plane of existence. The target must succeed on a Charisma saving throw or be banished.
+	If the target is native to the plane of existence you're on, you banish the target to a harmless demiplane. While there, the target is incapacitated. The target remains there until the spell ends, at which point the target reappears in the space it left or in the nearest unoccupied space if that space is occupied.
+	If the target is native to a different plane of existence than the one you're on, the target is banished with a faint popping noise, returning to its home plane. If the spell ends before 1 minute has passed, the target reappears in the space it left or in the nearest unoccupied space if that space is occupied. Otherwise, the target doesn't return.",
+	upcast_description: Some("When you cast this spell using a spell slot of 5th level or higher, you can target one additional creature for each slot level above 4th.")
+};
+
 // -----------------------------------------------------------------------------------------------------
 // DONT FORGET TO ADD TO THE SPELL LIST
 // -----------------------------------------------------------------------------------------------------
@@ -458,11 +508,12 @@ pub static FIRE_BOLT: Spell = Spell
 	upcast_description: None
 };
 
-pub static SPELL_LIST: [&Spell; 23] =
+pub static SPELL_LIST: [&Spell; 26] =
 [
 	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER,
 	&ANIMAL_SHAPES, &ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL,
 	&ANTIMAGIC_FIELD, &ANTIPATHY_SYMPATHY, &ARCANE_EYE, &ARCANE_GATE, &ARCANE_LOCK,
 	&ARMOR_OF_AGATHYS, &ARMS_OF_HADAR, &ASTRAL_PROJECTION, &AUGURY, &AURA_OF_LIFE,
-	&AURA_OF_PURITY, &AURA_OF_VITALITY, &AWAKEN
+	&AURA_OF_PURITY, &AURA_OF_VITALITY, &AWAKEN, &BANE, &BANISHING_SMITE,
+	&BANISHMENT
 ];
