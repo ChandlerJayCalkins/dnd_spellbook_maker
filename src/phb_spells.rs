@@ -695,6 +695,39 @@ pub static BLUR: Spell = Spell
 	upcast_description: None
 };
 
+pub static BRANDING_SMITE: Spell = Spell
+{
+	name: "Branding Smite",
+	level: Level::Level2,
+	school: MagicSchool::Evocation,
+	is_ritual: false,
+	casting_time: CastingTime::BonusAction,
+	range: Range::Yourself(None),
+	has_v_component: true,
+	has_s_component: false,
+	m_components: None,
+	duration: Duration::Minutes(1, true),
+	description: "The next time you hit a creature with a weapon attack before this spell ends, the weapon gleams with astral radiance as you strike. The attack deals an extra 2d6 radiant damage to the target, which becomes visible if it's invisible, and the target sheds dim light in a 5 foot radius and can't become invisible until the spell ends.",
+	upcast_description: Some("When you cast this spell using a spell slot of 3rd level or higher, the extra damage increases by 1d6 for each slot level above 2nd.")
+};
+
+pub static BURNING_HANDS: Spell = Spell
+{
+	name: "Burning Hands",
+	level: Level::Level1,
+	school: MagicSchool::Evocation,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Yourself(Some(AOE::Cone(15))),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Instant,
+	description: "As you hold your hands with thumbs touching and fingers spread, a thin sheet of flames shoots forth from your outstretched fingertips. Each creature in a 15-foot cone must make a Dexterity saving throw. A creature takes 3d6 damage on a failed save, or half as much damage on a successful one.
+	The fire ignites any flammable objects in the area that aren't being worn or carried.",
+	upcast_description: Some("When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st")
+};
+
 // -----------------------------------------------------------------------------------------------------
 // DONT FORGET TO ADD TO THE SPELL LIST
 // -----------------------------------------------------------------------------------------------------
@@ -732,7 +765,7 @@ pub static FIRE_BOLT: Spell = Spell
 	upcast_description: None
 };
 
-pub static SPELL_LIST: [&Spell; 39] =
+pub static SPELL_LIST: [&Spell; 41] =
 [
 	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER,
 	&ANIMAL_SHAPES, &ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL,
@@ -741,5 +774,5 @@ pub static SPELL_LIST: [&Spell; 39] =
 	&AURA_OF_PURITY, &AURA_OF_VITALITY, &AWAKEN, &BANE, &BANISHING_SMITE,
 	&BANISHMENT, &BARKSKIN, &BEACON_OF_HOPE, &BEAST_SENSE, &BESTOW_CURSE,
 	&BIGBYS_HAND, &BLADE_BARRIER, &BLADE_WARD, &BLESS, &BLIGHT, &BLINDING_SMITE,
-	&BLINDNESS_DEAFNESS, &BLINK, &BLUR
+	&BLINDNESS_DEAFNESS, &BLINK, &BLUR, &BRANDING_SMITE, &BURNING_HANDS
 ];
