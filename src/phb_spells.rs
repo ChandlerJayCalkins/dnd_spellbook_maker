@@ -646,6 +646,55 @@ pub static BLINDING_SMITE: Spell = Spell
 	upcast_description: None
 };
 
+pub static BLINDNESS_DEAFNESS: Spell = Spell
+{
+	name: "Blindness / Deafness",
+	level: Level::Level2,
+	school: MagicSchool::Necromancy,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(30),
+	has_v_component: true,
+	has_s_component: false,
+	m_components: None,
+	duration: Duration::Minutes(1, false),
+	description: "You can blind or deafen a foe. Choose one creature that you can see within range to make a Constitution saving throw. If it fails, the target is either blinded or deafened (your choice) for the duration. At the end of each of its turns, the target can make a Constitution saving throw. On a success, the spell ends.",
+	upcast_description: Some("When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd.")
+};
+
+pub static BLINK: Spell = Spell
+{
+	name: "Blink",
+	level: Level::Level3,
+	school: MagicSchool::Transmutation,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Yourself(None),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Minutes(1, false),
+	description: "Roll a d20 at the end of each of your turns for the duration of the spell. On a roll of 11 or higher, you vanish from your current plane of existence and appear in the Ethereal Plane (the spell fails and the casting is wasted if you were already on that plane). At the start of your next turn, and when the spell ends if you are on the Ethereal Plane, you return to an unoccupied space of your choice that you can see within 10 feet of the space you vanish from. If you unoccupied space if available within that range, you appear in the nearest unoccupied space (chosen at random if more than one space if equally near). You can dismiss this spell as an action.
+	While on the Ethereal Plane, you can see and hear the plan you originated from, which is cast in shades of gray, and you can't see anything there more than 60 feet away. You can only affect and be affected by other creatures on the Ethereal Plane. Creatures that aren't there can't perceive you or interact with you, unless they have the ability to do so.",
+	upcast_description: None
+};
+
+pub static BLUR: Spell = Spell
+{
+	name: "Blur",
+	level: Level::Level2,
+	school: MagicSchool::Illusion,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Yourself(None),
+	has_v_component: true,
+	has_s_component: false,
+	m_components: None,
+	duration: Duration::Minutes(1, true),
+	description: "Your body becomes blurred, shifting and wavering to all who can see you. For the duration, any creature has disadvantage on attack rolls against you. An attacker is immune to this effect if it doesn't rely on sight, as with blindsight, or can see through illusions, as with truesight.",
+	upcast_description: None
+};
+
 // -----------------------------------------------------------------------------------------------------
 // DONT FORGET TO ADD TO THE SPELL LIST
 // -----------------------------------------------------------------------------------------------------
@@ -683,7 +732,7 @@ pub static FIRE_BOLT: Spell = Spell
 	upcast_description: None
 };
 
-pub static SPELL_LIST: [&Spell; 36] =
+pub static SPELL_LIST: [&Spell; 39] =
 [
 	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER,
 	&ANIMAL_SHAPES, &ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL,
@@ -691,5 +740,6 @@ pub static SPELL_LIST: [&Spell; 36] =
 	&ARMOR_OF_AGATHYS, &ARMS_OF_HADAR, &ASTRAL_PROJECTION, &AUGURY, &AURA_OF_LIFE,
 	&AURA_OF_PURITY, &AURA_OF_VITALITY, &AWAKEN, &BANE, &BANISHING_SMITE,
 	&BANISHMENT, &BARKSKIN, &BEACON_OF_HOPE, &BEAST_SENSE, &BESTOW_CURSE,
-	&BIGBYS_HAND, &BLADE_BARRIER, &BLADE_WARD, &BLESS, &BLIGHT, &BLINDING_SMITE
+	&BIGBYS_HAND, &BLADE_BARRIER, &BLADE_WARD, &BLESS, &BLIGHT, &BLINDING_SMITE,
+	&BLINDNESS_DEAFNESS, &BLINK, &BLUR
 ];
