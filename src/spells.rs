@@ -179,7 +179,9 @@ pub enum AOE
 	// u16 defines radius of sphere in feet
 	Sphere(u16),
 	// u16 tuple defines radius and height of cylinder in feet (respectively)
-	Cylinder(u16, u16)
+	Cylinder(u16, u16),
+	// u16 defines radius of effect in miles
+	Radius(u16)
 }
 
 // Converts AOEs into strings
@@ -193,7 +195,8 @@ impl fmt::Display for AOE
 			Self::Cone(l) => format!("({}-foot cone)", l),
 			Self::Cube(l) => format!("({}-foot cube)", l),
 			Self::Sphere(r) => format!("({}-foot sphere)", r),
-			Self::Cylinder(r, h) => format!("({}-foot radius, {}-foot tall cylinder)", r, h)
+			Self::Cylinder(r, h) => format!("({}-foot radius, {}-foot tall cylinder)", r, h),
+			Self::Radius(r) => format!("({}-mile radius)", r)
 		};
 		write!(f, "{}", text)
 	}
