@@ -2496,13 +2496,46 @@ pub static FIRE_BOLT: Spell = Spell
 	upcast_description: None
 };
 
+pub static FIRE_SHIELD: Spell = Spell
+{
+	name: "Fire Shield",
+	level: Level::Level4,
+	school: MagicSchool::Evocation,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Yourself(None),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a bit of phosphorus or a firefly"),
+	duration: Duration::Minutes(10, false),
+	description: "Thin and wispy flames wreathe your body for the duration, shedding bright light in a 10-foot radius and dim light for an additional 10 feet. You can end the spell early by using an action to dismiss it.
+	The flames provide you with a warm shield or a chill shield, as you choose. The warm shield grants you resistance to cold damage, and the chill shield grants you resistance to fire damage.
+	In addition, whenever a creature within 5 feet of you hits you with a melee attack, the shield erupts with flame. The attacker takes 2d8 fire damage from a warm shield, or 2d8 cold damage from a cold shield.",
+	upcast_description: None
+};
 
+pub static FIRE_STORM: Spell = Spell
+{
+	name: "Fire Storm",
+	level: Level::Level7,
+	school: MagicSchool::Evocation,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(150),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Instant,
+	description: "A storm made up of sheets of roaring flame appears in a location you choose within range. The area of the storm consists of up to ten 10-foot cubes, which you can arrange as you wish. Each cube must have at least one face adjacent to the face of another cube. Each creature in the area must make a Dexterity saving throw. It takes 7d10 fire damage on a failed save, or half as much damage on a successful one.
+	The fire damages objects in the area and ignites flammable objects that aren't being worn or carried. If you choose, plant life in the area is unaffected by this spell.",
+	upcast_description: None
+};
 
 // -----------------------------------------------------------------------------------------------------
 // DONT FORGET TO ADD TO THE SPELL LIST
 // -----------------------------------------------------------------------------------------------------
 
-pub static SPELL_LIST: [&Spell; 136] =
+pub static SPELL_LIST: [&Spell; 138] =
 [
 	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER,
 	&ANIMAL_SHAPES, &ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL,
@@ -2533,5 +2566,6 @@ pub static SPELL_LIST: [&Spell; 136] =
 	&ENSNARING_STRIKE, &ENTANGLE, &ENTHRALL, &ETHEREALNESS,
 	&EVARDS_BLACK_TENTACLES, &EXPEDITIOUS_RETREAT, &EYEBITE, &FABRICATE,
 	&FAERIE_FIRE, &FALSE_LIFE, &FEAR, &FEATHER_FALL, &FEEBLEMIND, &FEIGN_DEATH,
-	&FIND_FAMILIAR, &FIND_STEED, &FIND_THE_PATH, &FIND_TRAPS, &FINGER_OF_DEATH
+	&FIND_FAMILIAR, &FIND_STEED, &FIND_THE_PATH, &FIND_TRAPS, &FINGER_OF_DEATH,
+	&FIRE_SHIELD, &FIRE_STORM
 ];
