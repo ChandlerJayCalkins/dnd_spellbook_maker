@@ -463,7 +463,10 @@ mod tests
 		// Create vec of spells for testing
 		let spell_list = vec![&phb_spells::FIRE_BOLT, &phb_spells::FIREBALL];
 		// Create spellbook
-		let doc = generate_spellbook("A Wizard's Very Fancy Spellbook Used for Casting Magical Spells", spell_list).unwrap();
+		//let doc = generate_spellbook("A Wizard's Very Fancy Spellbook Used for Casting Magical Spells", spell_list).unwrap();
+		//let _ = save_spellbook(doc, "Spellbook.pdf");
+		let spellbook_name = "A Wizard's Very Fancy Spellbook Used for Casting Magical Spells";
+		let doc = generate_spellbook(spellbook_name, phb_spells::SPELL_LIST.to_vec()).unwrap();
 		let _ = save_spellbook(doc, "Spellbook.pdf");
 	}
 }
