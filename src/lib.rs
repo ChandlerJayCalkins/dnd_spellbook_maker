@@ -58,7 +58,10 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 
 // Checks when to start and stop table processing in safe_write()
 // Returns true if a table is currently being processed or just finished processing, false otherwise
-fn check_in_table(table_string: &mut String, token: &str, in_table: &mut bool) -> bool
+fn check_in_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
+background: image::DynamicImage, img_transform: &ImageTransform, table_string: &mut String, token: &str,
+in_table: &mut bool, font_size: f32, x: f64, y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale,
+newline_amount: f64) -> (bool, PdfLayerReference)
 {
 	// If currently in a table
 	if *in_table
@@ -74,7 +77,7 @@ fn check_in_table(table_string: &mut String, token: &str, in_table: &mut bool) -
 			// Set the in_table flag off
 			*in_table = false;
 		}
-		return true;
+		return (true, layer.clone());
 	}
 	// If not currently in a table and the token is the table start / end token
 	else if token == TABLE
@@ -83,9 +86,9 @@ fn check_in_table(table_string: &mut String, token: &str, in_table: &mut bool) -
 		*in_table = true;
 		// Initialize the table_string to this token
 		*table_string = token.to_string();
-		return true;
+		return (true, layer.clone());
 	}
-	false
+	(false, layer.clone())
 }
 
 // Creates a new page and returns the layer for it
@@ -139,6 +142,9 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 {
 	// The layer that gets returned
 	let mut layer_ref = (*layer).clone();
+	// Creates a new page if one needs to be created
+	layer_ref = check_new_page(doc, &layer_ref, layer_count, background.clone(), img_transform, color,
+		font_size, x, y, font);
 	// Number of millimeters to shift the text over by at the start of a new paragraph
 	let mut x_offset: f64 = x_start_offset;
 	// Split the text into paragraphs by newlines
@@ -165,7 +171,9 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 		let mut line = tokens_vec[0].to_string();
 
 		// Check if a table is currently being processed
-		let skip = check_in_table(&mut table_string, &line, &mut in_table);
+		let mut skip = false;
+		(skip, layer_ref) = check_in_table(doc, &layer_ref, layer_count, background.clone(), img_transform,
+			&mut table_string, &line, &mut in_table, font_size, x, y, font, font_size_data, font_scale, newline_amount);
 		// If a table is being processed, skip printing this text here
 		if skip { continue; }
 
@@ -173,7 +181,9 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 		for token in &tokens_vec[1..]
 		{
 			// Check if a table is currently being processed
-			let skip = check_in_table(&mut table_string, &token, &mut in_table);
+			(skip, layer_ref) = check_in_table(doc, &layer_ref, layer_count, background.clone(), img_transform,
+				&mut table_string, &line, &mut in_table, font_size, x, y, font, font_size_data, font_scale,
+				newline_amount);
 			// If a table is being processed, skip printing this text here
 			if skip { continue; }
 
