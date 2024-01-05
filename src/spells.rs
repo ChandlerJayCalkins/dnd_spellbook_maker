@@ -209,7 +209,8 @@ pub enum Range
 	Yourself(Option<AOE>),
 	Touch,
 	Feet(u16),
-	Miles(u16)
+	Miles(u16),
+	Special
 }
 
 // Converts spell ranges into strings
@@ -229,7 +230,8 @@ impl fmt::Display for Range
 			}
 			Self::Touch => String::from("Touch"),
 			Self::Feet(r) => if *r == 1 { String::from("1 foot") } else { format!("{} feet", r) },
-			Self::Miles(r) => get_amount_string(*r, "mile")
+			Self::Miles(r) => get_amount_string(*r, "mile"),
+			Self::Special => String::from("Special")
 		};
 		write!(f, "{}", text)
 	}
