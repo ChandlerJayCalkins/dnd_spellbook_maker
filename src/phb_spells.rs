@@ -2071,6 +2071,167 @@ pub static ELDRITCH_BLAST: Spell = Spell
 	upcast_description: None
 };
 
+pub static ELEMENTAL_WEAPON: Spell = Spell
+{
+	name: "Elemental Weapon",
+	level: Level::Level3,
+	school: MagicSchool::Transmutation,
+	is_ritual: true,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Touch,
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Hours(1, true),
+	description: "A nonmagical weapon you touch becomes a magic weapon. Choose one of the following damage types: acid, cold, fire, lightning, or thunder. For the duration, the weapon has a +1 bonus to attack rolls and deals an extra 1d4 damage of the chosen type when it hits.",
+	upcast_description: Some("When you cast this spell using a spell slot of 5th or 6th level, the bonus to attack rolls increases to +2 and the extra damage increases to 2d4. When you use a spell slot of 7th level or higher, the bonus increases to +3 and the extra damage increases to 3d4.")
+};
+
+pub static ENHANCE_ABILITY: Spell = Spell
+{
+	name: "Enhance Ability",
+	level: Level::Level2,
+	school: MagicSchool::Transmutation,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Touch,
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("fur or a feather from a beast"),
+	duration: Duration::Hours(1, true),
+	description: "You touch a creature and bestow upon it a magical enhancement. Choose one of the following effects; the target gains that effect until the spell ends.
+	Bear's Endurance: The target has advantage on Constitution checks. It also gains 2d6 temporary hit points, which are lost when the spell ends.
+	Bull's Strength: The target has advantage on Strength checks, and his or her carrying capacity doubles.
+	Cat's Grace: The target has advantage on Dexterity checks. It also doesn't take damage from falling 20 feet or less if it isn't incapacitated.
+	Eagle's Splendor: The target has advantage on Charisma checks.
+	Fox's Cunning: The target has advantage on Intelligence checks.
+	Owl's Wisdom: The target has advantage on Wisdom checks.",
+	upcast_description: Some("When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd.")
+};
+
+pub static ENLARGE_REDUCE: Spell = Spell
+{
+	name: "Enlarge / Reduce",
+	level: Level::Level2,
+	school: MagicSchool::Transmutation,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(30),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a pinch of powdered iron"),
+	duration: Duration::Minutes(1, true),
+	description: "You cause a creature or an object you can see within range to grow larger or smaller for the duration. Choose either a creature or an object that is neither worn nor carried. If the target is unwilling, it can make a Constitution saving throw. On a success, the spell has no effect.
+	If the target is a creature, everything it is wearing and carrying changes size with it. Any item dropped by an affected creature returns to normal size at once.
+	Enlarge: The target's size doubles in all dimensions, and its weight is multiplied by eight. This growth increases its size by one category—from Medium to Large, for example. If there isn't enough room for the target to double its size, the creature or object attains the maximum possible size in the space available. Until the spell ends, the target also has advantage on Strength checks and Strength saving throws. The target's weapons also grow to match its new size. While these weapons are enlarged, the target's attacks with them deal 1d4 extra damage.
+	Reduce: The target's size is halved in all dimensions, and its weight is reduced to one-eighth of normal. This reduction decreases its size by one category—from Medium to Small, for example. Until the spell ends, the target also has disadvantage on Strength checks and Strength saving throws. The target's weapons also shrink to match its new size. While these weapons are reduced, the target's attacks with them deal 1d4 less damage (this can't reduce the damage below 1).",
+	upcast_description: None
+};
+
+pub static ENSNARING_STRIKE: Spell = Spell
+{
+	name: "Ensnaring Strike",
+	level: Level::Level1,
+	school: MagicSchool::Conjuration,
+	is_ritual: false,
+	casting_time: CastingTime::BonusAction,
+	range: Range::Yourself(None),
+	has_v_component: true,
+	has_s_component: false,
+	m_components: None,
+	duration: Duration::Minutes(1, true),
+	description: "The next time you hit a creature with a weapon attack before this spell ends, a writhing mass of thorny vines appears at the point of impact, and the target must succeed on a Strength saving throw or be restrained by the magical vines until the spell ends. A Large or larger creature has advantage on this saving throw. If the target succeeds on the save, the vines shrivel away. While restrained by this spell, the target takes 1d6 piercing damage at the start of each of its turns. A creature restrained by the vines or one that can touch the creature can use its action to make a Strength check against your spell save DC. On a success, the target is freed.",
+	upcast_description: Some("If you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st.")
+};
+
+pub static ENTANGLE: Spell = Spell
+{
+	name: "Entangle",
+	level: Level::Level1,
+	school: MagicSchool::Conjuration,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(90),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Minutes(1, true),
+	description: "Grasping weeds and vines sprout from the ground in a 20-foot square starting from a point within range. For the duration, these plants turn the ground in the area into difficult terrain.
+	A creature in the area when you cast the spell must succeed on a Strength saving throw or be restrained by the entangling plants until the spell ends. A creature restrained by the plants can use its action to make a Strength check against your spell save DC. On a success, it frees itself.
+	When the spell ends, the conjured plants wilt away.",
+	upcast_description: None
+};
+
+pub static ENTHRALL: Spell = Spell
+{
+	name: "Enthrall",
+	level: Level::Level2,
+	school: MagicSchool::Enchantment,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(60),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Minutes(1, false),
+	description: "You weave a distracting string of words, causing creatures of your choice that you can see within range and that can hear you to make a Wisdom saving throw. Any creature that can't be charmed succeeds on this saving throw automatically, and if you or your companions are fighting a creature, it has advantage on the save. On a failed save, the target has disadvantage on Wisdom (Perception) checks made to perceive any creature other than you until the spell ends or until the target can no longer hear you. The spell ends if you are incapacitated or can no longer speak.",
+	upcast_description: None
+};
+
+pub static ETHEREALNESS: Spell = Spell
+{
+	name: "Etherealness",
+	level: Level::Level7,
+	school: MagicSchool::Transmutation,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Yourself(None),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Hours(8, false),
+	description: "You step into the border regions of the Ethereal Plane, in the area where it overlaps with your current plane. You remain in the Border Ethereal for the duration or until you use your action to dismiss the spell. During this time, you can move in any direction. If you move up or down, every foot of movement costs an extra foot. You can see and hear the plane you originated from, but everything there looks gray, and you can't see anything more than 60 feet away.
+	While on the Ethereal Plane, you can only affect and be affected by other creatures on that plane. Creatures that aren't on the Ethereal Plane can't perceive you and can't interact with you, unless a special ability or magic has given them the ability to do so.
+	You ignore all objects and effects that aren't on the Ethereal Plane, allowing you to move through objects you perceive on the plane you originated from.
+	When the spell ends, you immediately return to the plane you originated from in the spot you currently occupy. If you occupy the same spot as a solid object or creature when this happens, you are immediately shunted to the nearest unoccupied space that you can occupy and take force damage equal to twice the number of feet you are moved.
+	This spell has no effect if you cast it while you are on the Ethereal Plane or a plane that doesn't border it, such as one of the Outer Planes.",
+	upcast_description: Some("When you cast this spell using a spell slot of 8th level or higher, you can target up to three willing creatures (including you) for each slot level above 7th. The creatures must be within 10 feet of you when you cast the spell.")
+};
+
+pub static EVARDS_BLACK_TENTACLES: Spell = Spell
+{
+	name: "Evard's Black Tentacles",
+	level: Level::Level4,
+	school: MagicSchool::Conjuration,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(90),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a piece of tentacle from a giant octopus or a giant squid"),
+	duration: Duration::Minutes(1, true),
+	description: "Squirming, ebony tentacles fill a 20-foot square on ground that you can see within range. For the duration, these tentacles turn the ground in the area into difficult terrain.
+	When a creature enters the affected area for the first time on a turn or starts its turn there, the creature must succeed on a Dexterity saving throw or take 3d6 bludgeoning damage and be restrained by the tentacles until the spell ends. A creature that starts its turn in the area and is already restrained by the tentacles takes 3d6 bludgeoning damage.
+	A creature restrained by the tentacles can use its action to make a Strength or Dexterity check (its choice) against your spell save DC. On a success, it frees itself.",
+	upcast_description: None
+};
+
+pub static EXPEDITIOUS_RETREAT: Spell = Spell
+{
+	name: "Expeditious Retreat",
+	level: Level::Level1,
+	school: MagicSchool::Transmutation,
+	is_ritual: false,
+	casting_time: CastingTime::BonusAction,
+	range: Range::Yourself(None),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Minutes(1, true),
+	description: "This spell allows you to move at an incredible pace. When you cast this spell, and then as a bonus action on each of your turns until the spell ends, you can take the Dash action.",
+	upcast_description: None
+};
+
 // -----------------------------------------------------------------------------------------------------
 // DONT FORGET TO ADD TO THE SPELL LIST
 // -----------------------------------------------------------------------------------------------------
@@ -2108,7 +2269,7 @@ pub static FIRE_BOLT: Spell = Spell
 	upcast_description: None
 };
 
-pub static SPELL_LIST: [&Spell; 114] =
+pub static SPELL_LIST: [&Spell; 123] =
 [
 	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER,
 	&ANIMAL_SHAPES, &ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL,
@@ -2135,5 +2296,7 @@ pub static SPELL_LIST: [&Spell; 114] =
 	&DISPEL_EVIL_AND_GOOD, &DISPEL_MAGIC, &DISSONANT_WHISPERS, &DIVINATION,
 	&DIVINE_FAVOR, &DIVINE_WORD, &DOMINATE_BEAST, &DOMINATE_MONSTER,
 	&DOMINATE_PERSON, &DRAWMIJS_INSTANT_SUMMONS, &DREAM, &DRUIDCRAFT, &EARTHQUAKE,
-	&ELDRITCH_BLAST
+	&ELDRITCH_BLAST, &ELEMENTAL_WEAPON, &ENHANCE_ABILITY, &ENLARGE_REDUCE,
+	&ENSNARING_STRIKE, &ENTANGLE, &ENTHRALL, &ETHEREALNESS,
+	&EVARDS_BLACK_TENTACLES, &EXPEDITIOUS_RETREAT
 ];
