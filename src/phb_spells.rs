@@ -2232,6 +2232,43 @@ pub static EXPEDITIOUS_RETREAT: Spell = Spell
 	upcast_description: None
 };
 
+pub static EYEBITE: Spell = Spell
+{
+	name: "Eyebite",
+	level: Level::Level6,
+	school: MagicSchool::Necromancy,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Yourself(None),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Minutes(1, true),
+	description: "For the spell's duration, your eyes become an inky void imbued with dread power. One creature of your choice within 60 feet of you that you can see must succeed on a Wisdom saving throw or be affected by one of the following effects of your choice for the duration. On each of your turns until the spell ends, you can use your action to target another creature but can't target a creature again if it has succeeded on a saving throw against this casting of eyebite.
+	Asleep: The target falls unconscious. It wakes up if it takes any damage or if another creature uses its action to shake the sleeper awake.
+	Panicked: The target is frightened of you. On each of its turns, the frightened creature must take the Dash action and move away from you by the safest and shortest available route, unless there is nowhere to move. If the target moves to a place at least 60 feet away from you where it can no longer see you, this effect ends.
+	Sickened: The target has disadvantage on attack rolls and ability checks. At the end of each of its turns, it can make another Wisdom saving throw. If it succeeds, the effect ends.",
+	upcast_description: None
+};
+
+pub static FABRICATE: Spell = Spell
+{
+	name: "Fabricate",
+	level: Level::Level4,
+	school: MagicSchool::Transmutation,
+	is_ritual: false,
+	casting_time: CastingTime::Minutes(10),
+	range: Range::Feet(120),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Instant,
+	description: "You convert raw materials into products of the same material. For example, you can fabricate a wooden bridge from a clump of trees, a rope from a patch of hemp, and clothes from flax or wool.
+	Choose raw materials that you can see within range. You can fabricate a Large or smaller object (contained within a 10-foot cube, or eight connected 5-foot cubes), given a sufficient quantity of raw material. If you are working with metal, stone, or another mineral substance, however, the fabricated object can be no larger than Medium (contained within a single 5-foot cube). The quality of objects made by the spell is commensurate with the quality of the raw materials.
+	Creatures or magic items can't be created or transmuted by this spell. You also can't use it to create items that ordinarily require a high degree of craftsmanship, such as jewelry, weapons, glass, or armor, unless you have proficiency with the type of artisan's tools used to craft such objects.",
+	upcast_description: None
+};
+
 // -----------------------------------------------------------------------------------------------------
 // DONT FORGET TO ADD TO THE SPELL LIST
 // -----------------------------------------------------------------------------------------------------
@@ -2269,7 +2306,7 @@ pub static FIRE_BOLT: Spell = Spell
 	upcast_description: None
 };
 
-pub static SPELL_LIST: [&Spell; 123] =
+pub static SPELL_LIST: [&Spell; 125] =
 [
 	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER,
 	&ANIMAL_SHAPES, &ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL,
@@ -2298,5 +2335,5 @@ pub static SPELL_LIST: [&Spell; 123] =
 	&DOMINATE_PERSON, &DRAWMIJS_INSTANT_SUMMONS, &DREAM, &DRUIDCRAFT, &EARTHQUAKE,
 	&ELDRITCH_BLAST, &ELEMENTAL_WEAPON, &ENHANCE_ABILITY, &ENLARGE_REDUCE,
 	&ENSNARING_STRIKE, &ENTANGLE, &ENTHRALL, &ETHEREALNESS,
-	&EVARDS_BLACK_TENTACLES, &EXPEDITIOUS_RETREAT
+	&EVARDS_BLACK_TENTACLES, &EXPEDITIOUS_RETREAT, &EYEBITE, &FABRICATE
 ];
