@@ -2391,9 +2391,77 @@ pub static FIND_FAMILIAR: Spell = Spell
 	upcast_description: None
 };
 
-// -----------------------------------------------------------------------------------------------------
-// DONT FORGET TO ADD TO THE SPELL LIST
-// -----------------------------------------------------------------------------------------------------
+pub static FIND_STEED: Spell = Spell
+{
+	name: "Find Steed",
+	level: Level::Level2,
+	school: MagicSchool::Conjuration,
+	is_ritual: false,
+	casting_time: CastingTime::Minutes(10),
+	range: Range::Feet(30),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Instant,
+	description: "You summon a spirit that assumes the form of an unusually intelligent, strong, and loyal steed, creating a long-lasting bond with it. Appearing in an unoccupied space within range, the steed takes on a form that you choose: a warhorse, a pony, a camel, an elk, or a mastiff. (Your DM might allow other animals to be summoned as steeds.) The steed has the statistics of the chosen form, though it is a celestial, fey, or fiend (your choice) instead of its normal type. Additionally, if your steed has an Intelligence of 5 or less, its Intelligence becomes 6, and it gains the ability to understand one language of your choice that you speak.
+	Your steed serves you as a mount, both in combat and out, and you have an instinctive bond with it that allows you to fight as a seamless unit. While mounted on your steed, you can make any spell you cast that targets only you also target your steed.
+	When the steed drops to 0 hit points, it disappears, leaving behind no physical form. You can also dismiss your steed at any time as an action, causing it to disappear. In either case, casting this spell again summons the same steed, restored to its hit point maximum.
+	While your steed is within 1 mile of you, you can communicate with each other telepathically.
+	You can't have more than one steed bonded by this spell at a time. As an action, you can release the steed from its bond at any time, causing it to disappear.",
+	upcast_description: None
+};
+
+pub static FIND_THE_PATH: Spell = Spell
+{
+	name: "Find the Path",
+	level: Level::Level6,
+	school: MagicSchool::Divination,
+	is_ritual: false,
+	casting_time: CastingTime::Minutes(1),
+	range: Range::Yourself(None),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a set of divinatory tools - such as bones, ivory sticks, cards, teeth, or carved runes - worth 100 gp and an object from the location you wish to find"),
+	duration: Duration::Days(1, true),
+	description: "This spell allows you to find the shortest, most direct physical route to a specific fixed location that you are familiar with on the same plane of existence. If you name a destination on another plane of existence, a destination that moves (such as a mobile fortress), or a destination that isn't specific (such as \"a green dragon's lair\"), the spell fails.
+	For the duration, as long as you are on the same plane of existence as the destination, you know how far it is and in what direction it lies. While you are traveling there, whenever you are presented with a choice of paths along the way, you automatically determine which path is the shortest and most direct route (but not necessarily the safest route) to the destination.",
+	upcast_description: None
+};
+
+pub static FIND_TRAPS: Spell = Spell
+{
+	name: "Find Traps",
+	level: Level::Level2,
+	school: MagicSchool::Divination,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(120),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Instant,
+	description: "You sense the presence of any trap within range that is within line of sight. A trap, for the purpose of this spell, includes anything that would inflict a sudden or unexpected effect you consider harmful or undesirable, which was specifically intended as such by its creator. Thus, the spell would sense an area affected by the alarm spell, a glyph of warding, or a mechanical pit trap, but it would not reveal a natural weakness in the floor, an unstable ceiling, or a hidden sinkhole.
+	This spell merely reveals that a trap is present. You don't learn the location of each trap, but you do learn the general nature of the danger posed by a trap you sense.",
+	upcast_description: None
+};
+
+pub static FINGER_OF_DEATH: Spell = Spell
+{
+	name: "Finger of Death",
+	level: Level::Level7,
+	school: MagicSchool::Necromancy,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(60),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: None,
+	duration: Duration::Instant,
+	description: "You send negative energy coursing through a creature that you can see within range, causing it searing pain. The target must make a Constitution saving throw. It takes 7d8 + 30 necrotic damage on a failed save, or half as much damage on a successful one.
+	A humanoid killed by this spell rises at the start of your next turn as a zombie that is permanently under your command, following your verbal orders to the best of its ability.",
+	upcast_description: None
+};
+
 pub static FIREBALL: Spell = Spell
 {
 	name: "Fireball",
@@ -2428,7 +2496,13 @@ pub static FIRE_BOLT: Spell = Spell
 	upcast_description: None
 };
 
-pub static SPELL_LIST: [&Spell; 132] =
+
+
+// -----------------------------------------------------------------------------------------------------
+// DONT FORGET TO ADD TO THE SPELL LIST
+// -----------------------------------------------------------------------------------------------------
+
+pub static SPELL_LIST: [&Spell; 136] =
 [
 	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER,
 	&ANIMAL_SHAPES, &ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL,
@@ -2459,5 +2533,5 @@ pub static SPELL_LIST: [&Spell; 132] =
 	&ENSNARING_STRIKE, &ENTANGLE, &ENTHRALL, &ETHEREALNESS,
 	&EVARDS_BLACK_TENTACLES, &EXPEDITIOUS_RETREAT, &EYEBITE, &FABRICATE,
 	&FAERIE_FIRE, &FALSE_LIFE, &FEAR, &FEATHER_FALL, &FEEBLEMIND, &FEIGN_DEATH,
-	&FIND_FAMILIAR
+	&FIND_FAMILIAR, &FIND_STEED, &FIND_THE_PATH, &FIND_TRAPS, &FINGER_OF_DEATH
 ];
