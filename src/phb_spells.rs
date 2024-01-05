@@ -2553,11 +2553,64 @@ pub static FLAME_BLADE: Spell = Spell
 	upcast_description: Some("When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for every two slot levels above 2nd.")
 };
 
+pub static FLAME_STRIKE: Spell = Spell
+{
+	name: "Flame Strike",
+	level: Level::Level5,
+	school: MagicSchool::Evocation,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(60),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("pinch of sulfur"),
+	duration: Duration::Instant,
+	description: "A vertical column of divine fire roars down from the heavens in a location you specify. Each creature in a 10-foot-radius, 40-foot-high cylinder centered on a point within range must make a Dexterity saving throw. A creature takes 4d6 fire damage and 4d6 radiant damage on a failed save, or half as much damage on a successful one.",
+	upcast_description: Some("When you cast this spell using a spell slot of 6th level or higher, the fire damage or the radiant damage (your choice) increases by 1d6 for each slot level above 5th.")
+};
+
+pub static FLAMING_SPHERE: Spell = Spell
+{
+	name: "Flaming Sphere",
+	level: Level::Level2,
+	school: MagicSchool::Conjuration,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(60),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a bit of tallow, a pinch of brimstone, and a dustring of powdered iron"),
+	duration: Duration::Minutes(1, true),
+	description: "A 5-foot-diameter sphere of fire appears in an unoccupied space of your choice within range and lasts for the duration. Any creature that ends its turn within 5 feet of the sphere must make a Dexterity saving throw. The creature takes 2d6 fire damage on a failed save, or half as much damage on a successful one.
+	As a bonus action, you can move the sphere up to 30 feet. If you ram the sphere into a creature, that creature must make the saving throw against the sphere's damage, and the sphere stops moving this turn.
+	When you move the sphere, you can direct it over barriers up to 5 feet tall and jump it across pits up to 10 feet wide. The sphere ignites flammable objects not being worn or carried, and it sheds bright light in a 20-foot radius and dim light for an additional 20 feet.",
+	upcast_description: Some("When you cast this spell using a spell slot of 3rd level or higher, the damage increases by 1d6 for each slot level above 2nd.")
+};
+
+pub static FLESH_TO_STONE: Spell = Spell
+{
+	name: "Flesh to Stone",
+	level: Level::Level6,
+	school: MagicSchool::Transmutation,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(60),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a pinch of lime, water, and earth"),
+	duration: Duration::Minutes(1, true),
+	description: "You attempt to turn one creature that you can see within range into stone. If the target's body is made of flesh, the creature must make a Constitution saving throw. On a failed save, it is restrained as its flesh begins to harden. On a successful save, the creature isn't affected.
+	A creature restrained by this spell must make another Constitution saving throw at the end of each of its turns. If it successfully saves against this spell three times, the spell ends. If it fails its saves three times, it is turned to stone and subjected to the petrified condition for the duration. The successes and failures don't need to be consecutive; keep track of both until the target collects three of a kind.
+	If the creature is physically broken while petrified, it suffers from similar deformities if it reverts to its original state.
+	If you maintain your concentration on this spell for the entire possible duration, the creature is turned to stone until the effect is removed.",
+	upcast_description: None
+};
+
 // -----------------------------------------------------------------------------------------------------
 // DONT FORGET TO ADD TO THE SPELL LIST
 // -----------------------------------------------------------------------------------------------------
 
-pub static SPELL_LIST: [&Spell; 139] =
+pub static SPELL_LIST: [&Spell; 142] =
 [
 	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER,
 	&ANIMAL_SHAPES, &ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL,
@@ -2589,5 +2642,6 @@ pub static SPELL_LIST: [&Spell; 139] =
 	&EVARDS_BLACK_TENTACLES, &EXPEDITIOUS_RETREAT, &EYEBITE, &FABRICATE,
 	&FAERIE_FIRE, &FALSE_LIFE, &FEAR, &FEATHER_FALL, &FEEBLEMIND, &FEIGN_DEATH,
 	&FIND_FAMILIAR, &FIND_STEED, &FIND_THE_PATH, &FIND_TRAPS, &FINGER_OF_DEATH,
-	&FIRE_SHIELD, &FIRE_STORM, &FLAME_BLADE
+	&FIRE_SHIELD, &FIRE_STORM, &FLAME_BLADE, &FLAME_STRIKE, &FLAMING_SPHERE,
+	&FLESH_TO_STONE
 ];
