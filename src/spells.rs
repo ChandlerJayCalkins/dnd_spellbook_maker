@@ -1,3 +1,7 @@
+/*
+* All object types needed for defining spells
+*/
+
 use std::fmt;
 
 // The level of a spell

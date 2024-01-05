@@ -1,3 +1,7 @@
+/*
+* Player's Handbook Spells
+*/
+
 use crate::spells::*;
 
 pub static ACID_SPLASH: Spell = Spell
