@@ -21,6 +21,8 @@ const Y_START: f64 = 280.0;
 const X_END: f64 = 190.0;
 const Y_END: f64 = 10.0;
 
+const TABLE: &str = "<table>";
+
 // Calculates the width of some text give the font and the font size it uses
 fn calc_text_width(font_size_data: &Font, font_scale: &Scale, text: &str) -> f32
 {
@@ -44,6 +46,48 @@ fn font_units_to_mm(font_unit_width: f32) -> f32
 	font_unit_width * mm_to_font_ratio
 }
 
+// Writes a table to the pdf doc
+fn create_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
+background: image::DynamicImage, img_transform: &ImageTransform, table_string: &str, font_size: f32, x: f64,
+y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
+{
+	// The layer that gets returned
+	let mut layer_ref = (*layer).clone();
+	layer_ref
+}
+
+// Checks when to start and stop table processing in safe_write()
+// Returns true if a table is currently being processed or just finished processing, false otherwise
+fn check_in_table(table_string: &mut String, token: &str, in_table: &mut bool) -> bool
+{
+	// If currently in a table
+	if *in_table
+	{
+		// Add the current token to the table string
+		*table_string = format!("{} {}", table_string, token);
+		// If the token is the table start / end token
+		if token == TABLE
+		{
+			// Write the table to the pdf doc
+			//create_table();
+			println!("{}", table_string);
+			// Set the in_table flag off
+			*in_table = false;
+		}
+		return true;
+	}
+	// If not currently in a table and the token is the table start / end token
+	else if token == TABLE
+	{
+		// Set the in_table flag to true
+		*in_table = true;
+		// Initialize the table_string to this token
+		*table_string = token.to_string();
+		return true;
+	}
+	false
+}
+
 // Creates a new page and returns the layer for it
 fn make_new_page(doc: &PdfDocumentReference, layer_count: &mut i32, background: image::DynamicImage,
 img_transform: &ImageTransform) -> (PdfPageIndex, PdfLayerReference)
@@ -61,6 +105,32 @@ img_transform: &ImageTransform) -> (PdfPageIndex, PdfLayerReference)
 	(page, layer_ref)
 }
 
+// Checks if a new page needs to be made (text too low on current page)
+// Returns layer of new page if a new one is created
+fn check_new_page(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
+background: image::DynamicImage, img_transform: &ImageTransform, color: &Color, font_size: f32, x: f64, y: &mut f64,
+font: &IndirectFontRef) -> PdfLayerReference
+{
+	if *y < Y_END
+	{
+		// End the current text section
+		layer.end_text_section();
+		// Create a new page
+		let (_, new_layer) = make_new_page(doc, layer_count, background.clone(), img_transform);
+		// Create a new text section
+		new_layer.begin_text_section();
+		// Set the cursor to the top of the page
+		*y = Y_START;
+		new_layer.set_text_cursor(Mm(x), Mm(*y));
+		// Reset the font
+		new_layer.set_font(font, font_size as f64);
+		// Reset the text color
+		new_layer.set_fill_color(color.clone());
+		new_layer
+	}
+	else { layer.clone() }
+}
+
 // Writes text onto multiple lines / pages so it doesn't go off the side or bottom of the page
 fn safe_write(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32, x: f64,
@@ -75,6 +145,10 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 	let paragraphs = text.split('\n');
 	// Flag to make sure the cursor doesn't get reset on the first paragraph
 	let mut set_cursor = false;
+	// Flag to tell if a table is currently bring processed or not
+	let mut in_table = false;
+	// String for passing tokens onto the create_table() function
+	let mut table_string: String = String::new();
 	// Loop through each paragraph
 	for paragraph in paragraphs
 	{
@@ -89,9 +163,20 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 		if tokens_vec.len() < 1 { continue }
 		// Create a string that will become a line to add to the page made up of tokens
 		let mut line = tokens_vec[0].to_string();
+
+		// Check if a table is currently being processed
+		let skip = check_in_table(&mut table_string, &line, &mut in_table);
+		// If a table is being processed, skip printing this text here
+		if skip { continue; }
+
 		// Loop through each token after the first
 		for token in &tokens_vec[1..]
 		{
+			// Check if a table is currently being processed
+			let skip = check_in_table(&mut table_string, &token, &mut in_table);
+			// If a table is being processed, skip printing this text here
+			if skip { continue; }
+
 			// Create a new line to test if the current line is long enough for a newline
 			let new_line = format!("{} {}", line, token);
 			// Calculate the width of the line with this token added
@@ -107,23 +192,10 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 				// Move the cursor down a line
 				*y -= newline_amount;
 				layer_ref.set_text_cursor(Mm(x), Mm(*y));
-				// If the cursor is too low
-				if *y < Y_END
-				{
-					// End the current text section
-					layer_ref.end_text_section();
-					// Create a new page
-					(_, layer_ref) = make_new_page(doc, layer_count, background.clone(), img_transform);
-					// Create a new text section
-					layer_ref.begin_text_section();
-					// Set the cursor to the top of the page
-					*y = Y_START;
-					layer_ref.set_text_cursor(Mm(x), Mm(*y));
-					// Reset the font
-					layer_ref.set_font(font, font_size as f64);
-					// Reset the text color
-					layer_ref.set_fill_color(color.clone());
-				}
+
+				// Creates a new page if one needs to be created
+				layer_ref = check_new_page(doc, &layer_ref, layer_count, background.clone(), img_transform, color,
+					font_size, x, y, font);
 				// Reset the x_offset to 0 in case the last line already used it
 				x_offset = 0.0;
 				// Reset the line to the current token
@@ -460,11 +532,7 @@ mod tests
 	#[test]
 	fn the_test()
 	{
-		// Create vec of spells for testing
-		let spell_list = vec![&phb_spells::FIRE_BOLT, &phb_spells::FIREBALL];
 		// Create spellbook
-		//let doc = generate_spellbook("A Wizard's Very Fancy Spellbook Used for Casting Magical Spells", spell_list).unwrap();
-		//let _ = save_spellbook(doc, "Spellbook.pdf");
 		let spellbook_name = "A Wizard's Very Fancy Spellbook Used for Casting Magical Spells";
 		let doc = generate_spellbook(spellbook_name, phb_spells::SPELL_LIST.to_vec()).unwrap();
 		let _ = save_spellbook(doc, "Spellbook.pdf");
