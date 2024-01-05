@@ -2269,6 +2269,128 @@ pub static FABRICATE: Spell = Spell
 	upcast_description: None
 };
 
+pub static FAERIE_FIRE: Spell = Spell
+{
+	name: "Faerie Fire",
+	level: Level::Level1,
+	school: MagicSchool::Evocation,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(60),
+	has_v_component: true,
+	has_s_component: false,
+	m_components: None,
+	duration: Duration::Minutes(1, true),
+	description: "Each object in a 20-foot cube within range is outlined in blue, green, or violet light (your choice). Any creature in the area when the spell is cast is also outlined in light if it fails a Dexterity saving throw. For the duration, objects and affected creatures shed dim light in a 10-foot radius.
+	Any attack roll against an affected creature or object has advantage if the attacker can see it, and the affected creature or object can't benefit from being invisible.",
+	upcast_description: None
+};
+
+pub static FALSE_LIFE: Spell = Spell
+{
+	name: "False Life",
+	level: Level::Level1,
+	school: MagicSchool::Necromancy,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Yourself(None),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a small amount of alcohol or distilled spirits"),
+	duration: Duration::Hours(1, false),
+	description: "Bolstering yourself with a necromantic facsimile of life, you gain 1d4 + 4 temporary hit points for the duration.",
+	upcast_description: Some("When you cast this spell using a spell slot of 2nd level or higher, you gain 5 additional temporary hit points for each slot level above 1st.")
+};
+
+pub static FEAR: Spell = Spell
+{
+	name: "Fear",
+	level: Level::Level3,
+	school: MagicSchool::Illusion,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Yourself(Some(AOE::Cone(30))),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a white feather or the heart of a hen"),
+	duration: Duration::Minutes(1, true),
+	description: "You project a phantasmal image of a creature's worst fears. Each creature in a 30-foot cone must succeed on a Wisdom saving throw or drop whatever it is holding and become frightened for the duration. While frightened by this spell, a creature must take the Dash action and move away from you by the safest available route on each of its turns, unless there is nowhere to move. If the creature ends its turn in a location where it doesn't have line of sight to you, the creature can make a Wisdom saving throw. On a successful save, the spell ends for that creature.",
+	upcast_description: None
+};
+
+pub static FEATHER_FALL: Spell = Spell
+{
+	name: "Feather Fall",
+	level: Level::Level1,
+	school: MagicSchool::Transmutation,
+	is_ritual: false,
+	casting_time: CastingTime::Reaction("you or a creature within 60 feet of you falls"),
+	range: Range::Feet(60),
+	has_v_component: true,
+	has_s_component: false,
+	m_components: Some("a small feather or piece of down"),
+	duration: Duration::Minutes(1, false),
+	description: "Choose up to five falling creatures within range. A falling creature's rate of descent slows to 60 feet per round until the spell ends. If the creature lands before the spell ends, it takes no falling damage and can land on its feet, and the spell ends for that creature.",
+	upcast_description: None
+};
+
+pub static FEEBLEMIND: Spell = Spell
+{
+	name: "FeebleMind",
+	level: Level::Level8,
+	school: MagicSchool::Enchantment,
+	is_ritual: false,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Feet(150),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a handful of clay, crystal, glass, or mineral spheres"),
+	duration: Duration::Instant,
+	description: "You blast the mind of a creature that you can see within range, attempting to shatter its intellect and personality. The target takes 4d6 psychic damage and must make an Intelligence saving throw.
+	On a failed save, the creature's Intelligence and Charisma scores become 1. The creature can't cast spells, activate magic items, understand language, or communicate in any intelligible way. The creature can, however, identify its friends, follow them, and even protect them.
+	At the end of every 30 days, the creature can repeat its saving throw against this spell. If it succeeds on its saving throw, the spell ends.
+	The spell can also be ended by greater restoration, heal, or wish.",
+	upcast_description: None
+};
+
+pub static FEIGN_DEATH: Spell = Spell
+{
+	name: "Feign Death",
+	level: Level::Level3,
+	school: MagicSchool::Necromancy,
+	is_ritual: true,
+	casting_time: CastingTime::Actions(1),
+	range: Range::Touch,
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("a pinch of graveyard dirt"),
+	duration: Duration::Hours(1, false),
+	description: "You touch a willing creature and put it into a cataleptic state that is indistinguishable from death.
+	For the spell's duration, or until you use an action to touch the target and dismiss the spell, the target appears dead to all outward inspection and to spells used to determine the target's status. The target is blinded and incapacitated, and its speed drops to 0. The target has resistance to all damage except psychic damage. If the target is diseased or poisoned when you cast the spell, or becomes diseased or poisoned while under the spell's effect, the disease and poison have no effect until the spell ends.",
+	upcast_description: None
+};
+
+pub static FIND_FAMILIAR: Spell = Spell
+{
+	name: "Find Familiar",
+	level: Level::Level1,
+	school: MagicSchool::Conjuration,
+	is_ritual: true,
+	casting_time: CastingTime::Hours(1),
+	range: Range::Feet(10),
+	has_v_component: true,
+	has_s_component: true,
+	m_components: Some("10 gp worth of characoal, incense, and herbs that must be consumed by fire in a brass brazier"),
+	duration: Duration::Instant,
+	description: "You gain the service of a familiar, a spirit that takes an animal form you choose: bat, cat, crab, frog (toad), hawk, lizard, octopus, owl, poisonous snake, fish (quipper), rat, raven, sea horse, spider, or weasel. Appearing in an unoccupied space within range, the familiar has the statistics of the chosen form, though it is a celestial, fey, or fiend (your choice) instead of a beast.
+	Your familiar acts independently of you, but it always obeys your commands. In combat, it rolls its own initiative and acts on its own turn. A familiar can't attack, but it can take other actions as normal.
+	When the familiar drops to 0 hit points, it disappears, leaving behind no physical form. It reappears after you cast this spell again. As an action, you can temporarily dismiss the familiar to a pocket dimension. Alternatively, you can dismiss it forever. As an action while it is temporarily dismissed, you can cause it to reappear in any unoccupied space within 30 feet of you. Whenever the familiar drops to 0 hit points or disappears into the pocket dimension, it leaves behind in its space anything it was wearing or carrying.
+	While your familiar is within 100 feet of you, you can communicate with it telepathically. Additionally, as an action, you can see through your familiar's eyes and hear what it hears until the start of your next turn, gaining the benefits of any special senses that the familiar has. During this time, you are deaf and blind with regard to your own senses.
+	You can't have more than one familiar at a time. If you cast this spell while you already have a familiar, you instead cause it to adopt a new form. Choose one of the forms from the above list. Your familiar transforms into the chosen creature.
+	Finally, when you cast a spell with a range of touch, your familiar can deliver the spell as if it had cast the spell. Your familiar must be within 100 feet of you, and it must use its reaction to deliver the spell when you cast it. If the spell requires an attack roll, you use your attack modifier for the roll.",
+	upcast_description: None
+};
+
 // -----------------------------------------------------------------------------------------------------
 // DONT FORGET TO ADD TO THE SPELL LIST
 // -----------------------------------------------------------------------------------------------------
@@ -2306,7 +2428,7 @@ pub static FIRE_BOLT: Spell = Spell
 	upcast_description: None
 };
 
-pub static SPELL_LIST: [&Spell; 125] =
+pub static SPELL_LIST: [&Spell; 132] =
 [
 	&ACID_SPLASH, &AID, &ALARM, &ALTER_SELF, &ANIMAL_FRIENDSHIP, &ANIMAL_MESSENGER,
 	&ANIMAL_SHAPES, &ANIMATE_DEAD, &ANIMATE_OBJECTS, &ANTILIFE_SHELL,
@@ -2335,5 +2457,7 @@ pub static SPELL_LIST: [&Spell; 125] =
 	&DOMINATE_PERSON, &DRAWMIJS_INSTANT_SUMMONS, &DREAM, &DRUIDCRAFT, &EARTHQUAKE,
 	&ELDRITCH_BLAST, &ELEMENTAL_WEAPON, &ENHANCE_ABILITY, &ENLARGE_REDUCE,
 	&ENSNARING_STRIKE, &ENTANGLE, &ENTHRALL, &ETHEREALNESS,
-	&EVARDS_BLACK_TENTACLES, &EXPEDITIOUS_RETREAT, &EYEBITE, &FABRICATE
+	&EVARDS_BLACK_TENTACLES, &EXPEDITIOUS_RETREAT, &EYEBITE, &FABRICATE,
+	&FAERIE_FIRE, &FALSE_LIFE, &FEAR, &FEATHER_FALL, &FEEBLEMIND, &FEIGN_DEATH,
+	&FIND_FAMILIAR
 ];

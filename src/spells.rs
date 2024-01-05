@@ -191,12 +191,12 @@ impl fmt::Display for AOE
 	{
 		let text = match self
 		{
-			Self::Line(l) => format!("({}-foot line)", l),
-			Self::Cone(l) => format!("({}-foot cone)", l),
-			Self::Cube(l) => format!("({}-foot cube)", l),
-			Self::Sphere(r) => format!("({}-foot sphere)", r),
-			Self::Cylinder(r, h) => format!("({}-foot radius, {}-foot tall cylinder)", r, h),
-			Self::Radius(r) => format!("({}-mile radius)", r)
+			Self::Line(l) => format!("{}-foot line", l),
+			Self::Cone(l) => format!("{}-foot cone", l),
+			Self::Cube(l) => format!("{}-foot cube", l),
+			Self::Sphere(r) => format!("{}-foot sphere", r),
+			Self::Cylinder(r, h) => format!("{}-foot radius, {}-foot tall cylinder", r, h),
+			Self::Radius(r) => format!("{}-mile radius", r)
 		};
 		write!(f, "{}", text)
 	}
@@ -225,7 +225,7 @@ impl fmt::Display for Range
 				match o
 				{
 					None => String::from("Self"),
-					Some(a) => format!("Self {}", a)
+					Some(a) => format!("Self ({})", a)
 				}
 			}
 			Self::Touch => String::from("Touch"),
