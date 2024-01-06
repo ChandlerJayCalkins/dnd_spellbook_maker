@@ -3,6 +3,8 @@
 */
 
 use std::fmt;
+use std::fs;
+use std::error;
 
 // The level of a spell
 // 0 is a cantrip, max level is 9
@@ -383,6 +385,161 @@ pub struct Spell<'a>
 
 impl<'a> Spell<'a>
 {
+	// Constructs a spell object from a file
+	pub fn from_file(file_name: &str) -> Result<Self, Box<dyn error::Error + '_>>
+	{
+		let file_contents = fs::read_to_string(file_name)?;
+		let lines: Vec<_> = file_contents.lines().collect();
+
+		let mut name: Option<&str> = None;
+		let mut level: Option<Level> = None;
+		let mut school: Option<MagicSchool> = None;
+		let mut is_ritual: Option<bool> = None;
+		let mut casting_time: Option<CastingTime> = None;
+		let mut range: Option<Range> = None;
+		let mut has_v_component: Option<bool> = None;
+		let mut has_s_component: Option<bool> = None;
+		let mut m_components: Option<&str> = None;
+		let mut duration: Option<Duration> = None;
+		let mut description: Option<&str> = None;
+		let mut upcast_description: Option<&str> = None;
+
+		let mut line_index = 0;
+		while line_index < lines.len()
+		{
+			let tokens: Vec<_> = lines[line_index].split_whitespace().collect();
+			if tokens.len() < 1 { continue; }
+			match tokens[0]
+			{
+				"name:" => {},
+				"level:" => {},
+				"school:" => {},
+				"is_ritual:" =>
+				{
+					if tokens.len() > 1
+					{
+						is_ritual = match Self::str_to_bool(tokens[1])
+						{
+							Ok(b) => Some(b),
+							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
+						}
+					}
+					else { is_ritual = Some(false); }
+				},
+				"casting_time:" => {},
+				"range:" => {},
+				"has_v_component:" =>
+				{
+					if tokens.len() > 1
+					{
+						has_v_component = match Self::str_to_bool(tokens[1])
+						{
+							Ok(b) => Some(b),
+							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
+						}
+					}
+					else { is_ritual = Some(false); }
+				},
+				"has_s_component:" =>
+				{
+					if tokens.len() > 1
+					{
+						has_s_component = match Self::str_to_bool(tokens[1])
+						{
+							Ok(b) => Some(b),
+							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
+						}
+					}
+					else { is_ritual = Some(false); }
+				},
+				"m_components:" => {},
+				"duration:" => {},
+				"description:" => {},
+				"upcast_description:" => {},
+				_ => return Err(SpellFileError::get_box(false, file_name, tokens[0]))
+			}
+
+			line_index += 1;
+		}
+
+		let name = match name
+		{
+			Some(s) => s,
+			None => return Err(SpellFileError::get_box(true, file_name, "name"))
+		};
+		let level = match level
+		{
+			Some(s) => s,
+			None => return Err(SpellFileError::get_box(true, file_name, "level"))
+		};
+		let school = match school
+		{
+			Some(s) => s,
+			None => return Err(SpellFileError::get_box(true, file_name, "school"))
+		};
+		let is_ritual = match is_ritual
+		{
+			Some(s) => s,
+			None => false
+		};
+		let casting_time = match casting_time
+		{
+			Some(s) => s,
+			None => return Err(SpellFileError::get_box(true, file_name, "casting_time"))
+		};
+		let range = match range
+		{
+			Some(s) => s,
+			None => return Err(SpellFileError::get_box(true, file_name, "range"))
+		};
+		let has_v_component = match has_v_component
+		{
+			Some(s) => s,
+			None => false
+		};
+		let has_s_component = match has_s_component
+		{
+			Some(s) => s,
+			None => false
+		};
+		let duration = match duration
+		{
+			Some(s) => s,
+			None => return Err(SpellFileError::get_box(true, file_name, "duration"))
+		};
+		let description = match description
+		{
+			Some(s) => s,
+			None => return Err(SpellFileError::get_box(true, file_name, "description"))
+		};
+
+		Ok(Spell
+		{
+			name: name,
+			level: level,
+			school: school,
+			is_ritual: is_ritual,
+			casting_time: casting_time,
+			range: range,
+			has_v_component: has_v_component,
+			has_s_component: has_s_component,
+			m_components: m_components,
+			duration: duration,
+			description: description,
+			upcast_description: upcast_description
+		})
+	}
+
+	fn str_to_bool(s: &str) -> Result<bool, ()>
+	{
+		match s
+		{
+			"true" => Ok(true),
+			"false" => Ok(false),
+			_ => Err(())
+		}
+	}
+
 	// Gets a string of the required components for a spell
 	// Ex: "V, S, M (a bit of sulfur and some wood bark)", "V, S", "V, M (a piece of hair)"
 	pub fn get_component_string(&self) -> String
@@ -411,3 +568,53 @@ impl<'a> Spell<'a>
 		component_string
 	}
 }
+
+#[derive(Clone, Debug)]
+enum SpellFileError
+{
+	MissingField
+	{
+		file_name: String,
+		field: String
+	},
+	InvalidField
+	{
+		file_name: String,
+		field: String
+	}
+}
+
+impl SpellFileError
+{
+	pub fn get_box(missing_type: bool, file_name: &str, field: &str) -> Box<SpellFileError>
+	{
+		match missing_type
+		{
+			true => Box::new(SpellFileError::MissingField
+			{
+				file_name: file_name.to_string(),
+				field: field.to_string()
+			}),
+			false => Box::new(SpellFileError::InvalidField
+			{
+				file_name: file_name.to_string(),
+				field: field.to_string()
+			})
+		}
+	}
+}
+
+impl fmt::Display for SpellFileError
+{
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
+	{
+		let s = match self
+		{
+			Self::MissingField {file_name, field} => format!("Missing field in {}: {}", file_name, field),
+			Self::InvalidField {file_name, field} => format!("Invalid field in {}: {}", file_name, field)
+		};
+		write!(f, "{}", s)
+	}
+}
+
+impl error::Error for SpellFileError {}
