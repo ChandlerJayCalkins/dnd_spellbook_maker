@@ -4,7 +4,7 @@
 
 use crate::spells::*;
 
-pub static ACID_SPLASH: Spell = Spell
+/*pub static ACID_SPLASH: Spell = Spell
 {
 	name: "Acid Splash",
 	level: Level::Cantrip,
@@ -2647,4 +2647,4 @@ pub static SPELL_LIST: [&Spell; 142] =
 	&FIND_FAMILIAR, &FIND_STEED, &FIND_THE_PATH, &FIND_TRAPS, &FINGER_OF_DEATH,
 	&FIRE_SHIELD, &FIRE_STORM, &FLAME_BLADE, &FLAME_STRIKE, &FLAMING_SPHERE,
 	&FLESH_TO_STONE
-];
+];*/

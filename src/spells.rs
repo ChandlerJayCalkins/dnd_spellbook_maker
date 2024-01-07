@@ -109,6 +109,28 @@ pub enum MagicSchool
 	Transmutation
 }
 
+// Allows strings of magic schools to be converted to the MagicSchool type
+impl TryFrom<&str> for MagicSchool
+{
+	type Error = &'static str;
+
+	fn try_from(value: &str) -> Result<Self, Self::Error>
+	{
+		match value.to_lowercase().as_str()
+		{
+			"abjuration" => Ok(Self::Abjuration),
+			"conjuration" => Ok(Self::Conjuration),
+			"divination" => Ok(Self::Divination),
+			"enchantment" => Ok(Self::Enchantment),
+			"evocation" => Ok(Self::Evocation),
+			"illusion" => Ok(Self::Illusion),
+			"necromancy" => Ok(Self::Necromancy),
+			"transmutation" => Ok(Self::Transmutation),
+			_ => Err("Invalid MagicSchool string.")
+		}
+	}
+}
+
 // Converts magic schools into strings
 impl fmt::Display for MagicSchool
 {
@@ -130,8 +152,8 @@ impl fmt::Display for MagicSchool
 }
 
 // The amount of time it takes to cast a spell
-#[derive(Clone, Copy, Debug)]
-pub enum CastingTime<'a>
+#[derive(Clone, Debug)]
+pub enum CastingTime
 {
 	Seconds(u16),
 	// u16 is number of actions a spell takes to cast
@@ -140,17 +162,145 @@ pub enum CastingTime<'a>
 	// &str is the circumstance in which the reaction can be triggered
 	// Ex: "you or a creature within 60 feet of you falls" or "you see a creature within 60 feet of you casting a spell"
 	// Note: whatever you put for this, it will come after the string "1 reaction, which you take when" on the spell page
-	Reaction(&'a str),
+	Reaction(String),
 	Minutes(u16),
 	Hours(u16),
 	Days(u16),
 	Weeks(u16),
 	Months(u16),
-	Years(u16)
+	Years(u16),
+	Special
+}
+
+// Allows strings to be converted into casting times
+impl TryFrom<&str> for CastingTime
+{
+	type Error = &'static str;
+
+	fn try_from(value: &str) -> Result<Self, Self::Error>
+	{
+		let tokens: Vec<_> = value.split_whitespace().collect();
+		if tokens.len() > 0
+		{
+			match tokens[0].to_lowercase().as_str()
+			{
+				"seconds" | "second" =>
+				{
+					if tokens.len() > 1
+					{
+						match tokens[1].parse::<u16>()
+						{
+							Ok(n) => return Ok(Self::Seconds(n)),
+							Err(_) => return Err("Invalid CastingTime string.")
+						}
+					}
+					else { return Err("Invalid CastingTime string."); }
+				},
+				"actions" | "action" =>
+				{
+					if tokens.len() > 1
+					{
+						match tokens[1].parse::<u16>()
+						{
+							Ok(n) => return Ok(Self::Actions(n)),
+							Err(_) => return Err("Invalid CastingTime string.")
+						}
+					}
+					else { return Err("Invalid CastingTime string."); }
+				},
+				"bonusaction" =>
+				{
+					return Ok(Self::BonusAction);
+				},
+				"reaction" =>
+				{
+					return Ok(Self::Reaction(tokens[1..].join(" ")));
+				},
+				"minutes" | "minute" =>
+				{
+					if tokens.len() > 1
+					{
+						match tokens[1].parse::<u16>()
+						{
+							Ok(n) => return Ok(Self::Minutes(n)),
+							Err(_) => return Err("Invalid CastingTime string.")
+						}
+					}
+					else { return Err("Invalid CastingTime string."); }
+				},
+				"hours" | "hour" =>
+				{
+					if tokens.len() > 1
+					{
+						match tokens[1].parse::<u16>()
+						{
+							Ok(n) => return Ok(Self::Hours(n)),
+							Err(_) => return Err("Invalid CastingTime string.")
+						}
+					}
+					else { return Err("Invalid CastingTime string."); }
+				},
+				"days" | "day" =>
+				{
+					if tokens.len() > 1
+					{
+						match tokens[1].parse::<u16>()
+						{
+							Ok(n) => return Ok(Self::Days(n)),
+							Err(_) => return Err("Invalid CastingTime string.")
+						}
+					}
+					else { return Err("Invalid CastingTime string."); }
+				},
+				"weeks" | "week" =>
+				{
+					if tokens.len() > 1
+					{
+						match tokens[1].parse::<u16>()
+						{
+							Ok(n) => return Ok(Self::Weeks(n)),
+							Err(_) => return Err("Invalid CastingTime string.")
+						}
+					}
+					else { return Err("Invalid CastingTime string."); }
+				},
+				"months" | "month" =>
+				{
+					if tokens.len() > 1
+					{
+						match tokens[1].parse::<u16>()
+						{
+							Ok(n) => return Ok(Self::Months(n)),
+							Err(_) => return Err("Invalid CastingTime string.")
+						}
+					}
+					else { return Err("Invalid CastingTime string."); }
+				},
+				"years" | "year" =>
+				{
+					if tokens.len() > 1
+					{
+						match tokens[1].parse::<u16>()
+						{
+							Ok(n) => return Ok(Self::Years(n)),
+							Err(_) => return Err("Invalid CastingTime string.")
+						}
+					}
+					else { return Err("Invalid CastingTime string."); }
+				},
+				"special" =>
+				{
+					return Ok(Self::Special);
+				},
+				_ => { return Err("Invalid CastingTime string."); }
+			}
+		}
+		else { return Err("Invalid CastingTime string."); }
+	}
 }
 
 // Converts casting times into strings
-impl<'a> fmt::Display for CastingTime<'a>
+impl fmt::Display for CastingTime
 {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
 	{
@@ -165,7 +315,8 @@ impl<'a> fmt::Display for CastingTime<'a>
 			Self::Days(t) => get_amount_string(*t, "day"),
 			Self::Weeks(t) => get_amount_string(*t, "week"),
 			Self::Months(t) => get_amount_string(*t, "month"),
-			Self::Years(t) => get_amount_string(*t, "year")
+			Self::Years(t) => get_amount_string(*t, "year"),
+			Self::Special => String::from("Special")
 		};
 		write!(f, "{}", text)
 	}
@@ -188,6 +339,82 @@ pub enum AOE
 	Cylinder(u16, u16),
 	// u16 defines radius of effect in miles
 	Radius(u16)
+}
+
+// Allows AOEs to be created from strings
+impl TryFrom<&str> for AOE
+{
+	type Error = &'static str;
+
+	fn try_from(value: &str) -> Result<Self, Self::Error>
+	{
+		let tokens: Vec<_> = value.split_whitespace().collect();
+		if tokens.len() < 2 { return Err("Invalid AOE string"); }
+		match tokens[0].to_lowercase().as_str()
+		{
+			"line" =>
+			{
+				let num = match tokens[1].parse::<u16>()
+				{
+					Ok(n) => n,
+					Err(_) => return Err("Invalid AOE string.")
+				};
+				Ok(Self::Line(num))
+			},
+			"cone" =>
+			{
+				let num = match tokens[1].parse::<u16>()
+				{
+					Ok(n) => n,
+					Err(_) => return Err("Invalid AOE string.")
+				};
+				Ok(Self::Cone(num))
+			},
+			"cube" =>
+			{
+				let num = match tokens[1].parse::<u16>()
+				{
+					Ok(n) => n,
+					Err(_) => return Err("Invalid AOE string.")
+				};
+				Ok(Self::Cube(num))
+			},
+			"sphere" =>
+			{
+				let num = match tokens[1].parse::<u16>()
+				{
+					Ok(n) => n,
+					Err(_) => return Err("Invalid AOE string.")
+				};
+				Ok(Self::Sphere(num))
+			},
+			"cylinder" =>
+			{
+				if tokens.len() < 3 { return Err("Invalid AOE string."); }
+				let num1 = match tokens[1].parse::<u16>()
+				{
+					Ok(n) => n,
+					Err(_) => return Err("Invalid AOE string.")
+				};
+				let num2 = match tokens[2].parse::<u16>()
+				{
+					Ok(n) => n,
+					Err(_) => return Err("Invalid AOE string.")
+				};
+				Ok(Self::Cylinder(num1, num2))
+			},
+			"radius" =>
+			{
+				let num = match tokens[1].parse::<u16>()
+				{
+					Ok(n) => n,
+					Err(_) => return Err("Invalid AOE string.")
+				};
+				Ok(Self::Radius(num))
+			},
+			_ => Err("Invalid AOE string.")
+		}
+	}
 }
 
 // Converts AOEs into strings
@@ -217,6 +444,56 @@ pub enum Range
 	Feet(u16),
 	Miles(u16),
 	Special
+}
+
+impl TryFrom<&str> for Range
+{
+	type Error = &'static str;
+
+	fn try_from(value: &str) -> Result<Self, Self::Error>
+	{
+		let tokens: Vec<_> = value.split_whitespace().collect();
+		if tokens.len() < 1 { return Err("Invalid Range string."); }
+		match tokens[0].to_lowercase().as_str()
+		{
+			"self" =>
+			{
+				if tokens.len() < 2 { return Ok(Self::Yourself(None)); }
+				match tokens[1..].join(" ").as_str().try_into()
+				{
+					Ok(aoe) => Ok(Self::Yourself(Some(aoe))),
+					Err(_) => Err("Invalid Range string.")
+				}
+			},
+			"touch" =>
+			{
+				Ok(Self::Touch)
+			},
+			"feet" =>
+			{
+				if tokens.len() < 2 { return Err("Invalid Range string."); }
+				match tokens[1].parse::<u16>()
+				{
+					Ok(n) => Ok(Self::Feet(n)),
+					Err(_) => Err("Invalid Range string.")
+				}
+			},
+			"miles" =>
+			{
+				if tokens.len() < 2 { return Err("Invalid Range string."); }
+				match tokens[1].parse::<u16>()
+				{
+					Ok(n) => Ok(Self::Miles(n)),
+					Err(_) => Err("Invalid Range string.")
+				}
+			},
+			"special" =>
+			{
+				Ok(Self::Special)
+			},
+			_ => Err("Invalid Range string.")
+		}
+	}
 }
 
 // Converts spell ranges into strings
@@ -262,6 +539,218 @@ pub enum Duration
 	UntilDispelled(bool),
 	Permanent,
 	Special(bool)
+}
+
+impl TryFrom<&str> for Duration
+{
+	type Error = &'static str;
+
+	fn try_from(value: &str) -> Result<Self, Self::Error>
+	{
+		let tokens: Vec<_> = value.split_whitespace().collect();
+		if tokens.len() < 1 { return Err("Invalid Duration string."); }
+		match tokens[0].to_lowercase().as_str()
+		{
+			"instant" =>
+			{
+				Ok(Self::Instant)
+			},
+			"seconds" | "second" =>
+			{
+				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				let num = match tokens[1].parse::<u16>()
+				{
+					Ok(n) => n,
+					Err(_) => return Err("Invalid Duration string.")
+				};
+				if tokens.len() > 2
+				{
+					if tokens[2].to_lowercase().as_str() == "concentration"
+					{
+						Ok(Self::Seconds(num, true))
+					}
+					else { Err("Invalid Duration string.") }
+				}
+				else { Ok(Self::Seconds(num, false)) }
+			},
+			"rounds" | "round" =>
+			{
+				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				let num = match tokens[1].parse::<u16>()
+				{
+					Ok(n) => n,
+					Err(_) => return Err("Invalid Duration string.")
+				};
+				if tokens.len() > 2
+				{
+					if tokens[2].to_lowercase().as_str() == "concentration"
+					{
+						Ok(Self::Rounds(num, true))
+					}
+					else { Err("Invalid Duration string.") }
+				}
+				else { Ok(Self::Rounds(num, false)) }
+			},
+			"minutes" | "minute" =>
+			{
+				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				let num = match tokens[1].parse::<u16>()
+				{
+					Ok(n) => n,
+					Err(_) => return Err("Invalid Duration string.")
+				};
+				if tokens.len() > 2
+				{
+					if tokens[2].to_lowercase().as_str() == "concentration"
+					{
+						Ok(Self::Minutes(num, true))
+					}
+					else { Err("Invalid Duration string.") }
+				}
+				else { Ok(Self::Minutes(num, false)) }
+			},
+			"hours" | "hour" =>
+			{
+				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				let num = match tokens[1].parse::<u16>()
+				{
+					Ok(n) => n,
+					Err(_) => return Err("Invalid Duration string.")
+				};
+				if tokens.len() > 2
+				{
+					if tokens[2].to_lowercase().as_str() == "concentration"
+					{
+						Ok(Self::Hours(num, true))
+					}
+					else { Err("Invalid Duration string.") }
+				}
+				else { Ok(Self::Hours(num, false)) }
+			},
+			"days" | "day" =>
+			{
+				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				let num = match tokens[1].parse::<u16>()
+				{
+					Ok(n) => n,
+					Err(_) => return Err("Invalid Duration string.")
+				};
+				if tokens.len() > 2
+				{
+					if tokens[2].to_lowercase().as_str() == "concentration"
+					{
+						Ok(Self::Days(num, true))
+					}
+					else { Err("Invalid Duration string.") }
+				}
+				else { Ok(Self::Days(num, false)) }
+			},
+			"weeks" | "week" =>
+			{
+				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				let num = match tokens[1].parse::<u16>()
+				{
+					Ok(n) => n,
+					Err(_) => return Err("Invalid Duration string.")
+				};
+				if tokens.len() > 2
+				{
+					if tokens[2].to_lowercase().as_str() == "concentration"
+					{
+						Ok(Self::Weeks(num, true))
+					}
+					else { Err("Invalid Duration string.") }
+				}
+				else { Ok(Self::Weeks(num, false)) }
+			},
+			"months" | "month" =>
+			{
+				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				let num = match tokens[1].parse::<u16>()
+				{
+					Ok(n) => n,
+					Err(_) => return Err("Invalid Duration string.")
+				};
+				if tokens.len() > 2
+				{
+					if tokens[2].to_lowercase().as_str() == "concentration"
+					{
+						Ok(Self::Months(num, true))
+					}
+					else { Err("Invalid Duration string.") }
+				}
+				else { Ok(Self::Months(num, false)) }
+			},
+			"years" | "year" =>
+			{
+				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				let num = match tokens[1].parse::<u16>()
+				{
+					Ok(n) => n,
+					Err(_) => return Err("Invalid Duration string.")
+				};
+				if tokens.len() > 2
+				{
+					if tokens[2].to_lowercase().as_str() == "concentration"
+					{
+						Ok(Self::Years(num, true))
+					}
+					else { Err("Invalid Duration string.") }
+				}
+				else { Ok(Self::Years(num, false)) }
+			},
+			"dispelledortriggered" =>
+			{
+				if tokens.len() > 1
+				{
+					if tokens[1].to_lowercase().as_str() == "concentration"
+					{
+						Ok(Self::DispelledOrTriggered(true))
+					}
+					else
+					{
+						Err("Invalid Duration string.")
+					}
+				}
+				else { Ok(Self::DispelledOrTriggered(false)) }
+			},
+			"untildispelled" =>
+			{
+				if tokens.len() > 1
+				{
+					if tokens[1].to_lowercase().as_str() == "concentration"
+					{
+						Ok(Self::UntilDispelled(true))
+					}
+					else
+					{
+						Err("Invalid Duration string.")
+					}
+				}
+				else { Ok(Self::UntilDispelled(false)) }
+			},
+			"permanent" =>
+			{
+				Ok(Self::Permanent)
+			},
+			"special" =>
+			{
+				if tokens.len() > 1
+				{
+					if tokens[1].to_lowercase().as_str() == "concentration"
+					{
+						Ok(Self::Special(true))
+					}
+					else
+					{
+						Err("Invalid Duration string.")
+					}
+				}
+				else { Ok(Self::Special(false)) }
+			},
+			_ => Err("Invalid Duration string.")
+		}
+	}
 }
 
 // Converts spell durations into strings
@@ -358,40 +847,50 @@ fn get_amount_string(num: u16, unit: &str) -> String
 	}
 }
 
-// Data containing all of the information about a spell
-#[derive(Clone, Copy, Debug)]
-pub struct Spell<'a>
+fn str_to_bool(s: &str) -> Result<bool, ()>
 {
-	pub name: &'a str,
+	match s
+	{
+		"true" => Ok(true),
+		"false" => Ok(false),
+		_ => Err(())
+	}
+}
+
+// Data containing all of the information about a spell
+#[derive(Clone, Debug)]
+pub struct Spell
+{
+	pub name: String,
 	pub level: Level,
 	pub school: MagicSchool,
 	// Whether or not the spell can be casted as a ritual
 	pub is_ritual: bool,
-	pub casting_time: CastingTime<'a>,
+	pub casting_time: CastingTime,
 	pub range: Range,
 	// Whether or not the spell requires a verbal component to be cast
 	pub has_v_component: bool,
 	// Whether or not the spell requires a somantic component to be cast
 	pub has_s_component: bool,
 	// Optional text that lists all of the material components a spell might need to be cast
-	pub m_components: Option<&'a str>,
+	pub m_components: Option<String>,
 	pub duration: Duration,
 	// Text that describes the effects of the spell
-	pub description: &'a str,
+	pub description: String,
 	// Optional text that describes the benefits a spell gains from being upcast
 	// (being cast at a level higher than its base level)
-	pub upcast_description: Option<&'a str>
+	pub upcast_description: Option<String>
 }
 
-impl<'a> Spell<'a>
+impl Spell
 {
 	// Constructs a spell object from a file
-	pub fn from_file(file_name: &str) -> Result<Self, Box<dyn error::Error + '_>>
+	pub fn from_file(file_name: &str) -> Result<Self, Box<dyn error::Error>>
 	{
 		let file_contents = fs::read_to_string(file_name)?;
 		let lines: Vec<_> = file_contents.lines().collect();
 
-		let mut name: Option<&str> = None;
+		let mut name: Option<String> = None;
 		let mut level: Option<Level> = None;
 		let mut school: Option<MagicSchool> = None;
 		let mut is_ritual: Option<bool> = None;
@@ -399,10 +898,10 @@ impl<'a> Spell<'a>
 		let mut range: Option<Range> = None;
 		let mut has_v_component: Option<bool> = None;
 		let mut has_s_component: Option<bool> = None;
-		let mut m_components: Option<&str> = None;
+		let mut m_components: Option<String> = None;
 		let mut duration: Option<Duration> = None;
-		let mut description: Option<&str> = None;
-		let mut upcast_description: Option<&str> = None;
+		let mut description: Option<String> = None;
+		let mut upcast_description: Option<String> = None;
 
 		let mut line_index = 0;
 		while line_index < lines.len()
@@ -411,14 +910,33 @@ impl<'a> Spell<'a>
 			if tokens.len() < 1 { continue; }
 			match tokens[0]
 			{
-				"name:" => {},
-				"level:" => {},
-				"school:" => {},
+				"name:" =>
+				{
+					if tokens.len() > 1
+					{
+						name = Some(tokens[1..].join(" "));
+					}
+				},
+				"level:" =>
+				{
+					if tokens.len() > 1
+					{
+						let level_num = tokens[1].parse::<u8>()?;
+						level = Some(level_num.try_into()?);
+					}
+				},
+				"school:" =>
+				{
+					if tokens.len() > 1
+					{
+						school = Some(tokens[1].try_into()?);
+					}
+				},
 				"is_ritual:" =>
 				{
 					if tokens.len() > 1
 					{
-						is_ritual = match Self::str_to_bool(tokens[1])
+						is_ritual = match str_to_bool(tokens[1])
 						{
 							Ok(b) => Some(b),
 							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
@@ -426,13 +944,33 @@ impl<'a> Spell<'a>
 					}
 					else { is_ritual = Some(false); }
 				},
-				"casting_time:" => {},
-				"range:" => {},
+				"casting_time:" =>
+				{
+					if tokens.len() > 1
+					{
+						casting_time = match tokens[1..].join(" ").as_str().try_into()
+						{
+							Ok(t) => Some(t),
+							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
+						}
+					}
+				},
+				"range:" =>
+				{
+					if tokens.len() > 1
+					{
+						range = match tokens[1..].join(" ").as_str().try_into()
+						{
+							Ok(r) => Some(r),
+							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
+						}
+					}
+				},
 				"has_v_component:" =>
 				{
 					if tokens.len() > 1
 					{
-						has_v_component = match Self::str_to_bool(tokens[1])
+						has_v_component = match str_to_bool(tokens[1])
 						{
 							Ok(b) => Some(b),
 							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
@@ -444,7 +982,7 @@ impl<'a> Spell<'a>
 				{
 					if tokens.len() > 1
 					{
-						has_s_component = match Self::str_to_bool(tokens[1])
+						has_s_component = match str_to_bool(tokens[1])
 						{
 							Ok(b) => Some(b),
 							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
@@ -452,10 +990,47 @@ impl<'a> Spell<'a>
 					}
 					else { is_ritual = Some(false); }
 				},
-				"m_components:" => {},
-				"duration:" => {},
-				"description:" => {},
-				"upcast_description:" => {},
+				"m_components:" =>
+				{
+					if tokens.len() > 1
+					{
+						if tokens[1] != "None"
+						{
+							let text_result = Self::get_text_field(&tokens, &lines, &mut line_index, file_name)?;
+							m_components = Some(text_result);
+						}
+					}
+				},
+				"duration:" =>
+				{
+					if tokens.len() > 1
+					{
+						duration = match tokens[1..].join(" ").as_str().try_into()
+						{
+							Ok(d) => Some(d),
+							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
+						}
+					}
+				},
+				"description:" =>
+				{
+					if tokens.len() > 1
+					{
+						let description_result = Self::get_text_field(&tokens, &lines, &mut line_index, file_name)?;
+						description = Some(description_result);
+					}
+				},
+				"upcast_description:" =>
+				{
+					if tokens.len() > 1
+					{
+						if tokens[1] != "None"
+						{
+							let description_result = Self::get_text_field(&tokens, &lines, &mut line_index, file_name)?;
+							upcast_description = Some(description_result);
+						}
+					}
+				},
 				_ => return Err(SpellFileError::get_box(false, file_name, tokens[0]))
 			}
 
@@ -530,14 +1105,26 @@ impl<'a> Spell<'a>
 		})
 	}
 
-	fn str_to_bool(s: &str) -> Result<bool, ()>
+	fn get_text_field(current_tokens: &Vec<&str>, lines: &Vec<&str>, line_index: &mut usize, file_name: &str)
+	-> Result<String, Box<dyn error::Error>>
 	{
-		match s
+		if !current_tokens[1].starts_with('"')
 		{
-			"true" => Ok(true),
-			"false" => Ok(false),
-			_ => Err(())
+			return Err(SpellFileError::get_box(false, file_name, lines[*line_index]));
 		}
+		let mut desc = current_tokens[1..].join(" ");
+		while true
+		{
+			let new_tokens: Vec<_> = lines[*line_index].split_whitespace().collect();
+			desc = format!("{}\n{}", desc, new_tokens.join(" "));
+			if desc.ends_with('"') && !desc.ends_with("\\\"") { break; }
+			*line_index += 1;
+			if *line_index >= lines.len()
+			{
+				return Err(SpellFileError::get_box(false, file_name, &desc));
+			}
+		}
+		Ok(desc[1..desc.len()-1].to_string())
 	}
 
 	// Gets a string of the required components for a spell
@@ -557,7 +1144,7 @@ impl<'a> Spell<'a>
 			}
 			component_string += "S";
 		}
-		if let Some(m) = self.m_components
+		if let Some(m) = &self.m_components
 		{
 			if component_string.len() > 0
 			{

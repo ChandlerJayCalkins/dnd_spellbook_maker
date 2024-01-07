@@ -1,3 +1,4 @@
+use std::fs;
 extern crate image;
 use printpdf::*;
 use rusttype::{Font, Scale};
@@ -378,7 +379,7 @@ fn get_level_school_text(spell: &spells::Spell) -> String
 	}
 }
 
-pub fn generate_spellbook(title: &str, spell_list: Vec<&spells::Spell>)
+pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 -> Result<PdfDocumentReference, Box<dyn std::error::Error>>
 {
 	// Text colors
@@ -398,10 +399,10 @@ pub fn generate_spellbook(title: &str, spell_list: Vec<&spells::Spell>)
 	let font_directory = format!("fonts/{}", FONT_NAME);
 
 	// Read the data from the font files
-    let regular_font_data = std::fs::read(format!("{}/{}-Regular.otf", font_directory.clone(), FONT_NAME))?;
-	let italic_font_data = std::fs::read(format!("{}/{}-Italic.otf", font_directory.clone(), FONT_NAME))?;
-	let bold_font_data = std::fs::read(format!("{}/{}-Bold.otf", font_directory.clone(), FONT_NAME))?;
-	let bold_italic_font_data = std::fs::read(format!("{}/{}-BoldItalic.otf", font_directory.clone(), FONT_NAME))?;
+    let regular_font_data = fs::read(format!("{}/{}-Regular.otf", font_directory.clone(), FONT_NAME))?;
+	let italic_font_data = fs::read(format!("{}/{}-Italic.otf", font_directory.clone(), FONT_NAME))?;
+	let bold_font_data = fs::read(format!("{}/{}-Bold.otf", font_directory.clone(), FONT_NAME))?;
+	let bold_italic_font_data = fs::read(format!("{}/{}-BoldItalic.otf", font_directory.clone(), FONT_NAME))?;
 
 	// Create font size data for each font style
 	let regular_font_size_data = Font::try_from_bytes(&regular_font_data as &[u8]).unwrap();
@@ -466,19 +467,19 @@ pub fn generate_spellbook(title: &str, spell_list: Vec<&spells::Spell>)
 		// Create a new page
 		let (page, mut layer_ref) = make_new_page(&doc, &mut layer_count, img_data.clone(), &img_transform);
 		// Create a new bookmark for this page
-		doc.add_bookmark(spell.name, page);
+		doc.add_bookmark(spell.name.clone(), page);
 		// Keeps track of the current height to place text at
 		let mut text_height: f64 = Y_START;
 
 		// Add text to the page
 
 		// Add the name of the spell as a header
-		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, spell.name, &red,
+		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &spell.name, &red,
 			HEADER_FONT_SIZE, X_START, &mut text_height, &regular_font, &regular_font_size_data, &header_font_scale,
 			HEADER_NEWLINE, HEADER_NEWLINE);
 
 		// Add the level and the spell's school of magic
-		let text = get_level_school_text(spell);
+		let text = get_level_school_text(&spell);
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
 			BODY_FONT_SIZE, X_START, &mut text_height, &italic_font, &italic_font_size_data, &body_font_scale,
 			BODY_NEWLINE, HEADER_NEWLINE);
@@ -505,15 +506,15 @@ pub fn generate_spellbook(title: &str, spell_list: Vec<&spells::Spell>)
 			&bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, HEADER_NEWLINE, 0.0);
 
 		// Add the spell's description
-		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, spell.description,
+		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &spell.description,
 			&black, BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &regular_font_size_data, &body_font_scale,
 			BODY_NEWLINE, BODY_NEWLINE);
 
 		// If the spell has an upcast description
-		if let Some(description) = spell.upcast_description
+		if let Some(description) = &spell.upcast_description
 		{
 			layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
-				"At Higher Levels. ", description, &black, BODY_FONT_SIZE, X_START, &mut text_height, &bold_italic_font,
+				"At Higher Levels. ", &description, &black, BODY_FONT_SIZE, X_START, &mut text_height, &bold_italic_font,
 				&regular_font, &bold_italic_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, 0.0,
 				10.0);
 		}
@@ -529,9 +530,27 @@ pub fn generate_spellbook(title: &str, spell_list: Vec<&spells::Spell>)
 // Saves a spellbook to a file
 pub fn save_spellbook(doc: PdfDocumentReference, file_name: &str) -> Result<(), Box<dyn std::error::Error>>
 {
-	let file = std::fs::File::create(file_name)?;
+	let file = fs::File::create(file_name)?;
 	doc.save(&mut std::io::BufWriter::new(file))?;
 	Ok(())
+}
+
+pub fn get_all_phb_spells() -> Result<Vec<spells::Spell>, Box<dyn std::error::Error>>
+{
+	let phb_path = "spells/phb";
+	let file_paths = fs::read_dir(phb_path)?;
+	let mut spell_list = Vec::new();
+	for file_path in file_paths
+	{
+		let file_name_option = file_path?.path();
+		let file_name = match file_name_option.to_str()
+		{
+			Some(s) => s,
+			None => panic!("Couldn't find file name")
+		};
+		spell_list.push(spells::Spell::from_file(file_name)?);
+	}
+	Ok(spell_list)
 }
 
 #[cfg(test)]
@@ -544,7 +563,8 @@ mod tests
 	{
 		// Create spellbook
 		let spellbook_name = "A Wizard's Very Fancy Spellbook Used for Casting Magical Spells";
-		let doc = generate_spellbook(spellbook_name, phb_spells::SPELL_LIST.to_vec()).unwrap();
+		let spell_list = get_all_phb_spells().unwrap();
+		let doc = generate_spellbook(spellbook_name, &spell_list).unwrap();
 		let _ = save_spellbook(doc, "Spellbook.pdf");
 	}
 }
