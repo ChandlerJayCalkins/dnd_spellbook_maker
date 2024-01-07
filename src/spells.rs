@@ -847,9 +847,10 @@ fn get_amount_string(num: u16, unit: &str) -> String
 	}
 }
 
+// Converts a string to a boolean value, return an empty error if it fails
 fn str_to_bool(s: &str) -> Result<bool, ()>
 {
-	match s
+	match s.to_lowercase().as_str()
 	{
 		"true" => Ok(true),
 		"false" => Ok(false),
@@ -887,9 +888,14 @@ impl Spell
 	// Constructs a spell object from a file
 	pub fn from_file(file_name: &str) -> Result<Self, Box<dyn error::Error>>
 	{
+		// Reads the file
 		let file_contents = fs::read_to_string(file_name)?;
+		// Separates the file into lines
 		let lines: Vec<_> = file_contents.lines().collect();
 
+		// All of the variables that will be used to construct the spell
+		// Options because if required fields are None after the file is done being processed, throw an error
+		// If a non-required field is None after the file is done being processed, set it to a default value
 		let mut name: Option<String> = None;
 		let mut level: Option<Level> = None;
 		let mut school: Option<MagicSchool> = None;
@@ -903,51 +909,73 @@ impl Spell
 		let mut description: Option<String> = None;
 		let mut upcast_description: Option<String> = None;
 
+		// Index that keeps track of which line is currently being processed
 		let mut line_index = 0;
+		// Loop through each line in the file
 		while line_index < lines.len()
 		{
+			// Split the line into tokens
 			let tokens: Vec<_> = lines[line_index].split_whitespace().collect();
+			// If there are no tokens in the line, skip it
 			if tokens.len() < 1 { continue; }
+			// Figure out what kind of field this line is based on the first token
 			match tokens[0]
 			{
+				// Name field
 				"name:" =>
 				{
+					// If a value was given for this field
 					if tokens.len() > 1
 					{
+						// Just use up the rest of the line as the name
 						name = Some(tokens[1..].join(" "));
 					}
 				},
+				// Level field
 				"level:" =>
 				{
+					// If a value was given for this field
 					if tokens.len() > 1
 					{
+						// Try to parse the value into a u8
 						let level_num = tokens[1].parse::<u8>()?;
+						// Try to convert that u8 into a level
 						level = Some(level_num.try_into()?);
 					}
 				},
+				// School field
 				"school:" =>
 				{
+					// If a value was given for this field
 					if tokens.len() > 1
 					{
+						// Try to convert the value for this field into a MagicSchool object
 						school = Some(tokens[1].try_into()?);
 					}
 				},
-				"is_ritual:" =>
+				// Ritual field
+				"is_ritual:" | "is_ritual" =>
 				{
+					// If a value was given for this field
 					if tokens.len() > 1
 					{
+						// Try to convert that value into a boolean
 						is_ritual = match str_to_bool(tokens[1])
 						{
 							Ok(b) => Some(b),
 							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
 						}
 					}
-					else { is_ritual = Some(false); }
+					// If no value was given, assume the field name alone means true
+					else { is_ritual = Some(true); }
 				},
+				// Casting time field
 				"casting_time:" =>
 				{
+					// If a value was given for this field
 					if tokens.len() > 1
 					{
+						// Try to convert the value for this field into a CastingTime object
 						casting_time = match tokens[1..].join(" ").as_str().try_into()
 						{
 							Ok(t) => Some(t),
@@ -955,10 +983,13 @@ impl Spell
 						}
 					}
 				},
+				// Range field
 				"range:" =>
 				{
+					// If a value was given for this field
 					if tokens.len() > 1
 					{
+						// Try to convert the value for this field into a Range object
 						range = match tokens[1..].join(" ").as_str().try_into()
 						{
 							Ok(r) => Some(r),
@@ -966,45 +997,60 @@ impl Spell
 						}
 					}
 				},
-				"has_v_component:" =>
+				// V component field
+				"has_v_component:" | "has_v_component" =>
 				{
+					// If a value was given for this field
 					if tokens.len() > 1
 					{
+						// Try to convert that value into a boolean
 						has_v_component = match str_to_bool(tokens[1])
 						{
 							Ok(b) => Some(b),
 							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
 						}
 					}
-					else { is_ritual = Some(false); }
+					// If no value was given, assume the field name alone means true
+					else { is_ritual = Some(true); }
 				},
-				"has_s_component:" =>
+				// S component field
+				"has_s_component:" | "has_s_component" =>
 				{
+					// If a value was given for this field
 					if tokens.len() > 1
 					{
+						// Try to convert that value into a boolean
 						has_s_component = match str_to_bool(tokens[1])
 						{
 							Ok(b) => Some(b),
 							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
 						}
 					}
-					else { is_ritual = Some(false); }
+					// If no value was given, assume the field name alone means true
+					else { is_ritual = Some(true); }
 				},
+				// M component field
 				"m_components:" =>
 				{
+					// If a value was given for this field
 					if tokens.len() > 1
 					{
+						// If the value of this field wasn't entered as "None"
 						if tokens[1] != "None"
 						{
+							// Try to collect value of this field as some text
 							let text_result = Self::get_text_field(&tokens, &lines, &mut line_index, file_name)?;
 							m_components = Some(text_result);
 						}
 					}
 				},
+				// Duration field
 				"duration:" =>
 				{
+					// If a value was given for this field
 					if tokens.len() > 1
 					{
+						// Try to convert the value for this field into a Duration object
 						duration = match tokens[1..].join(" ").as_str().try_into()
 						{
 							Ok(d) => Some(d),
@@ -1012,20 +1058,26 @@ impl Spell
 						}
 					}
 				},
+				// Description field
 				"description:" =>
 				{
+					// If a value was given for this field
 					if tokens.len() > 1
 					{
+						// Try to collect value of this field as some text
 						let description_result = Self::get_text_field(&tokens, &lines, &mut line_index, file_name)?;
 						description = Some(description_result);
 					}
 				},
 				"upcast_description:" =>
 				{
+					// If a value was given for this field
 					if tokens.len() > 1
 					{
+						// If the value of this field wasn't entered as "None"
 						if tokens[1] != "None"
 						{
+							// Try to collect value of this field as some text
 							let description_result = Self::get_text_field(&tokens, &lines, &mut line_index, file_name)?;
 							upcast_description = Some(description_result);
 						}
@@ -1037,57 +1089,72 @@ impl Spell
 			line_index += 1;
 		}
 
+		// Convert spell fields from options to their own values
+		// Required fields return an error if None
+		// Optional fields are set to a default value if None
+
+		// Name field (required)
 		let name = match name
 		{
 			Some(s) => s,
 			None => return Err(SpellFileError::get_box(true, file_name, "name"))
 		};
+		// Level field (required)
 		let level = match level
 		{
 			Some(s) => s,
 			None => return Err(SpellFileError::get_box(true, file_name, "level"))
 		};
+		// School field (required)
 		let school = match school
 		{
 			Some(s) => s,
 			None => return Err(SpellFileError::get_box(true, file_name, "school"))
 		};
+		// Ritual field (optional)
 		let is_ritual = match is_ritual
 		{
 			Some(s) => s,
 			None => false
 		};
+		// Casting time field (required)
 		let casting_time = match casting_time
 		{
 			Some(s) => s,
 			None => return Err(SpellFileError::get_box(true, file_name, "casting_time"))
 		};
+		// Range field (required)
 		let range = match range
 		{
 			Some(s) => s,
 			None => return Err(SpellFileError::get_box(true, file_name, "range"))
 		};
+		// V component field (optional)
 		let has_v_component = match has_v_component
 		{
 			Some(s) => s,
 			None => false
 		};
+		// S component field (optional)
 		let has_s_component = match has_s_component
 		{
 			Some(s) => s,
 			None => false
 		};
+		// Duration field (required)
 		let duration = match duration
 		{
 			Some(s) => s,
 			None => return Err(SpellFileError::get_box(true, file_name, "duration"))
 		};
+		// Description field (required)
 		let description = match description
 		{
 			Some(s) => s,
 			None => return Err(SpellFileError::get_box(true, file_name, "description"))
 		};
 
+		// Create and return the spell object
 		Ok(Spell
 		{
 			name: name,
@@ -1105,25 +1172,47 @@ impl Spell
 		})
 	}
 
+	// Gets text within quotes as a field from a spell file
 	fn get_text_field(current_tokens: &Vec<&str>, lines: &Vec<&str>, line_index: &mut usize, file_name: &str)
 	-> Result<String, Box<dyn error::Error>>
 	{
+		// If the field value doesn't start with a quote
 		if !current_tokens[1].starts_with('"')
 		{
+			// Return an error
 			return Err(SpellFileError::get_box(false, file_name, lines[*line_index]));
 		}
+
+		// Get the first line of the text field if it does start with a quote
 		let mut desc = current_tokens[1..].join(" ");
+		// If the first line ends with a quote but not an escape quote
+		if desc.ends_with('"') && !desc.ends_with("\\\"")
+		{
+			// Return that line
+			return Ok(desc[1..desc.len()-1].to_string());
+		}
+		// Otherwise continue to the next line
+		else { *line_index += 1; }
+
+		// Loop until a line that ends with a quote is reached
 		while true
 		{
-			let new_tokens: Vec<_> = lines[*line_index].split_whitespace().collect();
-			desc = format!("{}\n{}", desc, new_tokens.join(" "));
+			// Get the next line
+			let new_line: Vec<_> = lines[*line_index].split_whitespace().collect().join(" ");
+			// Combine the new line with the rest of the text
+			desc = format!("{}\n{}", desc, new_line);
+			// If the new line ends with a quote but not an escape quote, end the loop
 			if desc.ends_with('"') && !desc.ends_with("\\\"") { break; }
+			// Go to next line
 			*line_index += 1;
+			// If there are no lines left and an end quote still hasn't been reached
 			if *line_index >= lines.len()
 			{
+				// Return an error
 				return Err(SpellFileError::get_box(false, file_name, &desc));
 			}
 		}
+		// Return the text without the start and end quotes
 		Ok(desc[1..desc.len()-1].to_string())
 	}
 
@@ -1132,56 +1221,77 @@ impl Spell
 	pub fn get_component_string(&self) -> String
 	{
 		let mut component_string = String::from("");
+		// If there is a v component
 		if self.has_v_component
 		{
+			// Add a v to the string
 			component_string += "V";
 		}
+		// If there is an s component
 		if self.has_s_component
 		{
+			// If there is at least 1 component already
 			if component_string.len() > 0
 			{
+				// Add a comma to the string
 				component_string += ", ";
 			}
+			// Add an s to the string
 			component_string += "S";
 		}
+		// If there is an m component
 		if let Some(m) = &self.m_components
 		{
+			// If there is at least 1 component already
 			if component_string.len() > 0
 			{
+				// Add a comma to the string
 				component_string += ", ";
 			}
+			// Add the m component(s) to the string
 			component_string += format!("M ({})", m).as_str();
 		}
+		// Return the string
 		component_string
 	}
 }
 
+// Used for when there is an error while reading a spell file
 #[derive(Clone, Debug)]
 enum SpellFileError
 {
+	// Type of error for when a required field is missing
 	MissingField
 	{
+		// Name of the file that caused the error
 		file_name: String,
+		// The field that caused the error
 		field: String
 	},
+	// Type of error for when a field has invalid syntax
 	InvalidField
 	{
+		// Name of the file that caused the error
 		file_name: String,
+		// The field that caused the error
 		field: String
 	}
 }
 
 impl SpellFileError
 {
+	// Creates a SpellFileError and returns it in a box
 	pub fn get_box(missing_type: bool, file_name: &str, field: &str) -> Box<SpellFileError>
 	{
 		match missing_type
 		{
+			// If this is a missing field error
 			true => Box::new(SpellFileError::MissingField
 			{
 				file_name: file_name.to_string(),
 				field: field.to_string()
 			}),
+			// If this is an invalid field error
 			false => Box::new(SpellFileError::InvalidField
 			{
 				file_name: file_name.to_string(),
@@ -1191,6 +1301,7 @@ impl SpellFileError
 	}
 }
 
+// Makes it so SpellFileErrors can be displayed
 impl fmt::Display for SpellFileError
 {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
@@ -1204,4 +1315,5 @@ impl fmt::Display for SpellFileError
 	}
 }
 
+// Makes it so SpellFileErrors are considered errors
 impl error::Error for SpellFileError {}
