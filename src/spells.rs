@@ -179,123 +179,148 @@ impl TryFrom<&str> for CastingTime
 
 	fn try_from(value: &str) -> Result<Self, Self::Error>
 	{
+		// Gets a vec of all the tokens in the string
 		let tokens: Vec<_> = value.split_whitespace().collect();
-		if tokens.len() > 0
+		// If there aren't any tokens in the string, return an error
+		if tokens.len() < 1 { return Err("Invalid CastingTime string."); }
+		// Determine what type of casting time it is based on the first token
+		match tokens[0].to_lowercase().as_str()
 		{
-			match tokens[0].to_lowercase().as_str()
+			"seconds" | "second" =>
 			{
-				"seconds" | "second" =>
+				// If there's a second token
+				if tokens.len() > 1
 				{
-					if tokens.len() > 1
+					// Try to parse that second token into a u16 and use it as the value of this object
+					match tokens[1].parse::<u16>()
 					{
-						match tokens[1].parse::<u16>()
-						{
-							Ok(n) => return Ok(Self::Seconds(n)),
-							Err(_) => return Err("Invalid CastingTime string.")
-						}
+						Ok(n) => return Ok(Self::Seconds(n)),
+						Err(_) => return Err("Invalid CastingTime string.")
 					}
-					else { return Err("Invalid CastingTime string."); }
-				},
-				"actions" | "action" =>
+				}
+				// If there's no second token, return an error
+				else { return Err("Invalid CastingTime string."); }
+			},
+			"actions" | "action" =>
+			{
+				// If there's a second token
+				if tokens.len() > 1
 				{
-					if tokens.len() > 1
+					// Try to parse that second token into a u16 and use it as the value of this object
+					match tokens[1].parse::<u16>()
 					{
-						match tokens[1].parse::<u16>()
-						{
-							Ok(n) => return Ok(Self::Actions(n)),
-							Err(_) => return Err("Invalid CastingTime string.")
-						}
+						Ok(n) => return Ok(Self::Actions(n)),
+						Err(_) => return Err("Invalid CastingTime string.")
 					}
-					else { return Err("Invalid CastingTime string."); }
-				},
-				"bonusaction" =>
+				}
+				// If there's no second token, return an error
+				else { return Err("Invalid CastingTime string."); }
+			},
+			"bonusaction" =>
+			{
+				return Ok(Self::BonusAction);
+			},
+			"reaction" =>
+			{
+				return Ok(Self::Reaction(tokens[1..].join(" ")));
+			},
+			"minutes" | "minute" =>
+			{
+				// If there's a second token
+				if tokens.len() > 1
 				{
-					return Ok(Self::BonusAction);
-				},
-				"reaction" =>
-				{
-					return Ok(Self::Reaction(tokens[1..].join(" ")));
-				},
-				"minutes" | "minute" =>
-				{
-					if tokens.len() > 1
+					// Try to parse that second token into a u16 and use it as the value of this object
+					match tokens[1].parse::<u16>()
 					{
-						match tokens[1].parse::<u16>()
-						{
-							Ok(n) => return Ok(Self::Minutes(n)),
-							Err(_) => return Err("Invalid CastingTime string.")
-						}
+						Ok(n) => return Ok(Self::Minutes(n)),
+						Err(_) => return Err("Invalid CastingTime string.")
 					}
-					else { return Err("Invalid CastingTime string."); }
-				},
-				"hours" | "hour" =>
+				}
+				// If there's no second token, return an error
+				else { return Err("Invalid CastingTime string."); }
+			},
+			"hours" | "hour" =>
+			{
+				// If there's a second token
+				if tokens.len() > 1
 				{
-					if tokens.len() > 1
+					// Try to parse that second token into a u16 and use it as the value of this object
+					match tokens[1].parse::<u16>()
 					{
-						match tokens[1].parse::<u16>()
-						{
-							Ok(n) => return Ok(Self::Hours(n)),
-							Err(_) => return Err("Invalid CastingTime string.")
-						}
+						Ok(n) => return Ok(Self::Hours(n)),
+						Err(_) => return Err("Invalid CastingTime string.")
 					}
-					else { return Err("Invalid CastingTime string."); }
-				},
-				"days" | "day" =>
+				}
+				// Try to parse that second token into a u16 and use it as the value of this object
+				else { return Err("Invalid CastingTime string."); }
+			},
+			"days" | "day" =>
+			{
+				// If there's a second token
+				if tokens.len() > 1
 				{
-					if tokens.len() > 1
+					// Try to parse that second token into a u16 and use it as the value of this object
+					match tokens[1].parse::<u16>()
 					{
-						match tokens[1].parse::<u16>()
-						{
-							Ok(n) => return Ok(Self::Days(n)),
-							Err(_) => return Err("Invalid CastingTime string.")
-						}
+						Ok(n) => return Ok(Self::Days(n)),
+						Err(_) => return Err("Invalid CastingTime string.")
 					}
-					else { return Err("Invalid CastingTime string."); }
-				},
-				"weeks" | "week" =>
+				}
+				// Try to parse that second token into a u16 and use it as the value of this object
+				else { return Err("Invalid CastingTime string."); }
+			},
+			"weeks" | "week" =>
+			{
+				// If there's a second token
+				if tokens.len() > 1
 				{
-					if tokens.len() > 1
+					// Try to parse that second token into a u16 and use it as the value of this object
+					match tokens[1].parse::<u16>()
 					{
-						match tokens[1].parse::<u16>()
-						{
-							Ok(n) => return Ok(Self::Weeks(n)),
-							Err(_) => return Err("Invalid CastingTime string.")
-						}
+						Ok(n) => return Ok(Self::Weeks(n)),
+						Err(_) => return Err("Invalid CastingTime string.")
 					}
-					else { return Err("Invalid CastingTime string."); }
-				},
-				"months" | "month" =>
+				}
+				// Try to parse that second token into a u16 and use it as the value of this object
+				else { return Err("Invalid CastingTime string."); }
+			},
+			"months" | "month" =>
+			{
+				// If there's a second token
+				if tokens.len() > 1
 				{
-					if tokens.len() > 1
+					// Try to parse that second token into a u16 and use it as the value of this object
+					match tokens[1].parse::<u16>()
 					{
-						match tokens[1].parse::<u16>()
-						{
-							Ok(n) => return Ok(Self::Months(n)),
-							Err(_) => return Err("Invalid CastingTime string.")
-						}
+						Ok(n) => return Ok(Self::Months(n)),
+						Err(_) => return Err("Invalid CastingTime string.")
 					}
-					else { return Err("Invalid CastingTime string."); }
-				},
-				"years" | "year" =>
+				}
+				// Try to parse that second token into a u16 and use it as the value of this object
+				else { return Err("Invalid CastingTime string."); }
+			},
+			"years" | "year" =>
+			{
+				// If there's a second token
+				if tokens.len() > 1
 				{
-					if tokens.len() > 1
+					// Try to parse that second token into a u16 and use it as the value of this object
+					match tokens[1].parse::<u16>()
 					{
-						match tokens[1].parse::<u16>()
-						{
-							Ok(n) => return Ok(Self::Years(n)),
-							Err(_) => return Err("Invalid CastingTime string.")
-						}
+						Ok(n) => return Ok(Self::Years(n)),
+						Err(_) => return Err("Invalid CastingTime string.")
 					}
-					else { return Err("Invalid CastingTime string."); }
-				},
-				"special" =>
-				{
-					return Ok(Self::Special);
-				},
-				_ => { return Err("Invalid CastingTime string."); }
-			}
+				}
+				// Try to parse that second token into a u16 and use it as the value of this object
+				else { return Err("Invalid CastingTime string."); }
+			},
+			"special" =>
+			{
+				return Ok(Self::Special);
+			},
+			// If the first token wasn't recognized as a CastingTime type, return an error
+			_ => { return Err("Invalid CastingTime string."); }
 		}
-		else { return Err("Invalid CastingTime string."); }
 	}
 }
 
@@ -348,12 +373,16 @@ impl TryFrom<&str> for AOE
 
 	fn try_from(value: &str) -> Result<Self, Self::Error>
 	{
+		// Get a vec of all the tokens in the string
 		let tokens: Vec<_> = value.split_whitespace().collect();
+		// If there aren't at least 2 tokens in the string, return an error
 		if tokens.len() < 2 { return Err("Invalid AOE string"); }
+		// Determine what type of AOE this is based on the first token
 		match tokens[0].to_lowercase().as_str()
 		{
 			"line" =>
 			{
+				// Try to parse the second token and use it to construct the aoe
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
@@ -363,6 +392,7 @@ impl TryFrom<&str> for AOE
 			},
 			"cone" =>
 			{
+				// Try to parse the second token and use it to construct the aoe
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
@@ -372,6 +402,7 @@ impl TryFrom<&str> for AOE
 			},
 			"cube" =>
 			{
+				// Try to parse the second token and use it to construct the aoe
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
@@ -381,6 +412,7 @@ impl TryFrom<&str> for AOE
 			},
 			"sphere" =>
 			{
+				// Try to parse the second token and use it to construct the aoe
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
@@ -390,7 +422,9 @@ impl TryFrom<&str> for AOE
 			},
 			"cylinder" =>
 			{
+				// If there aren't at least 3 tokens for this aoe type, return an error
 				if tokens.len() < 3 { return Err("Invalid AOE string."); }
+				// Try to parse the second and third tokens and use them to construct the aoe
 				let num1 = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
@@ -405,6 +439,7 @@ impl TryFrom<&str> for AOE
 			},
 			"radius" =>
 			{
+				// Try to parse the second token and use it to construct the aoe
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
@@ -412,6 +447,7 @@ impl TryFrom<&str> for AOE
 				};
 				Ok(Self::Radius(num))
 			},
+			// If the first token wasn't recognized as an AOE type, return an error
 			_ => Err("Invalid AOE string.")
 		}
 	}
@@ -446,19 +482,25 @@ pub enum Range
 	Special
 }
 
+// Allows Ranges to be created from strings
 impl TryFrom<&str> for Range
 {
 	type Error = &'static str;
 
 	fn try_from(value: &str) -> Result<Self, Self::Error>
 	{
+		// Get a vec of all the tokens in the string
 		let tokens: Vec<_> = value.split_whitespace().collect();
+		// If there aren't any tokens in the string, return an error
 		if tokens.len() < 1 { return Err("Invalid Range string."); }
+		// Determine what kind of Range to create based on the first token
 		match tokens[0].to_lowercase().as_str()
 		{
 			"self" =>
 			{
+				// If there isn't at least a second token, assume this Range takes type None
 				if tokens.len() < 2 { return Ok(Self::Yourself(None)); }
+				// Try to constuct an AOE from the following tokens and use that to construct this Range object
 				match tokens[1..].join(" ").as_str().try_into()
 				{
 					Ok(aoe) => Ok(Self::Yourself(Some(aoe))),
@@ -471,7 +513,9 @@ impl TryFrom<&str> for Range
 			},
 			"feet" =>
 			{
+				// If there isn't at least a second token, return an error
 				if tokens.len() < 2 { return Err("Invalid Range string."); }
+				// Try to parse the second token and use that to construct this Range object
 				match tokens[1].parse::<u16>()
 				{
 					Ok(n) => Ok(Self::Feet(n)),
@@ -480,7 +524,9 @@ impl TryFrom<&str> for Range
 			},
 			"miles" =>
 			{
+				// If there isn't at least a second token, return an error
 				if tokens.len() < 2 { return Err("Invalid Range string."); }
+				// Try to parse the second token and use that to construct this Range object
 				match tokens[1].parse::<u16>()
 				{
 					Ok(n) => Ok(Self::Miles(n)),
@@ -491,6 +537,7 @@ impl TryFrom<&str> for Range
 			{
 				Ok(Self::Special)
 			},
+			// If the first token wasn't recognized as a type of Range, return an error
 			_ => Err("Invalid Range string.")
 		}
 	}
@@ -541,14 +588,18 @@ pub enum Duration
 	Special(bool)
 }
 
+// Allows Durations to be constructed from strings
 impl TryFrom<&str> for Duration
 {
 	type Error = &'static str;
 
 	fn try_from(value: &str) -> Result<Self, Self::Error>
 	{
+		// Gets a vec of all the tokens in the string
 		let tokens: Vec<_> = value.split_whitespace().collect();
+		// If there aren't any tokens in this string, return an error
 		if tokens.len() < 1 { return Err("Invalid Duration string."); }
+		// Determine what type of Duration this is based on the first token
 		match tokens[0].to_lowercase().as_str()
 		{
 			"instant" =>
@@ -557,176 +608,244 @@ impl TryFrom<&str> for Duration
 			},
 			"seconds" | "second" =>
 			{
+				// If there isn't a second token, return an error
 				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				// Try to parse the second token into a u16
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
 					Err(_) => return Err("Invalid Duration string.")
 				};
+				// If there's a third token
 				if tokens.len() > 2
 				{
+					// If the third token signifies concentration
 					if tokens[2].to_lowercase().as_str() == "concentration"
 					{
+						// Construct the Duration with the u16 and the concentration bool set to true
 						Ok(Self::Seconds(num, true))
 					}
+					// If the third token is anything else, return an error
 					else { Err("Invalid Duration string.") }
 				}
+				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Seconds(num, false)) }
 			},
 			"rounds" | "round" =>
 			{
+				// If there isn't a second token, return an error
 				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				// Try to parse the second token into a u16
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
 					Err(_) => return Err("Invalid Duration string.")
 				};
+				// If there's a third token
 				if tokens.len() > 2
 				{
+					// If the third token signifies concentration
 					if tokens[2].to_lowercase().as_str() == "concentration"
 					{
+						// Construct the Duration with the u16 and the concentration bool set to true
 						Ok(Self::Rounds(num, true))
 					}
+					// If the third token is anything else, return an error
 					else { Err("Invalid Duration string.") }
 				}
+				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Rounds(num, false)) }
 			},
 			"minutes" | "minute" =>
 			{
+				// If there isn't a second token, return an error
 				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				// Try to parse the second token into a u16
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
 					Err(_) => return Err("Invalid Duration string.")
 				};
+				// If there's a third token
 				if tokens.len() > 2
 				{
+					// If the third token signifies concentration
 					if tokens[2].to_lowercase().as_str() == "concentration"
 					{
+						// Construct the Duration with the u16 and the concentration bool set to true
 						Ok(Self::Minutes(num, true))
 					}
+					// If the third token is anything else, return an error
 					else { Err("Invalid Duration string.") }
 				}
+				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Minutes(num, false)) }
 			},
 			"hours" | "hour" =>
 			{
+				// If there isn't a second token, return an error
 				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				// Try to parse the second token into a u16
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
 					Err(_) => return Err("Invalid Duration string.")
 				};
+				// If there's a third token
 				if tokens.len() > 2
 				{
+					// If the third token signifies concentration
 					if tokens[2].to_lowercase().as_str() == "concentration"
 					{
+						// Construct the Duration with the u16 and the concentration bool set to true
 						Ok(Self::Hours(num, true))
 					}
+					// If the third token is anything else, return an error
 					else { Err("Invalid Duration string.") }
 				}
+				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Hours(num, false)) }
 			},
 			"days" | "day" =>
 			{
+				// If there isn't a second token, return an error
 				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				// Try to parse the second token into a u16
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
 					Err(_) => return Err("Invalid Duration string.")
 				};
+				// If there's a third token
 				if tokens.len() > 2
 				{
+					// If the third token signifies concentration
 					if tokens[2].to_lowercase().as_str() == "concentration"
 					{
+						// Construct the Duration with the u16 and the concentration bool set to true
 						Ok(Self::Days(num, true))
 					}
+					// If the third token is anything else, return an error
 					else { Err("Invalid Duration string.") }
 				}
+				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Days(num, false)) }
 			},
 			"weeks" | "week" =>
 			{
+				// If there isn't a second token, return an error
 				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				// Try to parse the second token into a u16
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
 					Err(_) => return Err("Invalid Duration string.")
 				};
+				// If there's a third token
 				if tokens.len() > 2
 				{
+					// If the third token signifies concentration
 					if tokens[2].to_lowercase().as_str() == "concentration"
 					{
+						// Construct the Duration with the u16 and the concentration bool set to true
 						Ok(Self::Weeks(num, true))
 					}
+					// If the third token is anything else, return an error
 					else { Err("Invalid Duration string.") }
 				}
+				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Weeks(num, false)) }
 			},
 			"months" | "month" =>
 			{
+				// If there isn't a second token, return an error
 				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				// Try to parse the second token into a u16
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
 					Err(_) => return Err("Invalid Duration string.")
 				};
+				// If there's a third token
 				if tokens.len() > 2
 				{
+					// If the third token signifies concentration
 					if tokens[2].to_lowercase().as_str() == "concentration"
 					{
+						// Construct the Duration with the u16 and the concentration bool set to true
 						Ok(Self::Months(num, true))
 					}
+					// If the third token is anything else, return an error
 					else { Err("Invalid Duration string.") }
 				}
+				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Months(num, false)) }
 			},
 			"years" | "year" =>
 			{
+				// If there isn't a second token, return an error
 				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				// Try to parse the second token into a u16
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
 					Err(_) => return Err("Invalid Duration string.")
 				};
+				// If there's a third token
 				if tokens.len() > 2
 				{
+					// If the third token signifies concentration
 					if tokens[2].to_lowercase().as_str() == "concentration"
 					{
+						// Construct the Duration with the u16 and the concentration bool set to true
 						Ok(Self::Years(num, true))
 					}
+					// If the third token is anything else, return an error
 					else { Err("Invalid Duration string.") }
 				}
+				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Years(num, false)) }
 			},
 			"dispelledortriggered" =>
 			{
+				// If there's a second token
 				if tokens.len() > 1
 				{
+					// If the second token signifies concentration
 					if tokens[1].to_lowercase().as_str() == "concentration"
 					{
+						// Construct the Duration with the concentration bool set to true
 						Ok(Self::DispelledOrTriggered(true))
 					}
+					// If the second token is anything else
 					else
 					{
+						// Return an error
 						Err("Invalid Duration string.")
 					}
 				}
+				// If there is not second token, construct the Duration with the concentration bool set to false
 				else { Ok(Self::DispelledOrTriggered(false)) }
 			},
 			"untildispelled" =>
 			{
+				// If there's a second token
 				if tokens.len() > 1
 				{
+					// If the second token signifies concentration
 					if tokens[1].to_lowercase().as_str() == "concentration"
 					{
+						// Construct the Duration with the concentration bool set to true
 						Ok(Self::UntilDispelled(true))
 					}
+					// If the second token is anything else
 					else
 					{
+						// Return an error
 						Err("Invalid Duration string.")
 					}
 				}
+				// If there is not second token, construct the Duration with the concentration bool set to false
 				else { Ok(Self::UntilDispelled(false)) }
 			},
 			"permanent" =>
@@ -735,19 +854,26 @@ impl TryFrom<&str> for Duration
 			},
 			"special" =>
 			{
+				// If there's a second token
 				if tokens.len() > 1
 				{
+					// If the second token signifies concentration
 					if tokens[1].to_lowercase().as_str() == "concentration"
 					{
+						// Construct the Duration with the concentration bool set to true
 						Ok(Self::Special(true))
 					}
+					// If the second token is anything else
 					else
 					{
+						// Return an error
 						Err("Invalid Duration string.")
 					}
 				}
+				// If there is not second token, construct the Duration with the concentration bool set to false
 				else { Ok(Self::Special(false)) }
 			},
+			// If the first token isn't recognized as a type of Duration, return an error
 			_ => Err("Invalid Duration string.")
 		}
 	}
@@ -1198,7 +1324,7 @@ impl Spell
 		while true
 		{
 			// Get the next line
-			let new_line: Vec<_> = lines[*line_index].split_whitespace().collect().join(" ");
+			let new_line = lines[*line_index].split_whitespace().collect::<Vec<_>>().join(" ");
 			// Combine the new line with the rest of the text
 			desc = format!("{}\n{}", desc, new_line);
 			// If the new line ends with a quote but not an escape quote, end the loop
