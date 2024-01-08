@@ -7,11 +7,14 @@ use std::fs;
 use std::io::Write;
 use std::error;
 
+// For reading and writing to spell files
 trait SpellFileString: Sized
 {
 	type SpellFileStringError;
 
+	// Turns an object into a string that can be written into a spell file
 	fn to_spell_file_string(&self) -> String;
+	// Tries to turn a string from a spell file into an object
 	fn from_spell_file_string(s: &str) -> Result<Self, Self::SpellFileStringError>;
 }
 
@@ -32,6 +35,7 @@ pub enum Level
 	Level9
 }
 
+// Allows levels to be written to and read from spell files
 impl SpellFileString for Level
 {
 	type SpellFileStringError = &'static str;
@@ -128,6 +132,7 @@ pub enum MagicSchool
 	Transmutation
 }
 
+// Allows magic schools to be written to and read from spell files
 impl SpellFileString for MagicSchool
 {
 	type SpellFileStringError = &'static str;
@@ -206,6 +211,7 @@ pub enum CastingTime
 	Special
 }
 
+// Allows casting times to be written to and read from spell files
 impl SpellFileString for CastingTime
 {
 	type SpellFileStringError = &'static str;
@@ -428,6 +434,7 @@ pub enum AOE
 	Radius(u16)
 }
 
+// Allows AOEs to be written to and read from spell files
 impl SpellFileString for AOE
 {
 	type SpellFileStringError = &'static str;
@@ -567,6 +574,7 @@ pub enum Range
 	Special
 }
 
+// Allows ranges to be written to and read from spell files
 impl SpellFileString for Range
 {
 	type SpellFileStringError = &'static str;
@@ -703,6 +711,7 @@ pub enum Duration
 	Special(bool)
 }
 
+// Allows durations to be written to and read from spell files
 impl SpellFileString for Duration
 {
 	type SpellFileStringError = &'static str;
@@ -1263,10 +1272,14 @@ impl Spell
 					// If a value was given for this field
 					if tokens.len() > 1
 					{
-						// Try to parse the value into a u8
-						let level_num = tokens[1].parse::<u8>()?;
-						// Try to convert that u8 into a level
-						level = Some(level_num.try_into()?);
+						// Try to convert the value for this field into a level object
+						let result = Level::from_spell_file_string(tokens[1..].join(" ").as_str());
+						// Assign the level value if parsing succeeded, return error if not
+						level = match result
+						{
+							Ok(l) => Some(l),
+							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
+						};
 					}
 				},
 				// School field
@@ -1276,7 +1289,13 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a MagicSchool object
-						school = Some(tokens[1].try_into()?);
+						let result = MagicSchool::from_spell_file_string(tokens[1..].join(" ").as_str());
+						// Assign the school value if parsing succeeded, return error if not
+						school = match result
+						{
+							Ok(s) => Some(s),
+							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
+						};
 					}
 				},
 				// Ritual field
@@ -1286,7 +1305,7 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert that value into a boolean
-						is_ritual = match str_to_bool(tokens[1])
+						is_ritual = match str_to_bool(tokens[1..].join(" ").as_str())
 						{
 							Ok(b) => Some(b),
 							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
@@ -1302,7 +1321,9 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a CastingTime object
-						casting_time = match tokens[1..].join(" ").as_str().try_into()
+						let result = CastingTime::from_spell_file_string(tokens[1..].join(" ").as_str());
+						// Assign the casting_time value if parsing succeeded, return error if not
+						casting_time = match result
 						{
 							Ok(t) => Some(t),
 							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
@@ -1316,7 +1337,9 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a Range object
-						range = match tokens[1..].join(" ").as_str().try_into()
+						let result = Range::from_spell_file_string(tokens[1..].join(" ").as_str());
+						// Assign the range value if parsing succeeded, return error if not
+						range = match result
 						{
 							Ok(r) => Some(r),
 							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
@@ -1330,7 +1353,7 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert that value into a boolean
-						has_v_component = match str_to_bool(tokens[1])
+						has_v_component = match str_to_bool(tokens[1..].join(" ").as_str())
 						{
 							Ok(b) => Some(b),
 							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
@@ -1346,7 +1369,7 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert that value into a boolean
-						has_s_component = match str_to_bool(tokens[1])
+						has_s_component = match str_to_bool(tokens[1..].join(" ").as_str())
 						{
 							Ok(b) => Some(b),
 							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
@@ -1377,7 +1400,9 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a Duration object
-						duration = match tokens[1..].join(" ").as_str().try_into()
+						let result = Duration::from_spell_file_string(tokens[1..].join(" ").as_str());
+						// Assign the duration value if parsing succeeded, return error if not
+						duration = match result
 						{
 							Ok(d) => Some(d),
 							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
@@ -1401,7 +1426,7 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// If the value of this field wasn't entered as "None"
-						if tokens[1] != "None"
+						if tokens[1].to_lowercase().as_str() != "none"
 						{
 							// Try to collect value of this field as some text
 							let description_result = Self::get_text_field(&tokens, &lines, &mut line_index, file_name)?;
