@@ -138,14 +138,14 @@ impl fmt::Display for MagicSchool
 	{
 		let text = match self
 		{
-			Self::Abjuration => String::from("Abjuration"),
-			Self::Conjuration => String::from("Conjuration"),
-			Self::Divination => String::from("Divination"),
-			Self::Enchantment => String::from("Enchantment"),
-			Self::Evocation => String::from("Evocation"),
-			Self::Illusion => String::from("Illusion"),
-			Self::Necromancy => String::from("Necromancy"),
-			Self::Transmutation => String::from("Transmutation")
+			Self::Abjuration => String::from("abjuration"),
+			Self::Conjuration => String::from("conjuration"),
+			Self::Divination => String::from("divination"),
+			Self::Enchantment => String::from("enchantment"),
+			Self::Evocation => String::from("evocation"),
+			Self::Illusion => String::from("illusion"),
+			Self::Necromancy => String::from("necromancy"),
+			Self::Transmutation => String::from("transmutation")
 		};
 		write!(f, "{}", text)
 	}
@@ -186,7 +186,7 @@ impl TryFrom<&str> for CastingTime
 		// Determine what type of casting time it is based on the first token
 		match tokens[0].to_lowercase().as_str()
 		{
-			"seconds" | "second" =>
+			"seconds" =>
 			{
 				// If there's a second token
 				if tokens.len() > 1
@@ -201,7 +201,7 @@ impl TryFrom<&str> for CastingTime
 				// If there's no second token, return an error
 				else { return Err("Invalid CastingTime string."); }
 			},
-			"actions" | "action" =>
+			"actions" =>
 			{
 				// If there's a second token
 				if tokens.len() > 1
@@ -224,7 +224,7 @@ impl TryFrom<&str> for CastingTime
 			{
 				return Ok(Self::Reaction(tokens[1..].join(" ")));
 			},
-			"minutes" | "minute" =>
+			"minutes" =>
 			{
 				// If there's a second token
 				if tokens.len() > 1
@@ -239,7 +239,7 @@ impl TryFrom<&str> for CastingTime
 				// If there's no second token, return an error
 				else { return Err("Invalid CastingTime string."); }
 			},
-			"hours" | "hour" =>
+			"hours" =>
 			{
 				// If there's a second token
 				if tokens.len() > 1
@@ -254,7 +254,7 @@ impl TryFrom<&str> for CastingTime
 				// Try to parse that second token into a u16 and use it as the value of this object
 				else { return Err("Invalid CastingTime string."); }
 			},
-			"days" | "day" =>
+			"days" =>
 			{
 				// If there's a second token
 				if tokens.len() > 1
@@ -269,7 +269,7 @@ impl TryFrom<&str> for CastingTime
 				// Try to parse that second token into a u16 and use it as the value of this object
 				else { return Err("Invalid CastingTime string."); }
 			},
-			"weeks" | "week" =>
+			"weeks" =>
 			{
 				// If there's a second token
 				if tokens.len() > 1
@@ -284,7 +284,7 @@ impl TryFrom<&str> for CastingTime
 				// Try to parse that second token into a u16 and use it as the value of this object
 				else { return Err("Invalid CastingTime string."); }
 			},
-			"months" | "month" =>
+			"months" =>
 			{
 				// If there's a second token
 				if tokens.len() > 1
@@ -299,7 +299,7 @@ impl TryFrom<&str> for CastingTime
 				// Try to parse that second token into a u16 and use it as the value of this object
 				else { return Err("Invalid CastingTime string."); }
 			},
-			"years" | "year" =>
+			"years" =>
 			{
 				// If there's a second token
 				if tokens.len() > 1
@@ -606,7 +606,7 @@ impl TryFrom<&str> for Duration
 			{
 				Ok(Self::Instant)
 			},
-			"seconds" | "second" =>
+			"seconds" =>
 			{
 				// If there isn't a second token, return an error
 				if tokens.len() < 2 { return Err("Invalid Duration string."); }
@@ -631,7 +631,7 @@ impl TryFrom<&str> for Duration
 				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Seconds(num, false)) }
 			},
-			"rounds" | "round" =>
+			"rounds" =>
 			{
 				// If there isn't a second token, return an error
 				if tokens.len() < 2 { return Err("Invalid Duration string."); }
@@ -656,7 +656,7 @@ impl TryFrom<&str> for Duration
 				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Rounds(num, false)) }
 			},
-			"minutes" | "minute" =>
+			"minutes" =>
 			{
 				// If there isn't a second token, return an error
 				if tokens.len() < 2 { return Err("Invalid Duration string."); }
@@ -681,7 +681,7 @@ impl TryFrom<&str> for Duration
 				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Minutes(num, false)) }
 			},
-			"hours" | "hour" =>
+			"hours" =>
 			{
 				// If there isn't a second token, return an error
 				if tokens.len() < 2 { return Err("Invalid Duration string."); }
@@ -706,7 +706,7 @@ impl TryFrom<&str> for Duration
 				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Hours(num, false)) }
 			},
-			"days" | "day" =>
+			"days" =>
 			{
 				// If there isn't a second token, return an error
 				if tokens.len() < 2 { return Err("Invalid Duration string."); }
@@ -731,7 +731,7 @@ impl TryFrom<&str> for Duration
 				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Days(num, false)) }
 			},
-			"weeks" | "week" =>
+			"weeks" =>
 			{
 				// If there isn't a second token, return an error
 				if tokens.len() < 2 { return Err("Invalid Duration string."); }
@@ -756,7 +756,7 @@ impl TryFrom<&str> for Duration
 				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Weeks(num, false)) }
 			},
-			"months" | "month" =>
+			"months" =>
 			{
 				// If there isn't a second token, return an error
 				if tokens.len() < 2 { return Err("Invalid Duration string."); }
@@ -781,7 +781,7 @@ impl TryFrom<&str> for Duration
 				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Months(num, false)) }
 			},
-			"years" | "year" =>
+			"years" =>
 			{
 				// If there isn't a second token, return an error
 				if tokens.len() < 2 { return Err("Invalid Duration string."); }
@@ -1137,7 +1137,7 @@ impl Spell
 						}
 					}
 					// If no value was given, assume the field name alone means true
-					else { is_ritual = Some(true); }
+					else { has_v_component = Some(true); }
 				},
 				// S component field
 				"has_s_component:" | "has_s_component" =>
@@ -1153,7 +1153,7 @@ impl Spell
 						}
 					}
 					// If no value was given, assume the field name alone means true
-					else { is_ritual = Some(true); }
+					else { has_s_component = Some(true); }
 				},
 				// M component field
 				"m_components:" =>
@@ -1346,7 +1346,7 @@ impl Spell
 	// Ex: "V, S, M (a bit of sulfur and some wood bark)", "V, S", "V, M (a piece of hair)"
 	pub fn get_component_string(&self) -> String
 	{
-		let mut component_string = String::from("");
+		let mut component_string = String::new();
 		// If there is a v component
 		if self.has_v_component
 		{
@@ -1377,6 +1377,9 @@ impl Spell
 			// Add the m component(s) to the string
 			component_string += format!("M ({})", m).as_str();
 		}
+
+		// If there are no components, set the string to "None"
+		if component_string.is_empty() { component_string = "None".to_string(); }
 		// Return the string
 		component_string
 	}

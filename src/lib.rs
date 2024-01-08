@@ -372,11 +372,20 @@ text_font_size_data: &Font, font_scale: &Scale, newline_amount: f64, ending_newl
 // Gets the school and level info from a spell and turns it into text that says something like "nth-Level School-Type"
 fn get_level_school_text(spell: &spells::Spell) -> String
 {
-	match spell.level
+	// Gets a string of the level and the school from the spell
+	let mut text = match spell.level
 	{
 		spells::Level::Cantrip => format!("{} {}", spell.school, spell.level),
 		_ => format!("{} {}", spell.level, spell.school)
+	};
+	// If the spell is a ritual
+	if spell.is_ritual
+	{
+		// Add that information to the end of the string
+		text += " (ritual)";
 	}
+	// Return the string
+	text
 }
 
 pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
