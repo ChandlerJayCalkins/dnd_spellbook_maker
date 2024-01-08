@@ -4,7 +4,16 @@
 
 use std::fmt;
 use std::fs;
+use std::io::Write;
 use std::error;
+
+trait SpellFileString: Sized
+{
+	type SpellFileStringError;
+
+	fn to_spell_file_string(&self) -> String;
+	fn from_spell_file_string(s: &str) -> Result<Self, Self::SpellFileStringError>;
+}
 
 // The level of a spell
 // 0 is a cantrip, max level is 9
@@ -23,24 +32,22 @@ pub enum Level
 	Level9
 }
 
-// Spell Level methods
-impl Level
+impl SpellFileString for Level
 {
-	// Converts spell levels into integers (u8)
-	pub fn as_num(&self) -> u8
+	type SpellFileStringError = &'static str;
+
+	fn to_spell_file_string(&self) -> String
 	{
-		match self
+		u8::from(*self).to_string()
+	}
+
+	fn from_spell_file_string(s: &str) -> Result<Self, Self::SpellFileStringError>
+	{
+		let parse_result = s.parse::<u8>();
+		match parse_result
 		{
-			Self::Cantrip => 0,
-			Self::Level1 => 1,
-			Self::Level2 => 2,
-			Self::Level3 => 3,
-			Self::Level4 => 4,
-			Self::Level5 => 5,
-			Self::Level6 => 6,
-			Self::Level7 => 7,
-			Self::Level8 => 8,
-			Self::Level9 => 9
+			Ok(n) => n.try_into(),
+			Err(_) => Err("Invalid level string.")
 		}
 	}
 }
@@ -91,7 +98,19 @@ impl From<Level> for u8
 {
 	fn from(level: Level) -> Self
 	{
-		level.as_num()
+		match level
+		{
+			Level::Cantrip => 0,
+			Level::Level1 => 1,
+			Level::Level2 => 2,
+			Level::Level3 => 3,
+			Level::Level4 => 4,
+			Level::Level5 => 5,
+			Level::Level6 => 6,
+			Level::Level7 => 7,
+			Level::Level8 => 8,
+			Level::Level9 => 9
+		}
 	}
 }
 
@@ -107,6 +126,21 @@ pub enum MagicSchool
 	Illusion,
 	Necromancy,
 	Transmutation
+}
+
+impl SpellFileString for MagicSchool
+{
+	type SpellFileStringError = &'static str;
+
+	fn to_spell_file_string(&self) -> String
+	{
+		self.to_string()
+	}
+
+	fn from_spell_file_string(s: &str) -> Result<Self, Self::SpellFileStringError>
+	{
+		s.try_into()
+	}
 }
 
 // Allows strings of magic schools to be converted to the MagicSchool type
@@ -172,15 +206,32 @@ pub enum CastingTime
 	Special
 }
 
-// Allows strings to be converted into casting times
-impl TryFrom<&str> for CastingTime
+impl SpellFileString for CastingTime
 {
-	type Error = &'static str;
+	type SpellFileStringError = &'static str;
 
-	fn try_from(value: &str) -> Result<Self, Self::Error>
+	fn to_spell_file_string(&self) -> String
+	{
+		match self
+		{
+			Self::Seconds(t) => format!("actions {}", *t),
+			Self::Actions(t) => format!("actions {}", *t),
+			Self::BonusAction => String::from("bonusaction"),
+			Self::Reaction(e) => format!("reaction {}", e),
+			Self::Minutes(t) => format!("minutes {}", *t),
+			Self::Hours(t) => format!("hours {}", *t),
+			Self::Days(t) => format!("days {}", *t),
+			Self::Weeks(t) => format!("weeks {}", *t),
+			Self::Months(t) => format!("months {}", *t),
+			Self::Years(t) => format!("years {}", *t),
+			Self::Special => format!("special")
+		}
+	}
+
+	fn from_spell_file_string(s: &str) -> Result<Self, Self::SpellFileStringError>
 	{
 		// Gets a vec of all the tokens in the string
-		let tokens: Vec<_> = value.split_whitespace().collect();
+		let tokens: Vec<_> = s.split_whitespace().collect();
 		// If there aren't any tokens in the string, return an error
 		if tokens.len() < 1 { return Err("Invalid CastingTime string."); }
 		// Determine what type of casting time it is based on the first token
@@ -324,6 +375,17 @@ impl TryFrom<&str> for CastingTime
 	}
 }
 
+// Allows strings to be converted into casting times
+impl TryFrom<&str> for CastingTime
+{
+	type Error = &'static str;
+
+	fn try_from(value: &str) -> Result<Self, Self::Error>
+	{
+		CastingTime::from_spell_file_string(value)
+	}
+}
+
 // Converts casting times into strings
 impl fmt::Display for CastingTime
 {
@@ -366,15 +428,27 @@ pub enum AOE
 	Radius(u16)
 }
 
-// Allows AOEs to be created from strings
-impl TryFrom<&str> for AOE
+impl SpellFileString for AOE
 {
-	type Error = &'static str;
+	type SpellFileStringError = &'static str;
 
-	fn try_from(value: &str) -> Result<Self, Self::Error>
+	fn to_spell_file_string(&self) -> String
+	{
+		match self
+		{
+			Self::Line(l) => format!("line {}", *l),
+			Self::Cone(l) => format!("cone {}", *l),
+			Self::Cube(l) => format!("cube {}", *l),
+			Self::Sphere(r) => format!("sphere {}", *r),
+			Self::Cylinder(r, h) => format!("cylinder {} {}", *r, *h),
+			Self::Radius(r) => format!("radius {}", *r)
+		}
+	}
+
+	fn from_spell_file_string(s: &str) -> Result<Self, Self::SpellFileStringError>
 	{
 		// Get a vec of all the tokens in the string
-		let tokens: Vec<_> = value.split_whitespace().collect();
+		let tokens: Vec<_> = s.split_whitespace().collect();
 		// If there aren't at least 2 tokens in the string, return an error
 		if tokens.len() < 2 { return Err("Invalid AOE string"); }
 		// Determine what type of AOE this is based on the first token
@@ -453,6 +527,17 @@ impl TryFrom<&str> for AOE
 	}
 }
 
+// Allows AOEs to be created from strings
+impl TryFrom<&str> for AOE
+{
+	type Error = &'static str;
+
+	fn try_from(value: &str) -> Result<Self, Self::Error>
+	{
+		Self::from_spell_file_string(value)
+	}
+}
+
 // Converts AOEs into strings
 impl fmt::Display for AOE
 {
@@ -482,15 +567,34 @@ pub enum Range
 	Special
 }
 
-// Allows Ranges to be created from strings
-impl TryFrom<&str> for Range
+impl SpellFileString for Range
 {
-	type Error = &'static str;
+	type SpellFileStringError = &'static str;
 
-	fn try_from(value: &str) -> Result<Self, Self::Error>
+	fn to_spell_file_string(&self) -> String
+	{
+		match self
+		{
+			Self::Yourself(o) =>
+			{
+				let mut text = String::from("self");
+				match o
+				{
+					Some(aoe) => format!("{} {}", text, aoe.to_spell_file_string()),
+					None => text
+				}
+			},
+			Self::Touch => String::from("touch"),
+			Self::Feet(n) => format!("feet {}", *n),
+			Self::Miles(n) => format!("miles {}", *n),
+			Self::Special => String::from("special")
+		}
+	}
+
+	fn from_spell_file_string(s: &str) -> Result<Self, Self::SpellFileStringError>
 	{
 		// Get a vec of all the tokens in the string
-		let tokens: Vec<_> = value.split_whitespace().collect();
+		let tokens: Vec<_> = s.split_whitespace().collect();
 		// If there aren't any tokens in the string, return an error
 		if tokens.len() < 1 { return Err("Invalid Range string."); }
 		// Determine what kind of Range to create based on the first token
@@ -543,6 +647,17 @@ impl TryFrom<&str> for Range
 	}
 }
 
+// Allows Ranges to be created from strings
+impl TryFrom<&str> for Range
+{
+	type Error = &'static str;
+
+	fn try_from(value: &str) -> Result<Self, Self::Error>
+	{
+		Self::from_spell_file_string(value)
+	}
+}
+
 // Converts spell ranges into strings
 impl fmt::Display for Range
 {
@@ -588,15 +703,89 @@ pub enum Duration
 	Special(bool)
 }
 
-// Allows Durations to be constructed from strings
-impl TryFrom<&str> for Duration
+impl SpellFileString for Duration
 {
-	type Error = &'static str;
+	type SpellFileStringError = &'static str;
 
-	fn try_from(value: &str) -> Result<Self, Self::Error>
+	fn to_spell_file_string(&self) -> String
+	{
+		match self
+		{
+			Self::Instant => String::from("instant"),
+			Self::Seconds(t, c) =>
+			{
+				let mut text = format!("seconds {}", *t);
+				if *c { text += " concentration"; }
+				text
+			},
+			Self::Rounds(t, c) =>
+			{
+				let mut text = format!("rounds {}", *t);
+				if *c { text += " concentration"; }
+				text
+			},
+			Self::Minutes(t, c) =>
+			{
+				let mut text = format!("minutes {}", *t);
+				if *c { text += " concentration"; }
+				text
+			},
+			Self::Hours(t, c) =>
+			{
+				let mut text = format!("hours {}", *t);
+				if *c { text += " concentration"; }
+				text
+			},
+			Self::Days(t, c) =>
+			{
+				let mut text = format!("days {}", *t);
+				if *c { text += " concentration"; }
+				text
+			},
+			Self::Weeks(t, c) =>
+			{
+				let mut text = format!("weeks {}", *t);
+				if *c { text += " concentration"; }
+				text
+			},
+			Self::Months(t, c) =>
+			{
+				let mut text = format!("months {}", *t);
+				if *c { text += " concentration"; }
+				text
+			},
+			Self::Years(t, c) =>
+			{
+				let mut text = format!("years {}", *t);
+				if *c { text += " concentration"; }
+				text
+			},
+			Self::DispelledOrTriggered(c) =>
+			{
+				let mut text = String::from("dispelledortriggered");
+				if *c { text += " concentration"; }
+				text
+			},
+			Self::UntilDispelled(c) =>
+			{
+				let mut text = String::from("untildispelled");
+				if *c { text += " concentration"; }
+				text
+			},
+			Self::Permanent => String::from("permanent"),
+			Self::Special(c) =>
+			{
+				let mut text = String::from("special");
+				if *c { text += " concentration"; }
+				text
+			}
+		}
+	}
+
+	fn from_spell_file_string(s: &str) -> Result<Self, Self::SpellFileStringError>
 	{
 		// Gets a vec of all the tokens in the string
-		let tokens: Vec<_> = value.split_whitespace().collect();
+		let tokens: Vec<_> = s.split_whitespace().collect();
 		// If there aren't any tokens in this string, return an error
 		if tokens.len() < 1 { return Err("Invalid Duration string."); }
 		// Determine what type of Duration this is based on the first token
@@ -876,6 +1065,17 @@ impl TryFrom<&str> for Duration
 			// If the first token isn't recognized as a type of Duration, return an error
 			_ => Err("Invalid Duration string.")
 		}
+	}
+}
+
+// Allows Durations to be constructed from strings
+impl TryFrom<&str> for Duration
+{
+	type Error = &'static str;
+
+	fn try_from(value: &str) -> Result<Self, Self::Error>
+	{
+		Self::from_spell_file_string(value)
 	}
 }
 
@@ -1162,7 +1362,7 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// If the value of this field wasn't entered as "None"
-						if tokens[1] != "None"
+						if tokens[1].to_lowercase().as_str() != "none"
 						{
 							// Try to collect value of this field as some text
 							let text_result = Self::get_text_field(&tokens, &lines, &mut line_index, file_name)?;
@@ -1296,6 +1496,119 @@ impl Spell
 			description: description,
 			upcast_description: upcast_description
 		})
+	}
+
+	// Saves this spell to a file
+	// Compress parameter is whether or not to not write some of the optional fields to the file to save space
+	// Not compressing the file may make it more readable though
+	pub fn to_file(&self, file_path: &str, compress: bool) -> Result<(), Box<dyn error::Error>>
+	{
+		// Add the spell's name to the data to write
+		let mut spell_data = format!("name: {}\n", self.name);
+		// Add the spell's level
+		spell_data = format!("{}level: {}\n", spell_data, self.level.to_spell_file_string());
+		// Add the spell's school
+		spell_data = format!("{}school: {}\n", spell_data, self.school.to_spell_file_string());
+		// If this is supposed to be a compressed file
+		if compress
+		{
+			// If this spell is a ritual
+			if self.is_ritual
+			{
+				// Add the is_ritual field
+				spell_data = format!("{}is_ritual\n", spell_data);
+			}
+		}
+		// If this is not supposed to be a compressed file
+		else
+		{
+			// Add the full form of the is_ritual field
+			spell_data = format!("{}is_ritual: {}\n", spell_data, self.is_ritual);
+		}
+		// Add the spell's casting time
+		spell_data = format!("{}casting_time: {}\n", spell_data, self.casting_time.to_spell_file_string());
+		// Add the spell's range
+		spell_data = format!("{}range: {}\n", spell_data, self.range.to_spell_file_string());
+		// If this is supposed to be a compressed file
+		if compress
+		{
+			// If the spell has a v component
+			if self.has_v_component
+			{
+				// Add the has_v_component field
+				spell_data = format!("{}has_v_component\n", spell_data);
+			}
+			// If the spell has an s component
+			if self.has_s_component
+			{
+				// Add the has_s_component field
+				spell_data = format!("{}has_s_component\n", spell_data);
+			}
+			// If the spell has any m components
+			if let Some(c) = &self.m_components
+			{
+				// Add the spell's m components
+				spell_data = format!("{}m_components: \"{}\"\n", spell_data, c);
+			}
+		}
+		// If this is not supposed to be a compressed file
+		else
+		{
+			// Add the full form of the has_v_component and has_s_component fields
+			spell_data = format!("{}has_v_component: {}\n", spell_data, self.has_v_component);
+			spell_data = format!("{}has_s_component: {}\n", spell_data, self.has_s_component);
+			// If the spell has any m components
+			if let Some(c) = &self.m_components
+			{
+				// Add the spell's m components
+				spell_data = format!("{}m_components: \"{}\"\n", spell_data, c);
+			}
+			// If the spell has no m components
+			else
+			{
+				// Add the m components field with the value "None"
+				spell_data = format!("{}m_components: none\n", spell_data);
+			}
+		}
+		// Add the spell's duration
+		spell_data = format!("{}duration: {}\n", spell_data, self.duration.to_spell_file_string());
+		// Add the spell's description
+		spell_data = format!("{} description: \"{}\"\n", spell_data, self.description);
+		// If this is supposed to be a compressed file
+		if compress
+		{
+			// If this spell has an upcast description
+			if let Some(d) = &self.upcast_description
+			{
+				// Add the spell's upcast description
+				spell_data = format!("{}upcast_description: \"{}\"\n", spell_data, d);
+			}
+		}
+		// if this is not supposed to be a compressed file
+		else
+		{
+			// If this spell has an upcast description
+			if let Some(d) = &self.upcast_description
+			{
+				// Add the spell's upcast description
+				spell_data = format!("{}upcast_description: \"{}\"\n", spell_data, d);
+			}
+			// If the spell has no upcast description
+			else
+			{
+				// Add the upcast description field with the value "None"
+				spell_data = format!("{}upcast_description: none\n", spell_data);
+			}
+		}
+
+		// Create / Open / Truncate file
+		let mut spell_file = fs::File::create(file_path)?;
+
+		// Write all of the spell's data to the file
+		spell_file.write(spell_data.as_bytes())?;
+
+		// Return Ok if no errors occured
+		Ok(())
 	}
 
 	// Gets text within quotes as a field from a spell file
