@@ -136,52 +136,35 @@ y: &mut f64, font: &IndirectFontRef) -> PdfLayerReference
 }
 
 // Checks if a token is a font switch token, switches the current font to that font, and returns true if the font was switched
-fn font_switch(current_font: &mut IndirectFontRef, current_font_size_data: &mut Font, token: &str,
-regular_font: &IndirectFontRef, bold_font: &IndirectFontRef, italic_font: &IndirectFontRef, bold_italic_font: &IndirectFontRef,
-regular_font_size_data: &Font, bold_font_size_data: &Font, italic_font_size_data: &Font, bold_italic_font_size_data: &Font)
--> bool
+fn font_switch<'a>(current_font: &'a IndirectFontRef, current_font_size_data: &'a Font<'a>, token: &'a str, regular_font: &'a IndirectFontRef,
+bold_font: &'a IndirectFontRef, italic_font: &'a IndirectFontRef, bold_italic_font: &'a IndirectFontRef,
+regular_font_size_data: &'a Font<'a>, bold_font_size_data: &'a Font<'a>, italic_font_size_data: &'a Font<'a>, bold_italic_font_size_data: &'a Font<'a>)
+-> (bool, &'a IndirectFontRef, &'a Font<'a>)
 {
 	match token
 	{
 		// Regular font
 		"<r>" =>
 		{
-			*current_font = regular_font.clone();
-			*current_font_size_data = regular_font_size_data.clone();
-			true
+			(true, regular_font, regular_font_size_data)
 		},
 		// Bold font
 		"<b>" =>
 		{
-			*current_font = bold_font.clone();
-			*current_font_size_data = bold_font_size_data.clone();
-			true
+			(true, bold_font, bold_font_size_data)
 		},
 		// Italic font
 		"<i>" =>
 		{
-			*current_font = italic_font.clone();
-			*current_font_size_data = italic_font_size_data.clone();
-			true
+			(true, italic_font, italic_font_size_data)
 		},
 		// Bold italic font
 		"<bi>" | "<ib>" =>
 		{
-			*current_font = bold_italic_font.clone();
-			*current_font_size_data = bold_italic_font_size_data.clone();
-			true
+			(true, bold_italic_font, bold_italic_font_size_data)
 		},
-		_ => false
+		_ => (false, current_font, current_font_size_data)
 	}
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum FontState
-{
-	Regular,
-	Bold,
-	Italic,
-	BoldItalic
 }
 
 // Writes text onto multiple lines / pages so it doesn't go off the side or bottom of the page
@@ -224,16 +207,25 @@ x_start_offset: f64) -> PdfLayerReference
 		// Loop until the tokens_vec is empty
 		while tokens_vec.len() > 0
 		{
-			// If the first token in tokens_vec is not a font switch token
-			// Calling this function also switches the font if the token is a font switch token
-			if !font_switch(&mut current_font, &mut current_font_size_data, &tokens_vec[0], &regular_font, &bold_font, &italic_font,
-				&bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data)
+			let mut font_switched = false;
+			// Switch the font if the first token in tokens_vec is a font switch token
+			(font_switched, current_font, current_font_size_data) = font_switch(current_font, current_font_size_data,
+				&tokens_vec[0], regular_font, bold_font, italic_font, bold_italic_font, regular_font_size_data,
+				bold_font_size_data, italic_font_size_data, bold_italic_font_size_data);
+			// If the current font wasn't switched
+			if !font_switched
 			{
 				// Exit the loop
 				break;
 			}
-			// If the first token is a font switch token, remove it
-			else { tokens_vec.remove(0); }
+			// If the first token is a font switch token
+			else
+			{
+				// Switch the font
+				layer_ref.set_font(current_font, font_size as f64);
+				// Remove the font token
+				tokens_vec.remove(0);
+			}
 		}
 
 		// If there are no tokens, skip to next paragraph
@@ -251,10 +243,16 @@ x_start_offset: f64) -> PdfLayerReference
 		// Loop through each token after the first
 		for token in &tokens_vec[1..]
 		{
-			// If the token is a font switch token and it switched the font
-			if font_switch(&mut current_font, &mut current_font_size_data, &token, &regular_font, &bold_font, &italic_font, &bold_italic_font,
-				&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data)
+			let mut font_switched = false;
+			// Switch the current font if this token is a font switch token
+			(font_switched, current_font, current_font_size_data) = font_switch(current_font, current_font_size_data,
+				token, regular_font, bold_font, italic_font, bold_italic_font, regular_font_size_data, bold_font_size_data,
+				italic_font_size_data, bold_italic_font_size_data);
+			// If the current font was switched
+			if font_switched
 			{
+				// Set the font
+				layer_ref.set_font(current_font, font_size as f64);
 				// Go to next token
 				continue;
 			}
@@ -464,10 +462,11 @@ x_start_offset: f64)
 fn get_level_school_text(spell: &spells::Spell) -> String
 {
 	// Gets a string of the level and the school from the spell
-	let mut text = match spell.level
+	let mut text = String::from("<i>");
+	text = match spell.level
 	{
-		spells::Level::Cantrip => format!("{} {}", spell.school, spell.level),
-		_ => format!("<i> {} {}", spell.level, spell.school)
+		spells::Level::Cantrip => format!("{} {} {}", text, spell.school, spell.level),
+		_ => format!("{} {} {}", text, spell.level, spell.school)
 	};
 	// If the spell is a ritual
 	if spell.is_ritual
