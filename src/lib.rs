@@ -145,25 +145,14 @@ italic_font_size_data: &'a Font, bold_italic_font_size_data: &'a Font) -> (bool,
 	match token
 	{
 		// Regular font
-		"<r>" =>
-		{
-			(true, regular_font, regular_font_size_data)
-		},
+		"<r>" => (true, regular_font, regular_font_size_data),
 		// Bold font
-		"<b>" =>
-		{
-			(true, bold_font, bold_font_size_data)
-		},
+		"<b>" => (true, bold_font, bold_font_size_data),
 		// Italic font
-		"<i>" =>
-		{
-			(true, italic_font, italic_font_size_data)
-		},
+		"<i>" => (true, italic_font, italic_font_size_data),
 		// Bold italic font
-		"<bi>" | "<ib>" =>
-		{
-			(true, bold_italic_font, bold_italic_font_size_data)
-		},
+		"<bi>" | "<ib>" => (true, bold_italic_font, bold_italic_font_size_data),
+		// Anything else
 		_ => (false, current_font, current_font_size_data)
 	}
 }
@@ -181,7 +170,6 @@ x: f64, y: &'a mut f64, font: &'a IndirectFontRef, font_size_data: &'a Font, fon
 	// Move the cursor down a line
 	*y -= newline_amount;
 	layer.set_text_cursor(Mm(x), Mm(*y));
-
 	// Creates a new page if one needs to be created
 	check_new_page(doc, &layer, layer_count, background.clone(), img_transform, color, font_size, X_START, y, font)
 }
@@ -263,7 +251,10 @@ x_start_offset: f64) -> PdfLayerReference
 		// Loop through each token after the first
 		for token in &tokens_vec[1..]
 		{
+			// Flag that tells if the font has been switched or not
 			let mut font_switched = false;
+			// Keeps track of the last font that was being used before a switch
+			let last_font = current_font;
 			let last_font_size_data = current_font_size_data;
 			// Switch the current font if this token is a font switch token
 			(font_switched, current_font, current_font_size_data) = font_switch(current_font, current_font_size_data,
@@ -272,13 +263,18 @@ x_start_offset: f64) -> PdfLayerReference
 			// If the current font was switched
 			if font_switched
 			{
+				// Calculate how wide the line is so far with the font before the switch
+				// This makes it so the cursor can be set to the right place in the apply_text call
 				x_offset += calc_text_width(last_font_size_data, font_scale, &line) as f64;
+				// Apply the text with the previous font
 				layer_ref = apply_text(doc, &layer_ref, layer_count, background.clone(), img_transform, &line,
-					color, font_size, X_START + x_offset, y, current_font, current_font_size_data, font_scale, 0.0);
-				// Set the font
+					color, font_size, X_START + x_offset, y, last_font, last_font_size_data, font_scale, 0.0);
+				// Set the font to the new one
 				layer_ref.set_font(current_font, font_size as f64);
+				// Reset the line back to just a space
 				line = String::from(" ");
-				println!("{}", line);
+				// If the font that was used was bold italic, add an extra two spaces sicne that font is weird
+				if last_font_size_data as *const Font == bold_italic_font_size_data as *const Font { line += "  "; }
 				// Go to next token
 				continue;
 			}
@@ -292,6 +288,7 @@ x_start_offset: f64) -> PdfLayerReference
 
 			// Create a new line to test if the current line is long enough for a newline
 			let new_line = format!("{} {}", line, token);
+			println!("{}", new_line);
 			// Calculate the width of the line with this token added
 			let width = calc_text_width(&current_font_size_data, &font_scale, &new_line);
 			// If the line is too long with this token added
@@ -418,48 +415,6 @@ ending_newline: f64, x_start_offset: f64) -> PdfLayerReference
 		&mut temp_x, y, &regular_font, &bold_font, &italic_font, &bold_italic_font, &regular_font_size_data,
 		&bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data, &font_scale, newline_amount,
 		x_start_offset);
-	// Ends the text section
-	new_layer.end_text_section();
-	// Decrement y value by the ending newine amount
-	*y -= ending_newline;
-	// If the y value is too low
-	if *y < Y_END
-	{
-		// Create a new page
-		(_, new_layer) = make_new_page(doc, layer_count, background.clone(), img_transform);
-	}
-	// Return the current layer (will be different if the text spilled into a new page)
-	new_layer
-}
-
-// Adds spell field text to a spell page
-fn add_spell_field(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
-background: image::DynamicImage, img_transform: &ImageTransform, field: &str, text: &str, color: &Color, font_size: f32,
-x: f64, y: &mut f64, regular_font: &IndirectFontRef, bold_font: &IndirectFontRef, italic_font: &IndirectFontRef,
-bold_italic_font: &IndirectFontRef, regular_font_size_data: &Font, bold_font_size_data: &Font,
-italic_font_size_data: &Font, bold_italic_font_size_data: &Font, font_scale: &Scale, newline_amount: f64,
-ending_newline: f64, x_start_offset: f64) -> PdfLayerReference
-{
-	// Set the text color
-	layer.set_fill_color(color.clone());
-	// Begins a text section
-	layer.begin_text_section();
-	// Sets the font to the field font
-	layer.set_font(bold_font, font_size as f64);
-	// Sets the cursor location
-	layer.set_text_cursor(Mm(x + x_start_offset), Mm(*y));
-	let mut curr_x = x;
-	// Add the field text to the page
-	layer.write_text(field, &bold_font);
-	// Calculate the width of the field text
-	let field_width = calc_text_width(bold_font_size_data, font_scale, field);
-	// Set the font to the text font
-	layer.set_font(regular_font, font_size as f64);
-	// Add the spell text to the page
-	let mut new_layer = safe_write(doc, &layer, layer_count, background.clone(), img_transform, &text, color, font_size,
-		&mut curr_x, y, &regular_font, &bold_font, &italic_font, &bold_italic_font, &regular_font_size_data,
-		&bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data, &font_scale, newline_amount,
-		field_width as f64 + x_start_offset);
 	// Ends the text section
 	new_layer.end_text_section();
 	// Decrement y value by the ending newine amount
