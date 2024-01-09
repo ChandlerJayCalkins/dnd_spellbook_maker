@@ -49,7 +49,7 @@ fn font_units_to_mm(font_unit_width: f32) -> f32
 
 // Writes a table to the pdf doc
 fn create_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
-background: image::DynamicImage, img_transform: &ImageTransform, table_string: &str, font_size: f32, x: f64,
+background: image::DynamicImage, img_transform: &ImageTransform, table_string: &str, font_size: f32, x: &mut f64,
 y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
 {
 	// The layer that gets returned
@@ -61,8 +61,8 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 // Returns true if a table is currently being processed or just finished processing, false otherwise
 fn check_in_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, table_string: &mut String, token: &str,
-in_table: &mut bool, font_size: f32, x: f64, y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale,
-newline_amount: f64) -> (bool, PdfLayerReference)
+in_table: &mut bool, font_size: f32, x: &mut f64, y: &mut f64, font: &IndirectFontRef, font_size_data: &Font,
+font_scale: &Scale, newline_amount: f64) -> (bool, PdfLayerReference)
 {
 	// If currently in a table
 	if *in_table
@@ -112,8 +112,8 @@ img_transform: &ImageTransform) -> (PdfPageIndex, PdfLayerReference)
 // Checks if a new page needs to be made (text too low on current page)
 // Returns layer of new page if a new one is created
 fn check_new_page(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
-background: image::DynamicImage, img_transform: &ImageTransform, color: &Color, font_size: f32, x: f64, y: &mut f64,
-font: &IndirectFontRef) -> PdfLayerReference
+background: image::DynamicImage, img_transform: &ImageTransform, color: &Color, font_size: f32, x: &mut f64,
+y: &mut f64, font: &IndirectFontRef) -> PdfLayerReference
 {
 	if *y < Y_END
 	{
@@ -125,7 +125,7 @@ font: &IndirectFontRef) -> PdfLayerReference
 		new_layer.begin_text_section();
 		// Set the cursor to the top of the page
 		*y = Y_START;
-		new_layer.set_text_cursor(Mm(x), Mm(*y));
+		new_layer.set_text_cursor(Mm(*x), Mm(*y));
 		// Reset the font
 		new_layer.set_font(font, font_size as f64);
 		// Reset the text color
@@ -135,17 +135,71 @@ font: &IndirectFontRef) -> PdfLayerReference
 	else { layer.clone() }
 }
 
+// Checks if a token is a font switch token, switches the current font to that font, and returns true if the font was switched
+fn font_switch(current_font: &mut IndirectFontRef, current_font_size_data: &mut Font, token: &str,
+regular_font: &IndirectFontRef, bold_font: &IndirectFontRef, italic_font: &IndirectFontRef, bold_italic_font: &IndirectFontRef,
+regular_font_size_data: &Font, bold_font_size_data: &Font, italic_font_size_data: &Font, bold_italic_font_size_data: &Font)
+-> bool
+{
+	match token
+	{
+		// Regular font
+		"<r>" =>
+		{
+			*current_font = regular_font.clone();
+			*current_font_size_data = regular_font_size_data.clone();
+			true
+		},
+		// Bold font
+		"<b>" =>
+		{
+			*current_font = bold_font.clone();
+			*current_font_size_data = bold_font_size_data.clone();
+			true
+		},
+		// Italic font
+		"<i>" =>
+		{
+			*current_font = italic_font.clone();
+			*current_font_size_data = italic_font_size_data.clone();
+			true
+		},
+		// Bold italic font
+		"<bi>" | "<ib>" =>
+		{
+			*current_font = bold_italic_font.clone();
+			*current_font_size_data = bold_italic_font_size_data.clone();
+			true
+		},
+		_ => false
+	}
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum FontState
+{
+	Regular,
+	Bold,
+	Italic,
+	BoldItalic
+}
+
 // Writes text onto multiple lines / pages so it doesn't go off the side or bottom of the page
 fn safe_write(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
-background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32, x: f64,
-y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, newline_amount: f64, x_start_offset: f64)
--> PdfLayerReference
+background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32, x: &mut f64,
+y: &mut f64, regular_font: &IndirectFontRef, bold_font: &IndirectFontRef, italic_font: &IndirectFontRef,
+bold_italic_font: &IndirectFontRef, regular_font_size_data: &Font, bold_font_size_data: &Font,
+italic_font_size_data: &Font, bold_italic_font_size_data: &Font, font_scale: &Scale, newline_amount: f64,
+x_start_offset: f64) -> PdfLayerReference
 {
+	// Set the current font being used to the regular font
+	let mut current_font = regular_font;
+	let mut current_font_size_data = regular_font_size_data;
 	// The layer that gets returned
 	let mut layer_ref = (*layer).clone();
 	// Creates a new page if one needs to be created
 	layer_ref = check_new_page(doc, &layer_ref, layer_count, background.clone(), img_transform, color,
-		font_size, x, y, font);
+		font_size, x, y, current_font);
 	// Number of millimeters to shift the text over by at the start of a new paragraph
 	let mut x_offset: f64 = x_start_offset;
 	// Split the text into paragraphs by newlines
@@ -160,12 +214,28 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 	for paragraph in paragraphs
 	{
 		// Only reset the cursor if it's not the first paragraph
-		if set_cursor { layer_ref.set_text_cursor(Mm(x + x_offset), Mm(*y)); }
+		if set_cursor { layer_ref.set_text_cursor(Mm(X_START + x_offset), Mm(*y)); }
 		else { set_cursor = true; }
 
 		// Split the paragraph into tokens by whitespace
 		let tokens = paragraph.split_whitespace();
-		let tokens_vec = tokens.collect::<Vec<&str>>();
+		let mut tokens_vec = tokens.collect::<Vec<&str>>();
+
+		// Loop until the tokens_vec is empty
+		while tokens_vec.len() > 0
+		{
+			// If the first token in tokens_vec is not a font switch token
+			// Calling this function also switches the font if the token is a font switch token
+			if !font_switch(&mut current_font, &mut current_font_size_data, &tokens_vec[0], &regular_font, &bold_font, &italic_font,
+				&bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data)
+			{
+				// Exit the loop
+				break;
+			}
+			// If the first token is a font switch token, remove it
+			else { tokens_vec.remove(0); }
+		}
+
 		// If there are no tokens, skip to next paragraph
 		if tokens_vec.len() < 1 { continue }
 		// Create a string that will become a line to add to the page made up of tokens
@@ -174,16 +244,24 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 		// Check if a table is currently being processed
 		let mut skip = false;
 		(skip, layer_ref) = check_in_table(doc, &layer_ref, layer_count, background.clone(), img_transform,
-			&mut table_string, &line, &mut in_table, font_size, x, y, font, font_size_data, font_scale, newline_amount);
+			&mut table_string, &line, &mut in_table, font_size, x, y, current_font, current_font_size_data, font_scale, newline_amount);
 		// If a table is being processed, skip printing this text here
 		if skip { continue; }
 
 		// Loop through each token after the first
 		for token in &tokens_vec[1..]
 		{
+			// If the token is a font switch token and it switched the font
+			if font_switch(&mut current_font, &mut current_font_size_data, &token, &regular_font, &bold_font, &italic_font, &bold_italic_font,
+				&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data)
+			{
+				// Go to next token
+				continue;
+			}
+
 			// Check if a table is currently being processed
 			(skip, layer_ref) = check_in_table(doc, &layer_ref, layer_count, background.clone(), img_transform,
-				&mut table_string, &line, &mut in_table, font_size, x, y, font, font_size_data, font_scale,
+				&mut table_string, &line, &mut in_table, font_size, x, y, current_font, current_font_size_data, font_scale,
 				newline_amount);
 			// If a table is being processed, skip printing this text here
 			if skip { continue; }
@@ -191,22 +269,22 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 			// Create a new line to test if the current line is long enough for a newline
 			let new_line = format!("{} {}", line, token);
 			// Calculate the width of the line with this token added
-			let width = calc_text_width(&font_size_data, &font_scale, &new_line);
+			let width = calc_text_width(&current_font_size_data, &font_scale, &new_line);
 			// If the line is too long with this token added
 			if width as f64 > X_END - x_offset
 			{
 				// Write the line without the current token
-				layer_ref.write_text(line, &font);
+				layer_ref.write_text(line, &current_font);
 				// Begin a new text section
 				layer_ref.end_text_section();
 				layer_ref.begin_text_section();
 				// Move the cursor down a line
 				*y -= newline_amount;
-				layer_ref.set_text_cursor(Mm(x), Mm(*y));
+				layer_ref.set_text_cursor(Mm(X_START), Mm(*y));
 
 				// Creates a new page if one needs to be created
 				layer_ref = check_new_page(doc, &layer_ref, layer_count, background.clone(), img_transform, color,
-					font_size, x, y, font);
+					font_size, x, y, current_font);
 				// Reset the x_offset to 0 in case the last line already used it
 				x_offset = 0.0;
 				// Reset the line to the current token
@@ -215,8 +293,12 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 			// If this line still isn't long enough, add the current token to the line
 			else { line = new_line; }
 		}
+		// Calculate the width of the last line
+		let width = calc_text_width(&current_font_size_data, &font_scale, &line);
+		// Set x to the width to it keeps track of where the text left off horitontally
+		*x = width as f64;
 		// Write any remaining text into its own line
-		layer_ref.write_text(line, &font);
+		layer_ref.write_text(line, &current_font);
 		// End the text section of this paragraph
 		layer_ref.end_text_section();
 		layer_ref.begin_text_section();
@@ -304,7 +386,9 @@ font_size_data: &Font, font_scale: &Scale, newline_amount: f64)
 // Adds text to a spell page
 fn add_spell_text(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32, x: f64,
-y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, newline_amount: f64, ending_newline: f64)
+y: &mut f64, regular_font: &IndirectFontRef, bold_font: &IndirectFontRef, italic_font: &IndirectFontRef,
+bold_italic_font: &IndirectFontRef, regular_font_size_data: &Font, bold_font_size_data: &Font,
+italic_font_size_data: &Font, bold_italic_font_size_data: &Font, font_scale: &Scale, newline_amount: f64, ending_newline: f64)
 -> PdfLayerReference
 {
 	// Set the text color
@@ -312,11 +396,13 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 	// Begins a text section
 	layer.begin_text_section();
 	// Sets the font and cursor location
-	layer.set_font(font, font_size as f64);
+	layer.set_font(regular_font, font_size as f64);
 	layer.set_text_cursor(Mm(x), Mm(*y));
+	let mut temp_x = x;
 	// Add spell text to the page
-	let mut new_layer = safe_write(doc, &layer, layer_count, background.clone(), img_transform, &text, color, font_size, x,
-		y, &font, &font_size_data, &font_scale, newline_amount, 0.0);
+	let mut new_layer = safe_write(doc, &layer, layer_count, background.clone(), img_transform, &text, color, font_size,
+		&mut temp_x, y, &regular_font, &bold_font, &italic_font, &bold_italic_font, &regular_font_size_data,
+		&bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data, &font_scale, newline_amount, 0.0);
 	// Ends the text section
 	new_layer.end_text_section();
 	// Decrement y value by the ending newine amount
@@ -333,9 +419,11 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 
 // Adds spell field text to a spell page
 fn add_spell_field(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
-background: image::DynamicImage, img_transform: &ImageTransform, field: &str, text: &str, color: &Color, font_size: f32,
-x: f64, y: &mut f64, field_font: &IndirectFontRef, text_font: &IndirectFontRef, field_font_size_data: &Font,
-text_font_size_data: &Font, font_scale: &Scale, newline_amount: f64, ending_newline: f64, x_start_offset: f64)
+background: image::DynamicImage, img_transform: &ImageTransform, field: &str, text: &str, color: &Color, font_size: f32, x: f64,
+y: &mut f64, regular_font: &IndirectFontRef, bold_font: &IndirectFontRef, italic_font: &IndirectFontRef,
+bold_italic_font: &IndirectFontRef, regular_font_size_data: &Font, bold_font_size_data: &Font,
+italic_font_size_data: &Font, bold_italic_font_size_data: &Font, font_scale: &Scale, newline_amount: f64, ending_newline: f64,
+x_start_offset: f64)
 -> PdfLayerReference
 {
 	// Set the text color
@@ -343,18 +431,21 @@ text_font_size_data: &Font, font_scale: &Scale, newline_amount: f64, ending_newl
 	// Begins a text section
 	layer.begin_text_section();
 	// Sets the font to the field font
-	layer.set_font(field_font, font_size as f64);
+	layer.set_font(bold_font, font_size as f64);
 	// Sets the cursor location
 	layer.set_text_cursor(Mm(x + x_start_offset), Mm(*y));
+	let mut curr_x = x;
 	// Add the field text to the page
-	layer.write_text(field, &field_font);
+	layer.write_text(field, &bold_font);
 	// Calculate the width of the field text
-	let field_width = calc_text_width(field_font_size_data, font_scale, field);
+	let field_width = calc_text_width(bold_font_size_data, font_scale, field);
 	// Set the font to the text font
-	layer.set_font(text_font, font_size as f64);
+	layer.set_font(regular_font, font_size as f64);
 	// Add the spell text to the page
-	let mut new_layer = safe_write(doc, &layer, layer_count, background.clone(), img_transform, &text, color, font_size, x,
-		y, &text_font, &text_font_size_data, &font_scale, newline_amount, field_width as f64 + x_start_offset);
+	let mut new_layer = safe_write(doc, &layer, layer_count, background.clone(), img_transform, &text, color, font_size,
+		&mut curr_x, y, &regular_font, &bold_font, &italic_font, &bold_italic_font, &regular_font_size_data,
+		&bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data, &font_scale, newline_amount,
+		field_width as f64 + x_start_offset);
 	// Ends the text section
 	new_layer.end_text_section();
 	// Decrement y value by the ending newine amount
@@ -376,7 +467,7 @@ fn get_level_school_text(spell: &spells::Spell) -> String
 	let mut text = match spell.level
 	{
 		spells::Level::Cantrip => format!("{} {}", spell.school, spell.level),
-		_ => format!("{} {}", spell.level, spell.school)
+		_ => format!("<i> {} {}", spell.level, spell.school)
 	};
 	// If the spell is a ritual
 	if spell.is_ritual
@@ -484,47 +575,50 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 
 		// Add the name of the spell as a header
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &spell.name, &red,
-			HEADER_FONT_SIZE, X_START, &mut text_height, &regular_font, &regular_font_size_data, &header_font_scale,
+			HEADER_FONT_SIZE, X_START, &mut text_height, &regular_font, &bold_font, &italic_font, &bold_italic_font,
+			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data, &header_font_scale,
 			HEADER_NEWLINE, HEADER_NEWLINE);
 
 		// Add the level and the spell's school of magic
 		let text = get_level_school_text(&spell);
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
-			BODY_FONT_SIZE, X_START, &mut text_height, &italic_font, &italic_font_size_data, &body_font_scale,
+			BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &bold_font, &italic_font, &bold_italic_font,
+			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data, &body_font_scale,
 			BODY_NEWLINE, HEADER_NEWLINE);
 
 		// Add the casting time of the spell
 		layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
-			"Casting Time: ", &spell.casting_time.to_string(), &black, BODY_FONT_SIZE, X_START, &mut text_height, &bold_font,
-			&regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, BODY_NEWLINE,
+			"Casting Time: ", &spell.casting_time.to_string(), &black, BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &bold_font, &italic_font, &bold_italic_font,
+			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data, &body_font_scale, BODY_NEWLINE, BODY_NEWLINE,
 			0.0);
 
 		// Add the range of the spell
 		layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, "Range: ",
-			&spell.range.to_string(), &black, BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
-			&bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);
+			&spell.range.to_string(), &black, BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &bold_font, &italic_font, &bold_italic_font,
+			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data, &body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);
 
 		// Add the components of the spell
 		layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, "Components: ",
-			&spell.get_component_string(), &black, BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
-			&bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);
+			&spell.get_component_string(), &black, BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &bold_font, &italic_font, &bold_italic_font,
+			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data, &body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);
 
 		// Add the duration of the spell
 		layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, "Duration: ",
-			&spell.duration.to_string(), &black, BODY_FONT_SIZE, X_START, &mut text_height, &bold_font, &regular_font,
-			&bold_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, HEADER_NEWLINE, 0.0);
+			&spell.duration.to_string(), &black, BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &bold_font, &italic_font, &bold_italic_font,
+			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data, &body_font_scale, BODY_NEWLINE, HEADER_NEWLINE, 0.0);
 
 		// Add the spell's description
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &spell.description,
-			&black, BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &regular_font_size_data, &body_font_scale,
+			&black, BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &bold_font, &italic_font, &bold_italic_font,
+			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data, &body_font_scale,
 			BODY_NEWLINE, BODY_NEWLINE);
 
 		// If the spell has an upcast description
 		if let Some(description) = &spell.upcast_description
 		{
 			layer_ref = add_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
-				"At Higher Levels. ", &description, &black, BODY_FONT_SIZE, X_START, &mut text_height, &bold_italic_font,
-				&regular_font, &bold_italic_font_size_data, &regular_font_size_data, &body_font_scale, BODY_NEWLINE, 0.0,
+				"At Higher Levels. ", &description, &black, BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &bold_font, &italic_font, &bold_italic_font,
+				&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data, &body_font_scale, BODY_NEWLINE, 0.0,
 				10.0);
 		}
 

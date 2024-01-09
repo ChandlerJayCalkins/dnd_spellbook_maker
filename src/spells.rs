@@ -1659,7 +1659,7 @@ impl Spell
 		else { *line_index += 1; }
 
 		// Loop until a line that ends with a quote is reached
-		while true
+		loop
 		{
 			// Get the next line
 			let new_line = lines[*line_index].split_whitespace().collect::<Vec<_>>().join(" ");
