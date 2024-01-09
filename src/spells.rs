@@ -1169,7 +1169,7 @@ impl fmt::Display for Duration
 }
 
 // Gets a string of an amount of something like "1 minute", "5 minutes", "1 hour", or "3 hours"
-// Note: the unit should be singular, not plural because an 's' will be added to the end of it if num is anything besides 1
+// Note: the unit should be singular, not plural because an 's' will be added to the end of it if num is anything but 1
 fn get_amount_string(num: u16, unit: &str) -> String
 {
 	if num == 1
