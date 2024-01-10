@@ -50,15 +50,18 @@ fn font_units_to_mm(font_unit_width: f32) -> f32
 }
 
 // Calculates the width of the widest text in each column of a table vec along with that column's index
-fn get_max_column_widths(table_vec: &Vec<Vec<&str>>, columns: usize, font_size_data: &Font, font_scale: &Scale) -> Vec<(usize, f32)>
+fn get_max_column_widths(table_vec: &Vec<Vec<&str>>, columns: usize, body_font_size_data: &Font,
+header_font_size_data: &Font, font_scale: &Scale) -> Vec<(usize, f32)>
 {
 	let mut widths = Vec::with_capacity(columns);
+	let mut header = true;
 	for i in 0..columns
 	{
 		let mut max_width: f32 = 0.0;
 		for j in 0..table_vec.len()
 		{
-			let width = calc_text_width(font_size_data, font_scale, table_vec[j][i]);
+			let width = if header { header = false; calc_text_width(header_font_size_data, font_scale, table_vec[j][i]) }
+			else { calc_text_width(body_font_size_data, font_scale, table_vec[j][i]) };
 			max_width = max_width.max(width);
 		}
 		widths.push((i, max_width));
@@ -69,7 +72,8 @@ fn get_max_column_widths(table_vec: &Vec<Vec<&str>>, columns: usize, font_size_d
 // Writes a table to the pdf doc
 fn create_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, table_string: &str, font_size: f32, x: &mut f64,
-y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
+y: &mut f64, body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data: &Font,
+header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
 {
 	// The layer that gets returned
 	let mut layer_ref = (*layer).clone();
@@ -120,7 +124,8 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 	}
 	println!("{:?}", table_vec);
 	// Get the width of the widest string in each column
-	let max_column_widths = get_max_column_widths(&table_vec, column_count, font_size_data, font_scale);
+	let max_column_widths = get_max_column_widths(&table_vec, column_count, body_font_size_data, header_font_size_data,
+		font_scale);
 	println!("{:?}", max_column_widths);
 	// Create vec for holding the actual width of each column
 	// This will be determined by first assuming all columns need the same amount of space on a page,
@@ -166,6 +171,15 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 	// Make the table width smaller if the columns aren't going to take up the whole page
 	table_width = table_width.min(actual_table_width);
 	println!("{}", table_width);
+	// Create a new 3D table vec for storing the rows, columns, and each line in a cell
+	let mut table: Vec<Vec<Vec<&str>>> = Vec::new();
+	for row in table_vec
+	{
+		for column in row
+		{
+
+		}
+	}
 	// Return the last layer that was used
 	layer_ref
 }
@@ -174,8 +188,9 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 // Returns true if a table is currently being processed or just finished processing, false otherwise
 fn check_in_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, table_string: &mut String, token: &str,
-in_table: &mut bool, font_size: f32, x: &mut f64, y: &mut f64, font: &IndirectFontRef, font_size_data: &Font,
-font_scale: &Scale, newline_amount: f64) -> (bool, PdfLayerReference)
+in_table: &mut bool, font_size: f32, x: &mut f64, y: &mut f64, regular_font: &IndirectFontRef, bold_font: &IndirectFontRef,
+regular_font_size_data: &Font, bold_font_size_data: &Font, font_scale: &Scale, newline_amount: f64)
+-> (bool, PdfLayerReference)
 {
 	// If currently in a table
 	if *in_table
@@ -187,7 +202,8 @@ font_scale: &Scale, newline_amount: f64) -> (bool, PdfLayerReference)
 		{
 			// Write the table to the pdf doc
 			let new_layer = create_table(doc, layer, layer_count, background.clone(), img_transform, table_string,
-				font_size, x, y, font, font_size_data, font_scale, newline_amount);
+				font_size, x, y, regular_font, bold_font, regular_font_size_data, bold_font_size_data, font_scale,
+				newline_amount);
 			// Set the in_table flag off
 			*in_table = false;
 			return (true, new_layer);
@@ -357,8 +373,8 @@ x_start_offset: f64) -> PdfLayerReference
 		// Check if a table is currently being processed
 		let mut skip = false;
 		(skip, layer_ref) = check_in_table(doc, &layer_ref, layer_count, background.clone(), img_transform,
-			&mut table_string, &paragraph, &mut in_table, font_size, x, y, current_font, current_font_size_data, font_scale,
-			newline_amount);
+			&mut table_string, &paragraph, &mut in_table, font_size, x, y, regular_font, bold_font, regular_font_size_data,
+			bold_font_size_data, font_scale, newline_amount);
 		// If a table is being processed, skip printing this text here
 		if skip { continue; }
 
@@ -395,8 +411,8 @@ x_start_offset: f64) -> PdfLayerReference
 
 			// Check if a table is currently being processed
 			(skip, layer_ref) = check_in_table(doc, &layer_ref, layer_count, background.clone(), img_transform,
-				&mut table_string, &token, &mut in_table, font_size, x, y, current_font, current_font_size_data, font_scale,
-				newline_amount);
+				&mut table_string, &token, &mut in_table, font_size, x, y, regular_font, bold_font, regular_font_size_data,
+				bold_font_size_data, font_scale, newline_amount);
 			// If a table is being processed, skip printing this text here
 			if skip { continue; }
 
