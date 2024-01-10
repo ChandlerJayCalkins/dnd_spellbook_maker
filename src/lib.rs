@@ -49,8 +49,8 @@ fn font_units_to_mm(font_unit_width: f32) -> f32
 	font_unit_width * mm_to_font_ratio
 }
 
-// Calculates the width of the widest text in each column of a table vec
-fn get_max_column_widths(table_vec: &Vec<Vec<&str>>, columns: usize, font_size_data: &Font, font_scale: &Scale) -> Vec<f32>
+// Calculates the width of the widest text in each column of a table vec along with that column's index
+fn get_max_column_widths(table_vec: &Vec<Vec<&str>>, columns: usize, font_size_data: &Font, font_scale: &Scale) -> Vec<(usize, f32)>
 {
 	let mut widths = Vec::with_capacity(columns);
 	for i in 0..columns
@@ -61,7 +61,7 @@ fn get_max_column_widths(table_vec: &Vec<Vec<&str>>, columns: usize, font_size_d
 			let width = calc_text_width(font_size_data, font_scale, table_vec[j][i]);
 			max_width = max_width.max(width);
 		}
-		widths.push(max_width);
+		widths.push((i, max_width));
 	}
 	widths
 }
@@ -119,8 +119,18 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 		index += 1;
 	}
 	println!("{:?}", table_vec);
-	let widths = get_max_column_widths(&table_vec, column_count, font_size_data, font_scale);
-	println!("{:?}", widths);
+	// Get the width of the widest string in each column
+	let max_column_widths = get_max_column_widths(&table_vec, column_count, font_size_data, font_scale);
+	println!("{:?}", max_column_widths);
+	// Create vec for holding the actual width of each column
+	// This will be determined by first assuming all columns need the same amount of space on a page,
+	// then if any columns have a max width less than that, remove the space that column doesn't need
+	// and split it up among the rest of the columns
+	let mut column_widths: Vec<f32> = Vec::with_capacity(column_count);
+	// Sort the max width of each column from least to greatest
+	let mut sorted_max_widths = max_column_widths.clone();
+	sorted_max_widths.sort_by(|(_, a), (_, b)| a.partial_cmp(&b).expect("Error sorting table widths"));
+	println!("{:?}", sorted_max_widths);
 	// Return the last layer that was used
 	layer_ref
 }
