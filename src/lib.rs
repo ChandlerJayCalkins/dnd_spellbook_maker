@@ -138,6 +138,8 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 	// Calculate the default column width
 	let mut default_column_width = (table_width - column_margin * ((column_count as f64) - 1.0)) / column_count as f64;
 	println!("{}", default_column_width);
+	// Keeps track of the number of reamining columns to calculate width for
+	let mut remaining_columns = column_count as f64 - 1.0;
 	// Loop through each max column width in order of least to greatest
 	for (index, max_width) in sorted_max_widths
 	{
@@ -147,7 +149,9 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 			// Set that column's width to it's max width
 			column_widths[index] = max_width as f64;
 			// Adjust the default column width to take up the space this column didn't use
-			default_column_width += (default_column_width - max_width as f64) / column_count as f64;
+			default_column_width += (default_column_width - max_width as f64) / remaining_columns;
+			// Decrease the number of columns left to calculate the width of
+			remaining_columns -= 1.0;
 		}
 		else
 		{
@@ -156,6 +160,12 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 		}
 	}
 	println!("{:?}", column_widths);
+	// Calculate the sum of the widths of each column
+	let actual_table_width: f64 = column_widths.iter().sum::<f64>() + column_margin * ((column_count as f64) - 1.0);
+	println!("{}", actual_table_width);
+	// Make the table width smaller if the columns aren't going to take up the whole page
+	table_width = table_width.min(actual_table_width);
+	println!("{}", table_width);
 	// Return the last layer that was used
 	layer_ref
 }
