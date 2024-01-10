@@ -54,12 +54,14 @@ fn get_max_column_widths(table_vec: &Vec<Vec<&str>>, columns: usize, body_font_s
 header_font_size_data: &Font, font_scale: &Scale) -> Vec<(usize, f32)>
 {
 	let mut widths = Vec::with_capacity(columns);
-	let mut header = true;
 	for i in 0..columns
 	{
+		// Flag to tell when to use header font instead of body font
+		let mut header = true;
 		let mut max_width: f32 = 0.0;
 		for j in 0..table_vec.len()
 		{
+			// Calculate width with either header or body text depending on header flag
 			let width = if header { header = false; calc_text_width(header_font_size_data, font_scale, table_vec[j][i]) }
 			else { calc_text_width(body_font_size_data, font_scale, table_vec[j][i]) };
 			max_width = max_width.max(width);
@@ -101,10 +103,10 @@ header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLay
 		// Index of the last row
 		let end_index = table_vec.len() - 1;
 		// Loop through each column
-		for column in columns
+		for cell in columns
 		{
 			// Add the column to the end of the table vec
-			table_vec[end_index].push(column.trim());
+			table_vec[end_index].push(cell.trim());
 		}
 	}
 	// Loop through each row in the table to add extra columns
@@ -172,14 +174,58 @@ header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLay
 	table_width = table_width.min(actual_table_width);
 	println!("{}", table_width);
 	// Create a new 3D table vec for storing the rows, columns, and each line in a cell
-	let mut table: Vec<Vec<Vec<&str>>> = Vec::new();
+	let mut table: Vec<Vec<Vec<String>>> = Vec::new();
+	// Flag to tell if header text is currently being processed
+	let mut header = true;
+	// Loops through each row in the table
 	for row in table_vec
 	{
-		for column in row
+		// Add a new row to the final table vec
+		table.push(Vec::new());
+		// Get the index of the row that was just added
+		let last_row = table.len() - 1;
+		// Counts which column is currently being processed so the correct width in the column_widths vec can be accessed
+		let mut column = 0;
+		// Loop through each cell in a row
+		for cell in row
 		{
-
+			// Add a new cell to that row
+			table[last_row].push(Vec::new());
+			// Get the index of the cell / col that was just added
+			let last_col = table[last_row].len() - 1;
+			// Get a vec of all the tokens in this cell
+			let tokens: Vec<_> = cell.split_whitespace().collect();
+			// If there are not tokens in this cell, continue to next cell
+			if tokens.len() < 1 { column += 1; continue; }
+			// Create a string that will represent an entire line of text in this cell
+			let mut line = tokens[0].to_string();
+			// Loop through each token after the first
+			for token in &tokens[1..]
+			{
+				// Create a string of a line with the next token added
+				let new_line = format!("{} {}", line, token);
+				// Calculate the width of this new line (with header or body font)
+				let width = if header { calc_text_width(header_font_size_data, font_scale, &new_line) }
+				else { calc_text_width(body_font_size_data, font_scale, &new_line) };
+				// If the line with this token added is too wide for this column
+				if width as f64 > column_widths[column]
+				{
+					// Add the current line
+					table[last_row][last_col].push(line);
+					// Reset the line to the current token
+					line = token.to_string();
+				}
+				// If the new line isn't too wide, add the current token to the current line
+				else { line = new_line; }
+			}
+			// Add the remaining text to the table
+			table[last_row][last_col].push(line);
+			column += 1;
 		}
+		// Set the header font flag to false after the first row has been completed
+		header = false;
 	}
+	println!("{:?}", table);
 	// Return the last layer that was used
 	layer_ref
 }
