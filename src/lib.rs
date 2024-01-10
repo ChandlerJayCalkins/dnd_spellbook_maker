@@ -133,8 +133,10 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 	println!("{:?}", sorted_max_widths);
 	// Get the width of the entire table
 	let mut table_width = X_END - X_START;
+	// Space between columns in the table
+	let column_margin = 10.0;
 	// Calculate the default column width
-	let mut default_column_width = (table_width / column_count as f64) - 10.0;
+	let mut default_column_width = (table_width - column_margin * ((column_count as f64) - 1.0)) / column_count as f64;
 	println!("{}", default_column_width);
 	// Loop through each max column width in order of least to greatest
 	for (index, max_width) in sorted_max_widths
