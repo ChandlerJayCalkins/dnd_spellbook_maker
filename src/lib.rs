@@ -23,6 +23,8 @@ const X_END: f64 = 190.0;
 const Y_END: f64 = 10.0;
 
 const TABLE: &str = "<table>";
+const ROW: &str = "<row>";
+const COLUMN_DELIM: &str = "|";
 
 // Calculates the width of some text give the font and the font size it uses
 fn calc_text_width(font_size_data: &Font, font_scale: &Scale, text: &str) -> f32
@@ -54,6 +56,53 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 {
 	// The layer that gets returned
 	let mut layer_ref = (*layer).clone();
+	// Split <table> tokens off of the ends of the table string
+	let mut tokens: Vec<_> = table_string.split_whitespace().collect();
+	if tokens.len() < 2 { return layer_ref; }
+	tokens.remove(0);
+	tokens.pop();
+	// Get a vec of every row in the table (separated by the ROW delimeter)
+	let new_table_string = tokens.join(" ");
+	let rows: Vec<_> = new_table_string.split(ROW).collect();
+	// Keeps track of the number of columns
+	let mut column_count = 0;
+	// 2D vec that will store the strings in the table
+	let mut table_vec: Vec<Vec<&str>> = Vec::new();
+	// Loop through each row in the table to create the table
+	for row in rows
+	{
+		// Create a new row in the table vec
+		table_vec.push(Vec::new());
+		// Split the row into columns by the COLUMN_DELIM
+		let columns: Vec<_> = row.split(COLUMN_DELIM).collect();
+		// Increase the number of columns if this row has more than the last column amount
+		column_count = std::cmp::max(column_count, columns.len());
+		// Index of the last row
+		let end_index = table_vec.len() - 1;
+		// Loop through each column
+		for column in columns
+		{
+			// Add the column to the end of the table vec
+			table_vec[end_index].push(column.trim());
+		}
+	}
+	// Loop through each row in the table to add extra columns
+	let mut index = 0;
+	while index < table_vec.len()
+	{
+		// If this row has less columns than needed
+		if table_vec[index].len() < column_count
+		{
+			// Add columns until it has the correct amount
+			for _ in 0..column_count - table_vec[index].len()
+			{
+				table_vec[index].push("");
+			}
+		}
+		index += 1;
+	}
+	println!("{:?}", table_vec);
+	// Return the last layer that was used
 	layer_ref
 }
 
@@ -73,10 +122,11 @@ font_scale: &Scale, newline_amount: f64) -> (bool, PdfLayerReference)
 		if token == TABLE
 		{
 			// Write the table to the pdf doc
-			//create_table();
-			println!("{}", table_string);
+			let new_layer = create_table(doc, layer, layer_count, background.clone(), img_transform, table_string,
+				font_size, x, y, font, font_size_data, font_scale, newline_amount);
 			// Set the in_table flag off
 			*in_table = false;
+			return (true, new_layer);
 		}
 		return (true, layer.clone());
 	}
@@ -243,7 +293,7 @@ x_start_offset: f64) -> PdfLayerReference
 		// Check if a table is currently being processed
 		let mut skip = false;
 		(skip, layer_ref) = check_in_table(doc, &layer_ref, layer_count, background.clone(), img_transform,
-			&mut table_string, &line, &mut in_table, font_size, x, y, current_font, current_font_size_data, font_scale,
+			&mut table_string, &paragraph, &mut in_table, font_size, x, y, current_font, current_font_size_data, font_scale,
 			newline_amount);
 		// If a table is being processed, skip printing this text here
 		if skip { continue; }
@@ -281,14 +331,13 @@ x_start_offset: f64) -> PdfLayerReference
 
 			// Check if a table is currently being processed
 			(skip, layer_ref) = check_in_table(doc, &layer_ref, layer_count, background.clone(), img_transform,
-				&mut table_string, &line, &mut in_table, font_size, x, y, current_font, current_font_size_data, font_scale,
+				&mut table_string, &token, &mut in_table, font_size, x, y, current_font, current_font_size_data, font_scale,
 				newline_amount);
 			// If a table is being processed, skip printing this text here
 			if skip { continue; }
 
 			// Create a new line to test if the current line is long enough for a newline
 			let new_line = format!("{} {}", line, token);
-			println!("{}", new_line);
 			// Calculate the width of the line with this token added
 			let width = calc_text_width(&current_font_size_data, &font_scale, &new_line);
 			// If the line is too long with this token added
@@ -391,7 +440,6 @@ font_size_data: &Font, font_scale: &Scale, newline_amount: f64)
 	}
 	// End this text section
 	layer.end_text_section();
-	// Return the current layer (will be different if the text spilled into a new page)
 }
 
 // Adds text to a spell page
