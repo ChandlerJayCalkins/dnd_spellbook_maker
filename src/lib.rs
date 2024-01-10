@@ -49,6 +49,23 @@ fn font_units_to_mm(font_unit_width: f32) -> f32
 	font_unit_width * mm_to_font_ratio
 }
 
+// Calculates the width of the widest text in each column of a table vec
+fn get_max_column_widths(table_vec: &Vec<Vec<&str>>, columns: usize, font_size_data: &Font, font_scale: &Scale) -> Vec<f32>
+{
+	let mut widths = Vec::with_capacity(columns);
+	for i in 0..columns
+	{
+		let mut max_width: f32 = 0.0;
+		for j in 0..table_vec.len()
+		{
+			let width = calc_text_width(font_size_data, font_scale, table_vec[j][i]);
+			max_width = max_width.max(width);
+		}
+		widths.push(max_width);
+	}
+	widths
+}
+
 // Writes a table to the pdf doc
 fn create_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, table_string: &str, font_size: f32, x: &mut f64,
@@ -102,6 +119,8 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 		index += 1;
 	}
 	println!("{:?}", table_vec);
+	let widths = get_max_column_widths(&table_vec, column_count, font_size_data, font_scale);
+	println!("{:?}", widths);
 	// Return the last layer that was used
 	layer_ref
 }
