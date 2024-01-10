@@ -126,11 +126,34 @@ y: &mut f64, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, 
 	// This will be determined by first assuming all columns need the same amount of space on a page,
 	// then if any columns have a max width less than that, remove the space that column doesn't need
 	// and split it up among the rest of the columns
-	let mut column_widths: Vec<f32> = Vec::with_capacity(column_count);
+	let mut column_widths = vec![0.0; column_count];
 	// Sort the max width of each column from least to greatest
 	let mut sorted_max_widths = max_column_widths.clone();
 	sorted_max_widths.sort_by(|(_, a), (_, b)| a.partial_cmp(&b).expect("Error sorting table widths"));
 	println!("{:?}", sorted_max_widths);
+	// Get the width of the entire table
+	let mut table_width = X_END - X_START;
+	// Calculate the default column width
+	let mut default_column_width = (table_width / column_count as f64) - 10.0;
+	println!("{}", default_column_width);
+	// Loop through each max column width in order of least to greatest
+	for (index, max_width) in sorted_max_widths
+	{
+		// If the column's max width is less than the default column width
+		if (max_width as f64) < default_column_width
+		{
+			// Set that column's width to it's max width
+			column_widths[index] = max_width as f64;
+			// Adjust the default column width to take up the space this column didn't use
+			default_column_width += (default_column_width - max_width as f64) / column_count as f64;
+		}
+		else
+		{
+			// Set this column's width to the default width
+			column_widths[index] = default_column_width;
+		}
+	}
+	println!("{:?}", column_widths);
 	// Return the last layer that was used
 	layer_ref
 }
