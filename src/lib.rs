@@ -152,10 +152,10 @@ header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLay
 	println!("{:?}", sorted_max_widths);
 	// Get the width of the entire table
 	let mut table_width = X_END - X_START;
-	// Space between columns in the table
-	let column_margin = 10.0;
+	// Space between cells in the table
+	let cell_margin = 10.0;
 	// Calculate the default column width
-	let mut default_column_width = (table_width - column_margin * ((column_count as f64) - 1.0)) / column_count as f64;
+	let mut default_column_width = (table_width - cell_margin * ((column_count as f64) - 1.0)) / column_count as f64;
 	println!("{}", default_column_width);
 	// Keeps track of the number of reamining columns to calculate width for
 	let mut remaining_columns = column_count as f64 - 1.0;
@@ -180,7 +180,7 @@ header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLay
 	}
 	println!("{:?}", column_widths);
 	// Calculate the sum of the widths of each column
-	let actual_table_width: f64 = column_widths.iter().sum::<f64>() + column_margin * ((column_count as f64) - 1.0);
+	let actual_table_width: f64 = column_widths.iter().sum::<f64>() + cell_margin * ((column_count as f64) - 1.0);
 	println!("{}", actual_table_width);
 	// Make the table width smaller if the columns aren't going to take up the whole page
 	table_width = table_width.min(actual_table_width);
@@ -249,6 +249,9 @@ header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLay
 	}
 	println!("{:?}", table);
 	println!("{:?}", row_heights);
+	// Calculate the height of the entire table
+	let table_height = (row_heights.iter().sum::<f32>() as f64) + (((row_heights.len() - 2) as f64) * cell_margin);
+	println!("{}", table_height);
 	// Return the last layer that was used
 	layer_ref
 }
