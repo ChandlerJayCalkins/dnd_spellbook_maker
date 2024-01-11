@@ -26,7 +26,7 @@ const TABLE: &str = "<table>";
 const ROW: &str = "<row>";
 const COLUMN_DELIM: &str = "|";
 
-// Calculates the width of some text give the font and the font size it uses
+// Calculates the width of some text given the font and the font size it uses
 fn calc_text_width(font_size_data: &Font, font_scale: &Scale, text: &str) -> f32
 {
 	let mut width: f32 = 0.0;
@@ -40,6 +40,18 @@ fn calc_text_width(font_size_data: &Font, font_scale: &Scale, text: &str) -> f32
 		width += glyph.scaled(*font_scale).h_metrics().advance_width;
 	}
 	font_units_to_mm(width)
+}
+
+// Calculates the height of a number of lines of text given the font, font size, newline size, and number of lines
+fn calc_text_height(font_size_data: &Font, font_scale: &Scale, font_size: f32, newline_amount: f64, lines: usize) -> f32
+{
+	// Calculate the amount of space every newline takes up
+	let line_height = ((lines - 1) as f32) * (newline_amount as f32);
+	// Calculate the height of a the lower half and the upper half of a line of text in this font
+	let v_metrics = font_size_data.v_metrics(*font_scale);
+	let font_height = font_units_to_mm(v_metrics.ascent - v_metrics.descent);
+	// Return the amount of space the newlines take up plus the space a single line takes up
+	line_height + font_height
 }
 
 // Converts rusttype font units to printpdf millimeters (Mm)
@@ -175,6 +187,8 @@ header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLay
 	println!("{}", table_width);
 	// Create a new 3D table vec for storing the rows, columns, and each line in a cell
 	let mut table: Vec<Vec<Vec<String>>> = Vec::new();
+	// Used for storing the height of each row in a table
+	let mut row_heights: Vec<f32> = Vec::new();
 	// Flag to tell if header text is currently being processed
 	let mut header = true;
 	// Loops through each row in the table
@@ -184,6 +198,8 @@ header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLay
 		table.push(Vec::new());
 		// Get the index of the row that was just added
 		let last_row = table.len() - 1;
+		// Create a new height for the current row
+		row_heights.push(0.0);
 		// Counts which column is currently being processed so the correct width in the column_widths vec can be accessed
 		let mut column = 0;
 		// Loop through each cell in a row
@@ -220,12 +236,19 @@ header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLay
 			}
 			// Add the remaining text to the table
 			table[last_row][last_col].push(line);
+			// Calculate the height of this cell
+			let cell_height = if header { calc_text_height(header_font_size_data, font_scale, font_size, newline_amount, table[last_row][last_col].len()) }
+			else { calc_text_height(header_font_size_data, font_scale, font_size, newline_amount, table[last_row][last_col].len()) };
+			// Replace the total height for this row if this cell's height is larger than the previous amount
+			row_heights[last_row] = row_heights[last_row].max(cell_height);
+			// Go to the next column_width index
 			column += 1;
 		}
 		// Set the header font flag to false after the first row has been completed
 		header = false;
 	}
 	println!("{:?}", table);
+	println!("{:?}", row_heights);
 	// Return the last layer that was used
 	layer_ref
 }
