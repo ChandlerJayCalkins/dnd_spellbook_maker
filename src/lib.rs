@@ -252,6 +252,9 @@ header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLay
 	// Calculate the height of the entire table
 	let table_height = (row_heights.iter().sum::<f32>() as f64) + (((row_heights.len() - 2) as f64) * cell_margin);
 	println!("{}", table_height);
+	// If the table is longer than a whole page, just start writing it
+	// Else if the table still goes off the current page but isn't longer than a whole page, make a new page and start writing it on there
+	// Else, just start writing the table
 	// Return the last layer that was used
 	layer_ref
 }
