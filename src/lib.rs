@@ -864,13 +864,13 @@ mod tests
 			"spells/phb/mage_hand.txt",
 			"spells/phb/fire_bolt.txt",
 			"spells/strix/silvery_barbs.txt",
-			"spells/phb/mage_armor.txt",
+			"spells/phb/color_spray.txt",
 			"spells/phb/magic_missile.txt",
 			"spells/phb/ice_knife.txt",
+			"spells/phb/mage_armor.txt",
 			"spells/phb/unseen_servant.txt",
-			"spells/phb/alarm.txt",
 			"spells/phb/detect_magic.txt",
-			"spells/phb/color_spray.txt",
+			"spells/phb/alarm.txt",
 			"spells/phb/cloud_of_daggers.txt",
 			"spells/phb/scorching_ray.txt"
 		];
