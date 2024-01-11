@@ -851,4 +851,36 @@ mod tests
 		let doc = generate_spellbook(spellbook_name, &spell_list).unwrap();
 		let _ = save_spellbook(doc, "Spellbook.pdf");
 	}
+
+	// For creating spellbooks for myself and friends while I work on creating a ui to use this library
+	/*#[test]
+	fn create_spellbook()
+	{
+		let mut spell_list = Vec::new();
+		let spell_paths = vec!
+		[
+			"spells/phb/prestidigitation.txt",
+			"spells/phb/mending.txt",
+			"spells/phb/mage_hand.txt",
+			"spells/phb/fire_bolt.txt",
+			"spells/strix/silvery_barbs.txt",
+			"spells/phb/mage_armor.txt",
+			"spells/phb/magic_missile.txt",
+			"spells/phb/ice_knife.txt",
+			"spells/phb/unseen_servant.txt",
+			"spells/phb/alarm.txt",
+			"spells/phb/detect_magic.txt",
+			"spells/phb/color_spray.txt",
+			"spells/phb/cloud_of_daggers.txt",
+			"spells/phb/scorching_ray.txt"
+		];
+		for path in spell_paths
+		{
+			println!("{}", path);
+			spell_list.push(spells::Spell::from_file(path).unwrap());
+		}
+		let spellbook_name = "A Spellcaster's Spellbook";
+		let doc = generate_spellbook(spellbook_name, &spell_list).unwrap();
+		let _ = save_spellbook(doc, "New Spellbook.pdf");
+	}*/
 }
