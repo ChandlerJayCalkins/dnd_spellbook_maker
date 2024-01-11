@@ -139,7 +139,7 @@ impl SpellFileString for MagicSchool
 
 	fn to_spell_file_string(&self) -> String
 	{
-		self.to_string()
+		self.to_string().to_lowercase()
 	}
 
 	fn from_spell_file_string(s: &str) -> Result<Self, Self::SpellFileStringError>
@@ -177,14 +177,14 @@ impl fmt::Display for MagicSchool
 	{
 		let text = match self
 		{
-			Self::Abjuration => String::from("abjuration"),
-			Self::Conjuration => String::from("conjuration"),
-			Self::Divination => String::from("divination"),
-			Self::Enchantment => String::from("enchantment"),
-			Self::Evocation => String::from("evocation"),
-			Self::Illusion => String::from("illusion"),
-			Self::Necromancy => String::from("necromancy"),
-			Self::Transmutation => String::from("transmutation")
+			Self::Abjuration => String::from("Abjuration"),
+			Self::Conjuration => String::from("Conjuration"),
+			Self::Divination => String::from("Divination"),
+			Self::Enchantment => String::from("Enchantment"),
+			Self::Evocation => String::from("Evocation"),
+			Self::Illusion => String::from("Illusion"),
+			Self::Necromancy => String::from("Necromancy"),
+			Self::Transmutation => String::from("Transmutation")
 		};
 		write!(f, "{}", text)
 	}

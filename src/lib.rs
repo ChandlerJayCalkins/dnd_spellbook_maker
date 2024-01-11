@@ -640,7 +640,7 @@ fn get_level_school_text(spell: &spells::Spell) -> String
 	text = match spell.level
 	{
 		spells::Level::Cantrip => format!("{} {} {}", text, spell.school, spell.level),
-		_ => format!("{} {} {}", text, spell.level, spell.school)
+		_ => format!("{} {} {}", text, spell.level, spell.school.to_string().to_lowercase())
 	};
 	// If the spell is a ritual
 	if spell.is_ritual
@@ -785,7 +785,7 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
 			BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &bold_font, &italic_font, &bold_italic_font,
 			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
-			&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);
+			&body_font_scale, BODY_NEWLINE, HEADER_NEWLINE, 0.0);
 
 		// Add the spell's description
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
