@@ -83,10 +83,118 @@ header_font_size_data: &Font, font_scale: &Scale) -> Vec<(usize, f32)>
 	widths
 }
 
+// Writes a line of text into a textbox
+// Returns the layer of a new page if one had to be created for this line to be applied
+// Otherwise it returns the layer of the current page
+fn apply_textbox_line(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
+background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32, x_left: f64,
+x_right: f64, y_low: f64, y_high: f64, x: &mut f64, y: &mut f64, font: &IndirectFontRef, newline_amount: f64)
+-> PdfLayerReference
+{
+	// The layer that will get returned
+	let mut layer_ref = (*layer).clone();
+	// Move the text down a level for the new line
+	*y -= newline_amount;
+	// if the y level is below the bottom of the text box
+	if *y < y_low
+	{
+		// Create a new page
+		(_, layer_ref) = make_new_page(doc, layer_count, background.clone(), img_transform);
+		// Set the y level to the top of this page
+		*y = y_high;
+	}
+	// Create a new text section on the page
+	layer_ref.begin_text_section();
+	// Set the text cursor on the page
+	layer_ref.set_text_cursor(Mm(*x), Mm(*y));
+	// Set the font and font size
+	layer_ref.set_font(font, font_size as f64);
+	// Set the text color
+	layer_ref.set_fill_color(color.clone());
+	// Write the text to the page
+	layer_ref.write_text(text, &font);
+	// End the text section on the page
+	layer_ref.end_text_section();
+	// Return the most recent page
+	layer_ref
+}
+
+// Writes left-aligned text into a fixed size text box
+// Returns the last layer of the last page that the text appeared on
+// Otherwise it returns the layer of the current page
+fn write_textbox(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
+background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32, x_left: f64,
+x_right: f64, y_low: f64, y_high: f64, x: &mut f64, y: &mut f64, font: &IndirectFontRef, font_size_data: &Font,
+font_scale: &Scale, tab_amount: f64, newline_amount: f64) -> PdfLayerReference
+{
+	// The layer that will get returned
+	let mut layer_ref = (*layer).clone();
+	// Keeps track of the ending position of the last line
+	let mut last_x = 0.0;
+	// Split the text up into paragraphs by newlines
+	let paragraphs = text.split('\n');
+	// Loop through each paragraph
+	for paragraph in paragraphs
+	{
+		// Move the x position to the left side of the box plus the tab amount since it's a new paragraph
+		*x = x_left + tab_amount;
+		// Get a vec of each token in the paragraph
+		let tokens: Vec<_> = paragraph.split_whitespace().collect();
+		// If there are no tokens in this paragraph, skip it
+		if tokens.len() < 1 { continue; }
+		// Set the current line to the first token in the paragraph
+		let mut line = tokens[0].to_string();
+		// Loop through each token after the first
+		for token in &tokens[1..]
+		{
+			// Create a hypothetical new line with the next token
+			let new_line = format!("{} {}", line, token);
+			// Calculate the width of this new line
+			let new_line_end = *x + (calc_text_width(font_size_data, font_scale, &new_line) as f64);
+			// If the line would be too wide with the next token
+			if new_line_end > x_right
+			{
+				// Write the current line to the page
+				layer_ref = apply_textbox_line(doc, &layer_ref, layer_count, background.clone(), img_transform, &line, color, font_size,
+					x_left, x_right, y_low, y_high, x, y, font, newline_amount);
+				// Set the x position back to the left side of the text box to undo tabbing on the first line of a new paragraph
+				*x = x_left;
+				// Set the current line to the next token
+				line = token.to_string();
+			}
+			// If the new line fits within the text box, add the next token to the current line
+			else { line = new_line; }
+		}
+		// Write all remaining text to the page
+		layer_ref = apply_textbox_line(doc, &layer_ref, layer_count, background.clone(), img_transform, &line, color, font_size,
+			x_left, x_right, y_low, y_high, x, y, font, newline_amount);
+		// Calculate where the end of the last line that was written is and save it
+		last_x = *x + (calc_text_width(font_size_data, font_scale, &line) as f64);
+	}
+	// Set the x position to the end of the last line that was written
+	*x = last_x;
+	// Return the last layer that the text appeared on
+	layer_ref
+}
+
+/*fn write_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
+background: image::DynamicImage, img_transform: &ImageTransform, table: &Vec<Vec<Vec<String>>>, color: &Color, font_size: f32,
+x: &mut f64, y: &mut f64, body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data: &Font,
+header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
+{
+	for row in table
+	{
+		for cell in row
+		{
+
+		}
+	}
+}*/
+
 // Writes a table to the pdf doc
 fn create_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
-background: image::DynamicImage, img_transform: &ImageTransform, table_string: &str, font_size: f32, x: &mut f64,
-y: &mut f64, body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data: &Font,
+background: image::DynamicImage, img_transform: &ImageTransform, table_string: &str, color: &Color, font_size: f32,
+x: &mut f64, y: &mut f64, body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data: &Font,
 header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
 {
 	// The layer that gets returned
@@ -252,6 +360,21 @@ header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLay
 	// Calculate the height of the entire table
 	let table_height = (row_heights.iter().sum::<f32>() as f64) + (((row_heights.len() - 2) as f64) * cell_margin);
 	println!("{}", table_height);
+	// If the table goes off the current page but isn't longer than a whole page
+	/*if *y - table_height < Y_END && table_height <= Y_START - Y_END
+	{
+		// End the current text section
+		layer_ref.end_text_section();
+		// Create a new page
+		(_, layer_ref) = make_new_page(doc, layer_count, background.clone(), img_transform);
+		// Create a new text section
+		layer_ref.begin_text_section();
+		// Set the cursor to the top of the page
+		*y = Y_START;
+		layer_ref.set_text_cursor(Mm(X_START), Mm(*y));
+		// Reset the text color
+		layer_ref.set_fill_color(color.clone());
+	}*/
 	// If the table is longer than a whole page, just start writing it
 	// Else if the table still goes off the current page but isn't longer than a whole page, make a new page and start writing it on there
 	// Else, just start writing the table
@@ -263,7 +386,7 @@ header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLay
 // Returns true if a table is currently being processed or just finished processing, false otherwise
 fn check_in_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, table_string: &mut String, token: &str,
-in_table: &mut bool, font_size: f32, x: &mut f64, y: &mut f64, regular_font: &IndirectFontRef, bold_font: &IndirectFontRef,
+in_table: &mut bool, color: &Color, font_size: f32, x: &mut f64, y: &mut f64, regular_font: &IndirectFontRef, bold_font: &IndirectFontRef,
 regular_font_size_data: &Font, bold_font_size_data: &Font, font_scale: &Scale, newline_amount: f64)
 -> (bool, PdfLayerReference)
 {
@@ -276,7 +399,7 @@ regular_font_size_data: &Font, bold_font_size_data: &Font, font_scale: &Scale, n
 		if token == TABLE
 		{
 			// Write the table to the pdf doc
-			let new_layer = create_table(doc, layer, layer_count, background.clone(), img_transform, table_string,
+			let new_layer = create_table(doc, layer, layer_count, background.clone(), img_transform, table_string, color,
 				font_size, x, y, regular_font, bold_font, regular_font_size_data, bold_font_size_data, font_scale,
 				newline_amount);
 			// Set the in_table flag off
@@ -448,7 +571,7 @@ x_start_offset: f64) -> PdfLayerReference
 		// Check if a table is currently being processed
 		let mut skip = false;
 		(skip, layer_ref) = check_in_table(doc, &layer_ref, layer_count, background.clone(), img_transform,
-			&mut table_string, &paragraph, &mut in_table, font_size, x, y, regular_font, bold_font, regular_font_size_data,
+			&mut table_string, &paragraph, &mut in_table, color, font_size, x, y, regular_font, bold_font, regular_font_size_data,
 			bold_font_size_data, font_scale, newline_amount);
 		// If a table is being processed, skip printing this text here
 		if skip { continue; }
@@ -486,7 +609,7 @@ x_start_offset: f64) -> PdfLayerReference
 
 			// Check if a table is currently being processed
 			(skip, layer_ref) = check_in_table(doc, &layer_ref, layer_count, background.clone(), img_transform,
-				&mut table_string, &token, &mut in_table, font_size, x, y, regular_font, bold_font, regular_font_size_data,
+				&mut table_string, &token, &mut in_table, color, font_size, x, y, regular_font, bold_font, regular_font_size_data,
 				bold_font_size_data, font_scale, newline_amount);
 			// If a table is being processed, skip printing this text here
 			if skip { continue; }
