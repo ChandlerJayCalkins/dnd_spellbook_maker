@@ -14,6 +14,9 @@ const TITLE_NEWLINE: f64 = 12.0;
 const HEADER_NEWLINE: f64 = 8.0;
 const BODY_NEWLINE: f64 = 5.0;
 
+// The number of millimeters text gets shifted over on a new paragraph
+const TAB_AMOUNT: f64 = 10.0;
+
 // Starting x and y positions for text on a page
 const X_START: f64 = 10.0;
 const Y_START: f64 = 280.0;
@@ -22,6 +25,7 @@ const Y_START: f64 = 280.0;
 const X_END: f64 = 190.0;
 const Y_END: f64 = 10.0;
 
+// The tokens that are used for processing tables
 const TABLE: &str = "<table>";
 const ROW: &str = "<row>";
 const COLUMN_DELIM: &str = "|";
@@ -883,8 +887,9 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 			&header_font_scale, HEADER_NEWLINE, HEADER_NEWLINE, 0.0);*/
 		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &spell.name,
 			&red, HEADER_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, &regular_font, &regular_font_size_data,
-			&header_font_scale, 0.0, HEADER_NEWLINE);
+			&header_font_scale, TAB_AMOUNT, HEADER_NEWLINE);
 			y -= HEADER_NEWLINE;
+			x = X_START;
 
 		// Add the level and the spell's school of magic
 		let text = get_level_school_text(&spell);
@@ -894,8 +899,9 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 			&body_font_scale, BODY_NEWLINE, HEADER_NEWLINE, 0.0);*/
 		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text,
 			&black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, &italic_font, &italic_font_size_data,
-			&body_font_scale, 0.0, BODY_NEWLINE);
+			&body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
 			y -= HEADER_NEWLINE;
+			x = X_START;
 
 		// Add the casting time of the spell
 		let text = format!("<b> Casting Time: <r> {}", &spell.casting_time);
