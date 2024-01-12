@@ -131,10 +131,17 @@ background: image::DynamicImage, img_transform: &ImageTransform, text: &str, col
 x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64, font: &IndirectFontRef, font_size_data: &Font,
 font_scale: &Scale, tab_amount: f64, newline_amount: f64) -> PdfLayerReference
 {
+	// If either dimensions of the text box overlap each other, do nothing
+	if x_left >= x_right || y_high <= y_low { return (*layer).clone(); }
+	// If the x position starts past the right side of the text box, reset it to the left side plus the tab amount
+	if *x > x_right { *x = x_left + tab_amount; }
 	// The layer that will get returned
 	let mut layer_ref = (*layer).clone();
 	// Keeps track of the ending position of the last line
 	let mut last_x = *x;
+	// Adjusts the x position to be tabbed over on new paragraphs
+	// Will be 0 for the first paragraph so the user of the function has control of where the text starts
+	let mut tab_adjuster = 0.0;
 	// Adjusts the y position to a new line before applying a line
 	// Will be 0 for the first line so the first line prints exactly where the y position is
 	let mut newline_adjuster = 0.0;
@@ -144,7 +151,9 @@ font_scale: &Scale, tab_amount: f64, newline_amount: f64) -> PdfLayerReference
 	for paragraph in paragraphs
 	{
 		// Move the x position to the left side of the box plus the tab amount since it's a new paragraph
-		*x = x_left + tab_amount;
+		*x = *x + tab_adjuster;
+		// Sets the tab adjuster to not be 0 anymore after the first paragraph
+		tab_adjuster = tab_amount;
 		// Get a vec of each token in the paragraph
 		let tokens: Vec<_> = paragraph.split_whitespace().collect();
 		// If there are no tokens in this paragraph, skip it
@@ -766,6 +775,30 @@ ending_newline: f64, x_start_offset: f64) -> PdfLayerReference
 	new_layer
 }
 
+// Writes ones of the fields of a spell (casting time, components, etc.) to a spellbook document
+// Returns the last layer of the last page that the text appeared on
+fn write_spell_field(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
+background: image::DynamicImage, img_transform: &ImageTransform, field_name: &str, field_text: &str,
+field_name_color: &Color, field_text_color: &Color, font_size: f32, x_left: f64, x_right: f64, y_high: f64, y_low: f64,
+x: &mut f64, y: &mut f64, field_name_font: &IndirectFontRef, field_text_font: &IndirectFontRef,
+field_name_font_size_data: &Font, field_text_font_size_data: &Font, font_scale: &Scale, tab_amount: f64,
+newline_amount: f64) -> PdfLayerReference
+{
+	// Write the field name ("Casting Time:", "Components:", etc.) to the document
+	let mut new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, field_name,
+		field_name_color, font_size, x_left, x_right, y_high, y_low, x, y, field_name_font, field_name_font_size_data,
+		font_scale, tab_amount, newline_amount);
+	// Shift the x position over by 1 space
+	let sideshift = calc_text_width(field_name_font_size_data, font_scale, "  ");
+	*x += sideshift as f64;
+	// Write the text for that field to the document
+	new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, field_text,
+		field_text_color, font_size, x_left, x_right, y_high, y_low, x, y, field_text_font, field_text_font_size_data,
+		font_scale, tab_amount, newline_amount);
+	// Return the last layer that was created for this text
+	new_layer
+}
+
 // Gets the school and level info from a spell and turns it into text that says something like "nth-Level School-Type"
 fn get_level_school_text(spell: &spells::Spell) -> String
 {
@@ -888,8 +921,8 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &spell.name,
 			&red, HEADER_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, &regular_font, &regular_font_size_data,
 			&header_font_scale, TAB_AMOUNT, HEADER_NEWLINE);
-			y -= HEADER_NEWLINE;
-			x = X_START;
+		y -= HEADER_NEWLINE;
+		x = X_START;
 
 		// Add the level and the spell's school of magic
 		let text = get_level_school_text(&spell);
@@ -900,36 +933,61 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text,
 			&black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, &italic_font, &italic_font_size_data,
 			&body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
-			y -= HEADER_NEWLINE;
-			x = X_START;
+		y -= HEADER_NEWLINE;
+		x = X_START;
 
 		// Add the casting time of the spell
-		let text = format!("<b> Casting Time: <r> {}", &spell.casting_time);
+		/*let text = format!("<b> Casting Time: <r> {}", &spell.casting_time);
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
 			BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
 			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
-			&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);
+			&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);*/
+		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
+			"Casting Time:", &spell.casting_time.to_string(), &black, &black, BODY_FONT_SIZE, X_START, X_END, Y_START,
+			Y_END, &mut x, &mut y, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data,
+			&body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
+		y -= BODY_NEWLINE;
+		x = X_START;
+
 
 		// Add the range of the spell
-		let text = format!("<b> Range: <r> {}", spell.range);
+		/*let text = format!("<b> Range: <r> {}", spell.range);
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
 			BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
 			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
-			&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);
+			&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);*/
+		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
+			"Range:", &spell.range.to_string(), &black, &black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x,
+			&mut y, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale, TAB_AMOUNT,
+			BODY_NEWLINE);
+		y -= BODY_NEWLINE;
+		x = X_START;
 
 		// Add the components of the spell
-		let text = format!("<b> Components: <r> {}", spell.get_component_string());
+		/*let text = format!("<b> Components: <r> {}", spell.get_component_string());
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
 			BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
 			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
-			&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);
+			&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);*/
+		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
+			"Components:", &spell.get_component_string(), &black, &black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END,
+			&mut x, &mut y, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
+			TAB_AMOUNT, BODY_NEWLINE);
+		y -= BODY_NEWLINE;
+		x = X_START;
 
 		// Add the duration of the spell
-		let text = format!("<b> Duration: <r> {}", spell.duration);
+		/*let text = format!("<b> Duration: <r> {}", spell.duration);
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
 			BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
 			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
-			&body_font_scale, BODY_NEWLINE, HEADER_NEWLINE, 0.0);
+			&body_font_scale, BODY_NEWLINE, HEADER_NEWLINE, 0.0);*/
+		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
+			"Duration:", &spell.duration.to_string(), &black, &black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END,
+			&mut x, &mut y, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
+			TAB_AMOUNT, BODY_NEWLINE);
+		y -= HEADER_NEWLINE;
+		x = X_START;
 
 		// Add the spell's description
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
