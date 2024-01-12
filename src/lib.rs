@@ -88,7 +88,7 @@ header_font_size_data: &Font, font_scale: &Scale) -> Vec<(usize, f32)>
 // Otherwise it returns the layer of the current page
 fn apply_textbox_line(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32, x_left: f64,
-x_right: f64, y_low: f64, y_high: f64, x: &mut f64, y: &mut f64, font: &IndirectFontRef, newline_amount: f64)
+x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64, font: &IndirectFontRef, newline_amount: f64)
 -> PdfLayerReference
 {
 	// The layer that will get returned
@@ -124,13 +124,16 @@ x_right: f64, y_low: f64, y_high: f64, x: &mut f64, y: &mut f64, font: &Indirect
 // Otherwise it returns the layer of the current page
 fn write_textbox(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32, x_left: f64,
-x_right: f64, y_low: f64, y_high: f64, x: &mut f64, y: &mut f64, font: &IndirectFontRef, font_size_data: &Font,
+x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64, font: &IndirectFontRef, font_size_data: &Font,
 font_scale: &Scale, tab_amount: f64, newline_amount: f64) -> PdfLayerReference
 {
 	// The layer that will get returned
 	let mut layer_ref = (*layer).clone();
 	// Keeps track of the ending position of the last line
-	let mut last_x = 0.0;
+	let mut last_x = *x;
+	// Adjusts the y position to a new line before applying a line
+	// Will be 0 for the first line so the first line prints exactly where the y position is
+	let mut newline_adjuster = 0.0;
 	// Split the text up into paragraphs by newlines
 	let paragraphs = text.split('\n');
 	// Loop through each paragraph
@@ -156,7 +159,9 @@ font_scale: &Scale, tab_amount: f64, newline_amount: f64) -> PdfLayerReference
 			{
 				// Write the current line to the page
 				layer_ref = apply_textbox_line(doc, &layer_ref, layer_count, background.clone(), img_transform, &line, color, font_size,
-					x_left, x_right, y_low, y_high, x, y, font, newline_amount);
+					x_left, x_right, y_high, y_low, x, y, font, newline_adjuster);
+				// Set the newline adjuster to the newline amount so it's not 0 after the first line
+				newline_adjuster = newline_amount;
 				// Set the x position back to the left side of the text box to undo tabbing on the first line of a new paragraph
 				*x = x_left;
 				// Set the current line to the next token
@@ -167,7 +172,9 @@ font_scale: &Scale, tab_amount: f64, newline_amount: f64) -> PdfLayerReference
 		}
 		// Write all remaining text to the page
 		layer_ref = apply_textbox_line(doc, &layer_ref, layer_count, background.clone(), img_transform, &line, color, font_size,
-			x_left, x_right, y_low, y_high, x, y, font, newline_amount);
+			x_left, x_right, y_high, y_low, x, y, font, newline_adjuster);
+		// Set the newline adjuster to the newline amount so it's not 0 after the first line
+		newline_adjuster = newline_amount;
 		// Calculate where the end of the last line that was written is and save it
 		last_x = *x + (calc_text_width(font_size_data, font_scale, &line) as f64);
 	}
@@ -759,11 +766,10 @@ ending_newline: f64, x_start_offset: f64) -> PdfLayerReference
 fn get_level_school_text(spell: &spells::Spell) -> String
 {
 	// Gets a string of the level and the school from the spell
-	let mut text = String::from("<i>");
-	text = match spell.level
+	let mut text = match spell.level
 	{
-		spells::Level::Cantrip => format!("{} {} {}", text, spell.school, spell.level),
-		_ => format!("{} {} {}", text, spell.level, spell.school.to_string().to_lowercase())
+		spells::Level::Cantrip => format!("{} {}", spell.school, spell.level),
+		_ => format!("{} {}", spell.level, spell.school.to_string().to_lowercase())
 	};
 	// If the spell is a ritual
 	if spell.is_ritual
@@ -864,55 +870,64 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 		let (page, mut layer_ref) = make_new_page(&doc, &mut layer_count, img_data.clone(), &img_transform);
 		// Create a new bookmark for this page
 		doc.add_bookmark(spell.name.clone(), page);
-		// Keeps track of the current height to place text at
-		let mut text_height: f64 = Y_START;
+		// Keeps track of the current x and y position to place text at
+		let mut x: f64 = X_START;
+		let mut y: f64 = Y_START;
 
 		// Add text to the page
 
 		// Add the name of the spell as a header
-		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &spell.name, &red,
-			HEADER_FONT_SIZE, X_START, &mut text_height, &regular_font, &bold_font, &italic_font, &bold_italic_font,
+		/*layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &spell.name,
+			&red, HEADER_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
 			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
-			&header_font_scale, HEADER_NEWLINE, HEADER_NEWLINE, 0.0);
+			&header_font_scale, HEADER_NEWLINE, HEADER_NEWLINE, 0.0);*/
+		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &spell.name,
+			&red, HEADER_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, &regular_font, &regular_font_size_data,
+			&header_font_scale, 0.0, HEADER_NEWLINE);
+			y -= HEADER_NEWLINE;
 
 		// Add the level and the spell's school of magic
 		let text = get_level_school_text(&spell);
-		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
-			BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &bold_font, &italic_font, &bold_italic_font,
+		/*layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
+			BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
 			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
-			&body_font_scale, BODY_NEWLINE, HEADER_NEWLINE, 0.0);
+			&body_font_scale, BODY_NEWLINE, HEADER_NEWLINE, 0.0);*/
+		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text,
+			&black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, &italic_font, &italic_font_size_data,
+			&body_font_scale, 0.0, BODY_NEWLINE);
+			y -= HEADER_NEWLINE;
 
 		// Add the casting time of the spell
 		let text = format!("<b> Casting Time: <r> {}", &spell.casting_time);
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
-			BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &bold_font, &italic_font, &bold_italic_font,
+			BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
 			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
 			&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);
 
 		// Add the range of the spell
 		let text = format!("<b> Range: <r> {}", spell.range);
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
-			BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &bold_font, &italic_font, &bold_italic_font,
+			BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
 			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
 			&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);
 
 		// Add the components of the spell
 		let text = format!("<b> Components: <r> {}", spell.get_component_string());
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
-			BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &bold_font, &italic_font, &bold_italic_font,
+			BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
 			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
 			&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);
 
 		// Add the duration of the spell
 		let text = format!("<b> Duration: <r> {}", spell.duration);
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
-			BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &bold_font, &italic_font, &bold_italic_font,
+			BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
 			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
 			&body_font_scale, BODY_NEWLINE, HEADER_NEWLINE, 0.0);
 
 		// Add the spell's description
 		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
-			&spell.description, &black, BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &bold_font, &italic_font,
+			&spell.description, &black, BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font,
 			&bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
 			&bold_italic_font_size_data, &body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);
 
@@ -921,7 +936,7 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 		{
 			let text = format!("<bi> At Higher Levels. <r> {}", description);
 			layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
-				BODY_FONT_SIZE, X_START, &mut text_height, &regular_font, &bold_font, &italic_font, &bold_italic_font,
+				BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
 				&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
 				&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 10.0);
 		}
