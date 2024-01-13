@@ -25,10 +25,17 @@ const Y_START: f64 = 280.0;
 const X_END: f64 = 190.0;
 const Y_END: f64 = 10.0;
 
+// The tokens for changing text font
+const REGULAR_FONT_TAG: &str = "<r>";
+const BOLD_FONT_TAG: &str = "<b>";
+const ITALIC_FONT_TAG: &str = "<i>";
+const BOLD_ITALIC_FONT_TAG: &str = "<bi>";
+const ITALIC_BOLD_FONT_TAG: &str = "<ib>";
+
 // The tokens that are used for processing tables
-const TABLE: &str = "<table>";
-const ROW: &str = "<row>";
-const COLUMN_DELIM: &str = "|";
+const TABLE_TAG: &str = "<table>";
+const ROW_TAG: &str = "<row>";
+const COLUMN_TAG: &str = "|";
 
 // Calculates the width of some text given the font and the font size it uses
 fn calc_text_width(font_size_data: &Font, font_scale: &Scale, text: &str) -> f32
@@ -226,7 +233,7 @@ header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLay
 	tokens.pop();
 	// Get a vec of every row in the table (separated by the ROW delimeter)
 	let new_table_string = tokens.join(" ");
-	let rows: Vec<_> = new_table_string.split(ROW).collect();
+	let rows: Vec<_> = new_table_string.split(ROW_TAG).collect();
 	// Keeps track of the number of columns
 	let mut column_count = 0;
 	// 2D vec that will store the strings in the table
@@ -237,7 +244,7 @@ header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLay
 		// Create a new row in the table vec
 		table_vec.push(Vec::new());
 		// Split the row into columns by the COLUMN_DELIM
-		let columns: Vec<_> = row.split(COLUMN_DELIM).collect();
+		let columns: Vec<_> = row.split(COLUMN_TAG).collect();
 		// Increase the number of columns if this row has more than the last column amount
 		column_count = std::cmp::max(column_count, columns.len());
 		// Index of the last row
@@ -416,7 +423,7 @@ regular_font_size_data: &Font, bold_font_size_data: &Font, font_scale: &Scale, n
 		// Add the current token to the table string
 		*table_string = format!("{} {}", table_string, token);
 		// If the token is the table start / end token
-		if token == TABLE
+		if token == TABLE_TAG
 		{
 			// Write the table to the pdf doc
 			let new_layer = create_table(doc, layer, layer_count, background.clone(), img_transform, table_string, color,
@@ -429,7 +436,7 @@ regular_font_size_data: &Font, bold_font_size_data: &Font, font_scale: &Scale, n
 		return (true, layer.clone());
 	}
 	// If not currently in a table and the token is the table start / end token
-	else if token == TABLE
+	else if token == TABLE_TAG
 	{
 		// Set the in_table flag to true
 		*in_table = true;
@@ -775,6 +782,116 @@ ending_newline: f64, x_start_offset: f64) -> PdfLayerReference
 	new_layer
 }
 
+fn check_new_paragraph(text: &str, x: &mut f64, y: &mut f64, x_left: f64, tab_amount: f64, newline_amount: f64)
+-> bool
+{
+	if text.ends_with("\n")
+	{
+		*y -= newline_amount;
+		*x = x_left + tab_amount;
+		true
+	}
+	else { false }
+}
+
+fn write_spell_description(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
+background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32, x_left: f64,
+x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64, regular_font: &IndirectFontRef,
+bold_font: &IndirectFontRef, italic_font: &IndirectFontRef, bold_italic_font: &IndirectFontRef,
+regular_font_size_data: &Font, bold_font_size_data: &Font, italic_font_size_data: &Font,
+bold_italic_font_size_data: &Font, font_scale: &Scale, tab_amount: f64, newline_amount: f64) -> PdfLayerReference
+{
+	let mut new_layer = (*layer).clone();
+	let mut buffer = String::new();
+	let mut current_font = regular_font;
+	let mut current_font_size_data = regular_font_size_data;
+	let mut in_table = false;
+	let paragraphs = text.split('\n');
+	for paragraph in paragraphs
+	{
+		buffer += "\n";
+		let tokens = paragraph.split_whitespace();
+		for token in tokens
+		{
+			match token
+			{
+				REGULAR_FONT_TAG =>
+				{
+					if current_font != regular_font
+					{
+						new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, &buffer,
+							color, font_size, x_left, x_right, y_high, y_low, x, y, current_font, current_font_size_data,
+							font_scale, tab_amount, newline_amount);
+						let _ = check_new_paragraph(&buffer, x, y, x_left, tab_amount, newline_amount);
+						buffer = String::new();
+						current_font = regular_font;
+						current_font_size_data = regular_font_size_data;
+					}
+				},
+				BOLD_FONT_TAG =>
+				{
+					if current_font != bold_font
+					{
+						new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, &buffer,
+							color, font_size, x_left, x_right, y_high, y_low, x, y, current_font, current_font_size_data,
+							font_scale, tab_amount, newline_amount);
+						let _ = check_new_paragraph(&buffer, x, y, x_left, tab_amount, newline_amount);
+						buffer = String::new();
+						current_font = bold_font;
+						current_font_size_data = bold_font_size_data;
+					}
+				},
+				ITALIC_FONT_TAG =>
+				{
+					if current_font != italic_font
+					{
+						new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, &buffer,
+							color, font_size, x_left, x_right, y_high, y_low, x, y, current_font, current_font_size_data,
+							font_scale, tab_amount, newline_amount);
+						let _ = check_new_paragraph(&buffer, x, y, x_left, tab_amount, newline_amount);
+						buffer = String::new();
+						current_font = italic_font;
+						current_font_size_data = italic_font_size_data;
+					}
+				},
+				BOLD_ITALIC_FONT_TAG | ITALIC_BOLD_FONT_TAG =>
+				{
+					if current_font != bold_italic_font
+					{
+						new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, &buffer,
+							color, font_size, x_left, x_right, y_high, y_low, x, y, current_font, current_font_size_data,
+							font_scale, tab_amount, newline_amount);
+						let _ = check_new_paragraph(&buffer, x, y, x_left, tab_amount, newline_amount);
+						buffer = String::new();
+						current_font = bold_italic_font;
+						current_font_size_data = bold_italic_font_size_data;
+					}
+				},
+				TABLE_TAG =>
+				{
+					if in_table
+					{
+						in_table = false;
+					}
+					else
+					{
+						in_table = true;
+					}
+				},
+				_ =>
+				{
+					if buffer.is_empty() { buffer = token.to_string(); }
+					else { buffer = format!("{} {}", buffer, token); }
+				}
+			}
+		}
+	}
+	new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, &buffer,
+		color, font_size, x_left, x_right, y_high, y_low, x, y, current_font, current_font_size_data,
+		font_scale, tab_amount, newline_amount);
+	new_layer
+}
+
 // Writes ones of the fields of a spell (casting time, components, etc.) to a spellbook document
 // Returns the last layer of the last page that the text appeared on
 fn write_spell_field(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
@@ -990,17 +1107,23 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 		x = X_START;
 
 		// Add the spell's description
-		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
+		/*layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
 			&spell.description, &black, BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font,
 			&bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
-			&bold_italic_font_size_data, &body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);
+			&bold_italic_font_size_data, &body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);*/
+		layer_ref = write_spell_description(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
+			&spell.description, &black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, &regular_font,
+			&bold_font, &italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data,
+			&italic_font_size_data, &bold_italic_font_size_data, &body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
 
 		// If the spell has an upcast description
 		if let Some(description) = &spell.upcast_description
 		{
+			y -= BODY_NEWLINE;
+			x = X_START + TAB_AMOUNT;
 			let text = format!("<bi> At Higher Levels. <r> {}", description);
-			layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
-				BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
+			layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text,
+				&black, BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
 				&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
 				&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 10.0);
 		}
