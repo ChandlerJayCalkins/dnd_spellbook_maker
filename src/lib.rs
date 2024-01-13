@@ -782,16 +782,20 @@ ending_newline: f64, x_start_offset: f64) -> PdfLayerReference
 	new_layer
 }
 
-fn check_new_paragraph(text: &str, x: &mut f64, y: &mut f64, x_left: f64, tab_amount: f64, newline_amount: f64)
--> bool
+fn font_change_wrapup(text: &mut String, x: &mut f64, y: &mut f64, x_left: f64, font_size_data: &Font,
+font_scale: &Scale, spaces: &str, tab_amount: f64, newline_amount: f64)
 {
-	if text.ends_with("\n")
+	if (*text).ends_with("\n")
 	{
 		*y -= newline_amount;
 		*x = x_left + tab_amount;
-		true
 	}
-	else { false }
+	else
+	{
+		let space_width = calc_text_width(font_size_data, font_scale, spaces);
+		*x += space_width as f64;
+	}
+	*text = String::new();
 }
 
 fn write_spell_description(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
@@ -809,7 +813,6 @@ bold_italic_font_size_data: &Font, font_scale: &Scale, tab_amount: f64, newline_
 	let paragraphs = text.split('\n');
 	for paragraph in paragraphs
 	{
-		buffer += "\n";
 		let tokens = paragraph.split_whitespace();
 		for token in tokens
 		{
@@ -822,8 +825,8 @@ bold_italic_font_size_data: &Font, font_scale: &Scale, tab_amount: f64, newline_
 						new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, &buffer,
 							color, font_size, x_left, x_right, y_high, y_low, x, y, current_font, current_font_size_data,
 							font_scale, tab_amount, newline_amount);
-						let _ = check_new_paragraph(&buffer, x, y, x_left, tab_amount, newline_amount);
-						buffer = String::new();
+						font_change_wrapup(&mut buffer, x, y, x_left, current_font_size_data, font_scale, " ",
+							tab_amount, newline_amount);
 						current_font = regular_font;
 						current_font_size_data = regular_font_size_data;
 					}
@@ -835,8 +838,8 @@ bold_italic_font_size_data: &Font, font_scale: &Scale, tab_amount: f64, newline_
 						new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, &buffer,
 							color, font_size, x_left, x_right, y_high, y_low, x, y, current_font, current_font_size_data,
 							font_scale, tab_amount, newline_amount);
-						let _ = check_new_paragraph(&buffer, x, y, x_left, tab_amount, newline_amount);
-						buffer = String::new();
+						font_change_wrapup(&mut buffer, x, y, x_left, current_font_size_data, font_scale, "  ",
+							tab_amount, newline_amount);
 						current_font = bold_font;
 						current_font_size_data = bold_font_size_data;
 					}
@@ -848,8 +851,8 @@ bold_italic_font_size_data: &Font, font_scale: &Scale, tab_amount: f64, newline_
 						new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, &buffer,
 							color, font_size, x_left, x_right, y_high, y_low, x, y, current_font, current_font_size_data,
 							font_scale, tab_amount, newline_amount);
-						let _ = check_new_paragraph(&buffer, x, y, x_left, tab_amount, newline_amount);
-						buffer = String::new();
+						font_change_wrapup(&mut buffer, x, y, x_left, current_font_size_data, font_scale, " ",
+							tab_amount, newline_amount);
 						current_font = italic_font;
 						current_font_size_data = italic_font_size_data;
 					}
@@ -861,8 +864,8 @@ bold_italic_font_size_data: &Font, font_scale: &Scale, tab_amount: f64, newline_
 						new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, &buffer,
 							color, font_size, x_left, x_right, y_high, y_low, x, y, current_font, current_font_size_data,
 							font_scale, tab_amount, newline_amount);
-						let _ = check_new_paragraph(&buffer, x, y, x_left, tab_amount, newline_amount);
-						buffer = String::new();
+						font_change_wrapup(&mut buffer, x, y, x_left, current_font_size_data, font_scale, "   ",
+							tab_amount, newline_amount);
 						current_font = bold_italic_font;
 						current_font_size_data = bold_italic_font_size_data;
 					}
@@ -885,6 +888,7 @@ bold_italic_font_size_data: &Font, font_scale: &Scale, tab_amount: f64, newline_
 				}
 			}
 		}
+		buffer += "\n";
 	}
 	new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, &buffer,
 		color, font_size, x_left, x_right, y_high, y_low, x, y, current_font, current_font_size_data,
