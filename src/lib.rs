@@ -1,7 +1,7 @@
 use std::fs;
 extern crate image;
 use printpdf::*;
-use rusttype::{Font, Scale};
+use rusttype::{Font, Scale, point};
 pub mod spells;
 pub mod phb_spells;
 
@@ -53,6 +53,22 @@ fn calc_text_width(font_size_data: &Font, font_scale: &Scale, text: &str) -> f32
 	font_units_to_mm(width)
 }
 
+fn new_calc_text_width(text: &str, font_type: &str, font_size_data: &Font, font_scale: &Scale) -> f64
+{
+	let width = font_size_data.layout(text, *font_scale, point(0.0, 0.0))
+		.map(|g| g.position().x + g.unpositioned().h_metrics().advance_width)
+		.last()
+		.unwrap_or(0.0);
+	let scaler: f32 = match font_type
+	{
+		BOLD_FONT_TAG => 1.4,
+		ITALIC_FONT_TAG => 0.4,
+		BOLD_ITALIC_FONT_TAG | ITALIC_BOLD_FONT_TAG => 2.5,
+		_ => 0.45
+	};
+	(width * scaler) as f64
+}
+
 // Calculates the height of a number of lines of text given the font, font size, newline size, and number of lines
 fn calc_text_height(font_size_data: &Font, font_scale: &Scale, font_size: f32, newline_amount: f64, lines: usize) -> f32
 {
@@ -68,7 +84,7 @@ fn calc_text_height(font_size_data: &Font, font_scale: &Scale, font_size: f32, n
 // Converts rusttype font units to printpdf millimeters (Mm)
 fn font_units_to_mm(font_unit_width: f32) -> f32
 {
-	let mm_to_font_ratio = 0.47;
+	let mm_to_font_ratio = 0.45;
 	font_unit_width * mm_to_font_ratio
 }
 
@@ -135,8 +151,8 @@ x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64, font: &Indirect
 // Otherwise it returns the layer of the current page
 fn write_textbox(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32, x_left: f64,
-x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64, font: &IndirectFontRef, font_size_data: &Font,
-font_scale: &Scale, tab_amount: f64, newline_amount: f64) -> PdfLayerReference
+x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64, font_tag: &str, font: &IndirectFontRef,
+font_size_data: &Font, font_scale: &Scale, tab_amount: f64, newline_amount: f64) -> PdfLayerReference
 {
 	// If either dimensions of the text box overlap each other, do nothing
 	if x_left >= x_right || y_high <= y_low { return (*layer).clone(); }
@@ -710,7 +726,7 @@ font_size_data: &Font, font_scale: &Scale, newline_amount: f64)
 		// Calculate the width of the line with this token added
 		let width = calc_text_width(&font_size_data, &font_scale, &new_line);
 		// If the line is too long with this token added
-		if width as f64 > X_END
+		if width as f64 > X_END - X_START
 		{
 			// Add the line without this token to the lines vec
 			lines.push(line);
@@ -782,8 +798,8 @@ ending_newline: f64, x_start_offset: f64) -> PdfLayerReference
 	new_layer
 }
 
-fn font_change_wrapup(text: &mut String, x: &mut f64, y: &mut f64, x_left: f64, font_size_data: &Font,
-font_scale: &Scale, spaces: &str, tab_amount: f64, newline_amount: f64)
+fn font_change_wrapup(text: &mut String, x: &mut f64, y: &mut f64, x_left: f64, font_tag: &str, font_size_data: &Font,
+font_scale: &Scale, tab_amount: f64, newline_amount: f64)
 {
 	if (*text).ends_with("\n")
 	{
@@ -792,7 +808,7 @@ font_scale: &Scale, spaces: &str, tab_amount: f64, newline_amount: f64)
 	}
 	else
 	{
-		let space_width = calc_text_width(font_size_data, font_scale, spaces);
+		let space_width = new_calc_text_width(" ", font_tag, font_size_data, font_scale);
 		*x += space_width as f64;
 	}
 	*text = String::new();
@@ -809,6 +825,7 @@ bold_italic_font_size_data: &Font, font_scale: &Scale, tab_amount: f64, newline_
 	let mut buffer = String::new();
 	let mut current_font = regular_font;
 	let mut current_font_size_data = regular_font_size_data;
+	let mut last_font_tag = REGULAR_FONT_TAG;
 	let mut in_table = false;
 	let paragraphs = text.split('\n');
 	for paragraph in paragraphs
@@ -823,12 +840,13 @@ bold_italic_font_size_data: &Font, font_scale: &Scale, tab_amount: f64, newline_
 					if current_font != regular_font
 					{
 						new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, &buffer,
-							color, font_size, x_left, x_right, y_high, y_low, x, y, current_font, current_font_size_data,
-							font_scale, tab_amount, newline_amount);
-						font_change_wrapup(&mut buffer, x, y, x_left, current_font_size_data, font_scale, " ",
+							color, font_size, x_left, x_right, y_high, y_low, x, y, last_font_tag, current_font,
+							current_font_size_data, font_scale, tab_amount, newline_amount);
+						font_change_wrapup(&mut buffer, x, y, x_left, last_font_tag, current_font_size_data, font_scale,
 							tab_amount, newline_amount);
 						current_font = regular_font;
 						current_font_size_data = regular_font_size_data;
+						last_font_tag = token;
 					}
 				},
 				BOLD_FONT_TAG =>
@@ -836,12 +854,13 @@ bold_italic_font_size_data: &Font, font_scale: &Scale, tab_amount: f64, newline_
 					if current_font != bold_font
 					{
 						new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, &buffer,
-							color, font_size, x_left, x_right, y_high, y_low, x, y, current_font, current_font_size_data,
-							font_scale, tab_amount, newline_amount);
-						font_change_wrapup(&mut buffer, x, y, x_left, current_font_size_data, font_scale, "  ",
+							color, font_size, x_left, x_right, y_high, y_low, x, y, last_font_tag, current_font,
+							current_font_size_data, font_scale, tab_amount, newline_amount);
+						font_change_wrapup(&mut buffer, x, y, x_left, last_font_tag, current_font_size_data, font_scale,
 							tab_amount, newline_amount);
 						current_font = bold_font;
 						current_font_size_data = bold_font_size_data;
+						last_font_tag = token;
 					}
 				},
 				ITALIC_FONT_TAG =>
@@ -849,12 +868,13 @@ bold_italic_font_size_data: &Font, font_scale: &Scale, tab_amount: f64, newline_
 					if current_font != italic_font
 					{
 						new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, &buffer,
-							color, font_size, x_left, x_right, y_high, y_low, x, y, current_font, current_font_size_data,
-							font_scale, tab_amount, newline_amount);
-						font_change_wrapup(&mut buffer, x, y, x_left, current_font_size_data, font_scale, " ",
+							color, font_size, x_left, x_right, y_high, y_low, x, y, last_font_tag, current_font,
+							current_font_size_data, font_scale, tab_amount, newline_amount);
+						font_change_wrapup(&mut buffer, x, y, x_left, last_font_tag, current_font_size_data, font_scale,
 							tab_amount, newline_amount);
 						current_font = italic_font;
 						current_font_size_data = italic_font_size_data;
+						last_font_tag = token;
 					}
 				},
 				BOLD_ITALIC_FONT_TAG | ITALIC_BOLD_FONT_TAG =>
@@ -862,12 +882,13 @@ bold_italic_font_size_data: &Font, font_scale: &Scale, tab_amount: f64, newline_
 					if current_font != bold_italic_font
 					{
 						new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, &buffer,
-							color, font_size, x_left, x_right, y_high, y_low, x, y, current_font, current_font_size_data,
-							font_scale, tab_amount, newline_amount);
-						font_change_wrapup(&mut buffer, x, y, x_left, current_font_size_data, font_scale, "   ",
+							color, font_size, x_left, x_right, y_high, y_low, x, y, last_font_tag, current_font,
+							current_font_size_data, font_scale, tab_amount, newline_amount);
+						font_change_wrapup(&mut buffer, x, y, x_left, last_font_tag, current_font_size_data, font_scale,
 							tab_amount, newline_amount);
 						current_font = bold_italic_font;
 						current_font_size_data = bold_italic_font_size_data;
+						last_font_tag = token;
 					}
 				},
 				TABLE_TAG =>
@@ -890,9 +911,9 @@ bold_italic_font_size_data: &Font, font_scale: &Scale, tab_amount: f64, newline_
 		}
 		buffer += "\n";
 	}
-	new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, &buffer,
-		color, font_size, x_left, x_right, y_high, y_low, x, y, current_font, current_font_size_data,
-		font_scale, tab_amount, newline_amount);
+	new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, &buffer, color, font_size,
+		x_left, x_right, y_high, y_low, x, y, last_font_tag, current_font, current_font_size_data, font_scale,
+		tab_amount, newline_amount);
 	new_layer
 }
 
@@ -901,21 +922,21 @@ bold_italic_font_size_data: &Font, font_scale: &Scale, tab_amount: f64, newline_
 fn write_spell_field(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, field_name: &str, field_text: &str,
 field_name_color: &Color, field_text_color: &Color, font_size: f32, x_left: f64, x_right: f64, y_high: f64, y_low: f64,
-x: &mut f64, y: &mut f64, field_name_font: &IndirectFontRef, field_text_font: &IndirectFontRef,
-field_name_font_size_data: &Font, field_text_font_size_data: &Font, font_scale: &Scale, tab_amount: f64,
-newline_amount: f64) -> PdfLayerReference
+x: &mut f64, y: &mut f64, field_name_font_tag: &str, field_text_font_tag: &str, field_name_font: &IndirectFontRef,
+field_text_font: &IndirectFontRef, field_name_font_size_data: &Font, field_text_font_size_data: &Font,
+font_scale: &Scale, tab_amount: f64, newline_amount: f64) -> PdfLayerReference
 {
 	// Write the field name ("Casting Time:", "Components:", etc.) to the document
 	let mut new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, field_name,
-		field_name_color, font_size, x_left, x_right, y_high, y_low, x, y, field_name_font, field_name_font_size_data,
-		font_scale, tab_amount, newline_amount);
+		field_name_color, font_size, x_left, x_right, y_high, y_low, x, y, field_name_font_tag, field_name_font,
+		field_name_font_size_data, font_scale, tab_amount, newline_amount);
 	// Shift the x position over by 1 space
-	let sideshift = calc_text_width(field_name_font_size_data, font_scale, "  ");
+	let sideshift = new_calc_text_width(" ", field_name_font_tag, field_name_font_size_data, font_scale);
 	*x += sideshift as f64;
 	// Write the text for that field to the document
 	new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, field_text,
-		field_text_color, font_size, x_left, x_right, y_high, y_low, x, y, field_text_font, field_text_font_size_data,
-		font_scale, tab_amount, newline_amount);
+		field_text_color, font_size, x_left, x_right, y_high, y_low, x, y, field_text_font_tag, field_text_font,
+		field_text_font_size_data, font_scale, tab_amount, newline_amount);
 	// Return the last layer that was created for this text
 	new_layer
 }
@@ -980,6 +1001,9 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 	let header_font_scale = Scale::uniform(HEADER_FONT_SIZE);
 	let body_font_scale = Scale::uniform(BODY_FONT_SIZE);
 
+	println!("{}", calc_text_width(&bold_italic_font_size_data, &body_font_scale, " "));
+	println!("{}", calc_text_width(&bold_italic_font_size_data, &body_font_scale, "   "));
+
 	// Load background image
 	let img_data = image::open("img/parchment.jpg")?;
     let img1 = Image::from_dynamic_image(&img_data.clone());
@@ -1040,8 +1064,8 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
 			&header_font_scale, HEADER_NEWLINE, HEADER_NEWLINE, 0.0);*/
 		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &spell.name,
-			&red, HEADER_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, &regular_font, &regular_font_size_data,
-			&header_font_scale, TAB_AMOUNT, HEADER_NEWLINE);
+			&red, HEADER_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, REGULAR_FONT_TAG, &regular_font,
+			&regular_font_size_data, &header_font_scale, TAB_AMOUNT, HEADER_NEWLINE);
 		y -= HEADER_NEWLINE;
 		x = X_START;
 
@@ -1052,8 +1076,8 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
 			&body_font_scale, BODY_NEWLINE, HEADER_NEWLINE, 0.0);*/
 		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text,
-			&black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, &italic_font, &italic_font_size_data,
-			&body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
+			&black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, ITALIC_FONT_TAG, &italic_font,
+			&italic_font_size_data, &body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
 		y -= HEADER_NEWLINE;
 		x = X_START;
 
@@ -1065,8 +1089,8 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 			&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);*/
 		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
 			"Casting Time:", &spell.casting_time.to_string(), &black, &black, BODY_FONT_SIZE, X_START, X_END, Y_START,
-			Y_END, &mut x, &mut y, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data,
-			&body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
+			Y_END, &mut x, &mut y, BOLD_FONT_TAG, REGULAR_FONT_TAG, &bold_font, &regular_font, &bold_font_size_data,
+			&regular_font_size_data, &body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
 		y -= BODY_NEWLINE;
 		x = X_START;
 
@@ -1079,8 +1103,8 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 			&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);*/
 		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
 			"Range:", &spell.range.to_string(), &black, &black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x,
-			&mut y, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale, TAB_AMOUNT,
-			BODY_NEWLINE);
+			&mut y, BOLD_FONT_TAG, REGULAR_FONT_TAG, &bold_font, &regular_font, &bold_font_size_data,
+			&regular_font_size_data, &body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
 		y -= BODY_NEWLINE;
 		x = X_START;
 
@@ -1092,8 +1116,8 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 			&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);*/
 		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
 			"Components:", &spell.get_component_string(), &black, &black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END,
-			&mut x, &mut y, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
-			TAB_AMOUNT, BODY_NEWLINE);
+			&mut x, &mut y, BOLD_FONT_TAG, REGULAR_FONT_TAG, &bold_font, &regular_font, &bold_font_size_data,
+			&regular_font_size_data, &body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
 		y -= BODY_NEWLINE;
 		x = X_START;
 
@@ -1105,8 +1129,8 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 			&body_font_scale, BODY_NEWLINE, HEADER_NEWLINE, 0.0);*/
 		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
 			"Duration:", &spell.duration.to_string(), &black, &black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END,
-			&mut x, &mut y, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
-			TAB_AMOUNT, BODY_NEWLINE);
+			&mut x, &mut y, BOLD_FONT_TAG, REGULAR_FONT_TAG, &bold_font, &regular_font, &bold_font_size_data,
+			&regular_font_size_data, &body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
 		y -= HEADER_NEWLINE;
 		x = X_START;
 
@@ -1126,10 +1150,14 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 			y -= BODY_NEWLINE;
 			x = X_START + TAB_AMOUNT;
 			let text = format!("<bi> At Higher Levels. <r> {}", description);
-			layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text,
+			/*layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text,
 				&black, BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
 				&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
-				&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 10.0);
+				&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 10.0);*/
+			layer_ref = write_spell_description(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
+				&text, &black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, &regular_font, &bold_font,
+				&italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
+				&bold_italic_font_size_data, &body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
 		}
 
 		// Increment the layer counter
