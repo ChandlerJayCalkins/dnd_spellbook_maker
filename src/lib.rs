@@ -59,29 +59,30 @@ fn calc_text_width(text: &str, font_tag: &str, font_size_data: &Font, font_scale
 		.map(|g| g.position().x + g.unpositioned().h_metrics().advance_width)
 		.last()
 		.unwrap_or(0.0);
-	new_font_units_to_mm(width, font_tag)
+	font_units_to_mm(width, font_tag)
 }
 
 // Calculates the height of a number of lines of text given the font, font size, newline size, and number of lines
-fn calc_text_height(font_size_data: &Font, font_scale: &Scale, font_size: f32, newline_amount: f64, lines: usize) -> f32
+fn calc_text_height(font_tag: &str, font_size_data: &Font, font_scale: &Scale, font_size: f32, newline_amount: f64,
+lines: usize) -> f64
 {
 	// Calculate the amount of space every newline takes up
-	let line_height = ((lines - 1) as f32) * (newline_amount as f32);
+	let line_height = ((lines - 1) as f64) * newline_amount;
 	// Calculate the height of a the lower half and the upper half of a line of text in this font
 	let v_metrics = font_size_data.v_metrics(*font_scale);
-	let font_height = font_units_to_mm(v_metrics.ascent - v_metrics.descent);
+	let font_height = font_units_to_mm(v_metrics.ascent - v_metrics.descent, font_tag);
 	// Return the amount of space the newlines take up plus the space a single line takes up
 	line_height + font_height
 }
 
 // Converts rusttype font units to printpdf millimeters (Mm)
-fn font_units_to_mm(font_unit_width: f32) -> f32
+/*fn font_units_to_mm(font_unit_width: f32) -> f32
 {
 	let mm_to_font_ratio = 0.45;
 	font_unit_width * mm_to_font_ratio
-}
+}*/
 
-fn new_font_units_to_mm(font_units: f32, font_tag: &str) -> f64
+fn font_units_to_mm(font_units: f32, font_tag: &str) -> f64
 {
 	let scaler: f32 = match font_tag
 	{
@@ -348,7 +349,7 @@ newline_amount: f64) -> PdfLayerReference
 	// Create a new 3D table vec for storing the rows, columns, and each line in a cell
 	let mut table: Vec<Vec<Vec<String>>> = Vec::new();
 	// Used for storing the height of each row in a table
-	let mut row_heights: Vec<f32> = Vec::new();
+	let mut row_heights: Vec<f64> = Vec::new();
 	// Flag to tell if header text is currently being processed
 	let mut header = true;
 	// Loops through each row in the table
@@ -397,8 +398,14 @@ newline_amount: f64) -> PdfLayerReference
 			// Add the remaining text to the table
 			table[last_row][last_col].push(line);
 			// Calculate the height of this cell
-			let cell_height = if header { calc_text_height(header_font_size_data, font_scale, font_size, newline_amount, table[last_row][last_col].len()) }
-			else { calc_text_height(header_font_size_data, font_scale, font_size, newline_amount, table[last_row][last_col].len()) };
+			let cell_height = if header
+			{
+				calc_text_height(header_font_tag, header_font_size_data, font_scale, font_size, newline_amount, table[last_row][last_col].len())
+			}
+			else
+			{
+				calc_text_height(body_font_tag, body_font_size_data, font_scale, font_size, newline_amount, table[last_row][last_col].len())
+			};
 			// Replace the total height for this row if this cell's height is larger than the previous amount
 			row_heights[last_row] = row_heights[last_row].max(cell_height);
 			// Go to the next column_width index
@@ -410,7 +417,7 @@ newline_amount: f64) -> PdfLayerReference
 	println!("{:?}", table);
 	println!("{:?}", row_heights);
 	// Calculate the height of the entire table
-	let table_height = (row_heights.iter().sum::<f32>() as f64) + (((row_heights.len() - 2) as f64) * cell_margin);
+	let table_height = row_heights.iter().sum::<f64>() + (((row_heights.len() - 2) as f64) * cell_margin);
 	println!("{}", table_height);
 	// If the table goes off the current page but isn't longer than a whole page
 	/*if *y - table_height < Y_END && table_height <= Y_START - Y_END
