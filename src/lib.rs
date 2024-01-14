@@ -1059,10 +1059,6 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 		// Add text to the page
 
 		// Add the name of the spell as a header
-		/*layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &spell.name,
-			&red, HEADER_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
-			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
-			&header_font_scale, HEADER_NEWLINE, HEADER_NEWLINE, 0.0);*/
 		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &spell.name,
 			&red, HEADER_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, REGULAR_FONT_TAG, &regular_font,
 			&regular_font_size_data, &header_font_scale, TAB_AMOUNT, HEADER_NEWLINE);
@@ -1071,10 +1067,6 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 
 		// Add the level and the spell's school of magic
 		let text = get_level_school_text(&spell);
-		/*layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
-			BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
-			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
-			&body_font_scale, BODY_NEWLINE, HEADER_NEWLINE, 0.0);*/
 		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text,
 			&black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, ITALIC_FONT_TAG, &italic_font,
 			&italic_font_size_data, &body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
@@ -1082,11 +1074,6 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 		x = X_START;
 
 		// Add the casting time of the spell
-		/*let text = format!("<b> Casting Time: <r> {}", &spell.casting_time);
-		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
-			BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
-			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
-			&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);*/
 		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
 			"Casting Time:", &spell.casting_time.to_string(), &black, &black, BODY_FONT_SIZE, X_START, X_END, Y_START,
 			Y_END, &mut x, &mut y, BOLD_FONT_TAG, REGULAR_FONT_TAG, &bold_font, &regular_font, &bold_font_size_data,
@@ -1096,11 +1083,6 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 
 
 		// Add the range of the spell
-		/*let text = format!("<b> Range: <r> {}", spell.range);
-		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
-			BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
-			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
-			&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);*/
 		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
 			"Range:", &spell.range.to_string(), &black, &black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x,
 			&mut y, BOLD_FONT_TAG, REGULAR_FONT_TAG, &bold_font, &regular_font, &bold_font_size_data,
@@ -1109,11 +1091,6 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 		x = X_START;
 
 		// Add the components of the spell
-		/*let text = format!("<b> Components: <r> {}", spell.get_component_string());
-		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
-			BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
-			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
-			&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);*/
 		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
 			"Components:", &spell.get_component_string(), &black, &black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END,
 			&mut x, &mut y, BOLD_FONT_TAG, REGULAR_FONT_TAG, &bold_font, &regular_font, &bold_font_size_data,
@@ -1122,11 +1099,6 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 		x = X_START;
 
 		// Add the duration of the spell
-		/*let text = format!("<b> Duration: <r> {}", spell.duration);
-		layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text, &black,
-			BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
-			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
-			&body_font_scale, BODY_NEWLINE, HEADER_NEWLINE, 0.0);*/
 		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
 			"Duration:", &spell.duration.to_string(), &black, &black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END,
 			&mut x, &mut y, BOLD_FONT_TAG, REGULAR_FONT_TAG, &bold_font, &regular_font, &bold_font_size_data,
@@ -1135,10 +1107,6 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 		x = X_START;
 
 		// Add the spell's description
-		/*layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
-			&spell.description, &black, BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font,
-			&bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
-			&bold_italic_font_size_data, &body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 0.0);*/
 		layer_ref = write_spell_description(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
 			&spell.description, &black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, &regular_font,
 			&bold_font, &italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data,
@@ -1150,10 +1118,6 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 			y -= BODY_NEWLINE;
 			x = X_START + TAB_AMOUNT;
 			let text = format!("<bi> At Higher Levels. <r> {}", description);
-			/*layer_ref = add_spell_text(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text,
-				&black, BODY_FONT_SIZE, X_START, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
-				&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
-				&body_font_scale, BODY_NEWLINE, BODY_NEWLINE, 10.0);*/
 			layer_ref = write_spell_description(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
 				&text, &black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, &regular_font, &bold_font,
 				&italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
