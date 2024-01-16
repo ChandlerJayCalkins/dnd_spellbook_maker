@@ -806,7 +806,9 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &spell.name,
 			&red, HEADER_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, REGULAR_FONT_TAG, &regular_font,
 			&regular_font_size_data, &header_font_scale, TAB_AMOUNT, HEADER_NEWLINE);
+		// Move the y position down a bit to put some extra space between lines of text
 		y -= HEADER_NEWLINE;
+		// Reset the x position back to the starting position
 		x = X_START;
 
 		// Add the level and the spell's school of magic
