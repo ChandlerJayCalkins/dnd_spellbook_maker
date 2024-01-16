@@ -5,13 +5,9 @@ use rusttype::{Font, Scale, point};
 pub mod spells;
 pub mod phb_spells;
 
-// The tokens that are used for processing tables
-const TABLE_TAG: &str = "<table>";
-const ROW_TAG: &str = "<row>";
-const COLUMN_TAG: &str = "|";
-
 // Used for conveying what type of font is being used
 // Mostly used for font units to mm conversion
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum FontType
 {
 	Regular,
@@ -57,7 +53,7 @@ fn font_units_to_mm(font_units: f32, font_type: &FontType) -> f64
 }
 
 // Calculates the width of the widest text in each column of a table vec along with that column's index
-/*fn get_max_column_widths(table_vec: &Vec<Vec<&str>>, columns: usize, body_font_type: &FontType,
+fn get_max_column_widths(table_vec: &Vec<Vec<&str>>, columns: usize, body_font_type: &FontType,
 header_font_type: &FontType, body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale)
 -> Vec<(usize, f64)>
 {
@@ -99,20 +95,19 @@ body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, ne
 // Writes a table to the pdf doc
 fn create_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, table_string: &str, color: &Color, font_size: f32,
-x: &mut f64, y: &mut f64, body_font_type: &FontType, header_font_type: &FontType, body_font: &IndirectFontRef,
-header_font: &IndirectFontRef, body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale,
-newline_amount: f64) -> PdfLayerReference
+page_width: f64, page_height: f64, x_left: f64, x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64,
+body_font_type: &FontType, header_font_type: &FontType, body_font: &IndirectFontRef, header_font: &IndirectFontRef,
+body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
 {
+	// Tags for delimiting rows and columns in the table
+	const ROW_TAG: &str = "<row>";
+	const COLUMN_TAG: &str = "|";
 	// The layer that gets returned
 	let mut layer_ref = (*layer).clone();
-	// Split <table> tokens off of the ends of the table string
-	let mut tokens: Vec<_> = table_string.split_whitespace().collect();
-	if tokens.len() < 2 { return layer_ref; }
-	tokens.remove(0);
-	tokens.pop();
-	// Get a vec of every row in the table (separated by the ROW delimeter)
-	let new_table_string = tokens.join(" ");
-	let rows: Vec<_> = new_table_string.split(ROW_TAG).collect();
+	// Split the table string up into rows by the row tag
+	let rows: Vec<_> = table_string.split(ROW_TAG).collect();
+	// If there are no rows, do nothing
+	if rows.len() < 2 { return layer_ref; }
 	// Keeps track of the number of columns
 	let mut column_count = 0;
 	// 2D vec that will store the strings in the table
@@ -165,7 +160,7 @@ newline_amount: f64) -> PdfLayerReference
 	sorted_max_widths.sort_by(|(_, a), (_, b)| a.partial_cmp(&b).expect("Error sorting table widths"));
 	println!("{:?}", sorted_max_widths);
 	// Get the width of the entire table
-	let mut table_width = X_END - X_START;
+	let mut table_width = x_right - x_left;
 	// Space between cells in the table
 	let cell_margin = 10.0;
 	// Calculate the default column width
@@ -297,7 +292,7 @@ newline_amount: f64) -> PdfLayerReference
 	// Else, just start writing the table
 	// Return the last layer that was used
 	layer_ref
-}*/
+}
 
 // Creates a new page and returns the layer for it
 fn make_new_page(doc: &PdfDocumentReference, layer_count: &mut i32, width: f64, height: f64,
@@ -537,16 +532,23 @@ newline_amount: f64) -> PdfLayerReference
 	let mut new_layer = (*layer).clone();
 	// A buffer of text that gets written to the spellbook when the font changes, a table is inserted, or the text ends
 	let mut buffer = String::new();
+	// Font types
+	let regular_font_type = FontType::Regular;
+	let bold_font_type = FontType::Bold;
+	let italic_font_type = FontType::Italic;
+	let bold_italic_font_type = FontType::BoldItalic;
 	// Keeps track of the font that is currently being used
 	let mut current_font = regular_font;
 	let mut current_font_size_data = regular_font_size_data;
-	let mut last_font_type = FontType::Regular;
+	let mut last_font_type = regular_font_type;
 	// Tags for switching fonts
 	const REGULAR_FONT_TAG: &str = "<r>";
 	const BOLD_FONT_TAG: &str = "<b>";
 	const ITALIC_FONT_TAG: &str = "<i>";
 	const BOLD_ITALIC_FONT_TAG: &str = "<bi>";
 	const ITALIC_BOLD_FONT_TAG: &str = "<ib>";
+	// Tag for starting and ending tables
+	const TABLE_TAG: &str = "<table>";
 	// Keeps track of whether or not a table is currently being processed
 	let mut in_table = false;
 	// Split the text into paragraphs by newlines
@@ -579,7 +581,7 @@ newline_amount: f64) -> PdfLayerReference
 						// Change the font that is currently being used
 						current_font = regular_font;
 						current_font_size_data = regular_font_size_data;
-						last_font_type = FontType::Regular;
+						last_font_type = regular_font_type;
 					}
 				},
 				// Bold font
@@ -594,7 +596,7 @@ newline_amount: f64) -> PdfLayerReference
 							tab_amount, newline_amount);
 						current_font = bold_font;
 						current_font_size_data = bold_font_size_data;
-						last_font_type = FontType::Bold;
+						last_font_type = bold_font_type;
 					}
 				},
 				// Italic font
@@ -609,7 +611,7 @@ newline_amount: f64) -> PdfLayerReference
 							tab_amount, newline_amount);
 						current_font = italic_font;
 						current_font_size_data = italic_font_size_data;
-						last_font_type = FontType::Italic;
+						last_font_type = italic_font_type;
 					}
 				},
 				// Bold-Italic font
@@ -624,19 +626,40 @@ newline_amount: f64) -> PdfLayerReference
 							tab_amount, newline_amount);
 						current_font = bold_italic_font;
 						current_font_size_data = bold_italic_font_size_data;
-						last_font_type = FontType::BoldItalic;
+						last_font_type = bold_italic_font_type;
 					}
 				},
 				// If the token is a table tag
 				TABLE_TAG =>
 				{
+					// If a table is currently being processed
 					if in_table
 					{
+						// End table processing
 						in_table = false;
+						// Create the table and write it to the document
+						create_table(doc, &new_layer, layer_count, background.clone(), img_transform, &buffer, color,
+							font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y, &regular_font_type,
+							&bold_font_type, regular_font, bold_font, regular_font_size_data, bold_font_size_data,
+							font_scale, newline_amount);
+						// Reset the buffer
+						buffer = String::new();
+						// Reset the font to regular font
+						current_font = regular_font;
+						current_font_size_data = regular_font_size_data;
+						last_font_type = regular_font_type;
 					}
 					else
 					{
+						// Begin table processing
 						in_table = true;
+						// Write out the buffer to the document
+						new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, &buffer,
+							color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
+							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount,
+							newline_amount);
+						// Reset the buffer
+						buffer = String::new();
 					}
 				},
 				// If the token is anything else
