@@ -703,8 +703,102 @@ fn get_level_school_text(spell: &spells::Spell) -> String
 	text
 }
 
-pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
--> Result<PdfDocumentReference, Box<dyn std::error::Error>>
+// Holds file paths to all of the fonts types needed for the generate_spellbook()
+pub struct FontPaths
+{
+	pub regular: String,
+	pub bold: String,
+	pub italic: String,
+	pub bold_italic: String
+}
+
+pub struct PageSizeData
+{
+	width: f64,
+	height: f64,
+	left_margin: f64,
+	right_margin: f64,
+	top_margin: f64,
+	bottom_margin: f64
+}
+
+impl PageSizeData
+{
+	pub fn new(width: f64, height: f64, margin: f64) -> Result<Self, String>
+	{
+		if width <= 0.0
+		{
+			Err(String::from("Invalid page width."))
+		}
+		else if height <= 0.0
+		{
+			Err(String::from("Invalid page height."))
+		}
+		else if margin <= 0.0 || margin >= (width.min(height) / 2.0)
+		{
+			Err(String::from("Invalid page margin."))
+		}
+		else
+		{
+			Ok(Self
+			{
+				width: width,
+				height: height,
+				left_margin: margin,
+				right_margin: margin,
+				top_margin: margin,
+				bottom_margin: margin
+			})
+		}
+	}
+
+	pub fn new_with_margins(width: f64, height: f64, left_margin: f64, right_margin: f64, top_margin: f64,
+	bottom_margin: f64) -> Result<Self, String>
+	{
+		let min_dim = width.min(height);
+		if width <= 0.0
+		{
+			Err(String::from("Invalid page width."))
+		}
+		else if height <= 0.0
+		{
+			Err(String::from("Invalid page height."))
+		}
+		else if left_margin <= 0.0 || right_margin <= 0.0 || left_margin >= right_margin ||
+		left_margin + right_margin >= min_dim
+		{
+			Err(String::from("Invalid horizontal page margin."))
+		}
+		else if top_margin <= 0.0 || bottom_margin <= 0.0 || top_margin <= bottom_margin ||
+		top_margin + bottom_margin >= min_dim
+		{
+			Err(String::from("Invalid vertical page margin."))
+		}
+		else
+		{
+			Ok(Self
+			{
+				width: width,
+				height: height,
+				left_margin: left_margin,
+				right_margin: right_margin,
+				top_margin: top_margin,
+				bottom_margin: bottom_margin
+			})
+		}
+	}
+
+	pub fn get_width(&self) -> f64 { self.width }
+	pub fn get_height(&self) -> f64 { self.height }
+	pub fn get_left_margin(&self) -> f64 { self.left_margin }
+	pub fn get_right_margin(&self) -> f64 { self.right_margin }
+	pub fn get_top_margin(&self) -> f64 { self.top_margin }
+	pub fn get_bottom_margin(&self) -> f64 { self.bottom_margin }
+}
+
+// Generates a printpdf pdf document of a spellbook with spells from the spell_list parameter
+pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>, font_paths: &FontPaths, background_img_path: &str,
+background_img_transform: &ImageTransform) -> Result<PdfDocumentReference, Box<dyn std::error::Error>>
 {
 	// Text colors
 	let black = Color::Rgb(Rgb
@@ -718,15 +812,11 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 	
     // Load custom font
 
-	// File path to font
-	const FONT_NAME: &str = "Bookman";
-	let font_directory = format!("fonts/{}", FONT_NAME);
-
 	// Read the data from the font files
-    let regular_font_data = fs::read(format!("{}/{}-Regular.otf", font_directory.clone(), FONT_NAME))?;
-	let italic_font_data = fs::read(format!("{}/{}-Italic.otf", font_directory.clone(), FONT_NAME))?;
-	let bold_font_data = fs::read(format!("{}/{}-Bold.otf", font_directory.clone(), FONT_NAME))?;
-	let bold_italic_font_data = fs::read(format!("{}/{}-BoldItalic.otf", font_directory.clone(), FONT_NAME))?;
+	let regular_font_data = fs::read(&font_paths.regular)?;
+	let bold_font_data = fs::read(&font_paths.bold)?;
+	let italic_font_data = fs::read(&font_paths.italic)?;
+	let bold_italic_font_data = fs::read(&font_paths.bold_italic)?;
 
 	// Create font size data for each font style
 	let regular_font_size_data = Font::try_from_bytes(&regular_font_data as &[u8]).unwrap();
@@ -745,18 +835,8 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 	let body_font_scale = Scale::uniform(BODY_FONT_SIZE);
 
 	// Load background image
-	let img_data = image::open("img/parchment.jpg")?;
+	let img_data = image::open(background_img_path)?;
     let img1 = Image::from_dynamic_image(&img_data.clone());
-
-	// Determine position, size, and rotation of image
-	let img_transform = ImageTransform
-	{
-		translate_x: Some(Mm(0.0)),
-		translate_y: Some(Mm(0.0)),
-		scale_x: Some(1.95),
-		scale_y: Some(2.125),
-		..Default::default()
-	};
 
     // Create PDF document
     let (doc, cover_page, cover_layer) = PdfDocument::new(title, Mm(PAGE_WIDTH), Mm(PAGE_HEIGHT), "Cover Layer");
@@ -774,7 +854,7 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 	let cover_layer_ref = doc.get_page(cover_page).get_layer(cover_layer);
 
 	// Add the background image to the page
-	img1.add_to_layer(cover_layer_ref.clone(), img_transform);
+	img1.add_to_layer(cover_layer_ref.clone(), *background_img_transform);
 
 	// Counter variable for naming each layer incrementally
 	let mut layer_count = 1;
@@ -783,9 +863,9 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 	let mut temp_y: f64 = 0.0;
 
     // Add text using the custom font to the page
-	let _ = write_centered_textbox(&doc, &cover_layer_ref, &mut layer_count, img_data.clone(), &img_transform,
-		title, &black, TITLE_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut temp_x, &mut temp_y,
-		REGULAR_FONT_TAG, &regular_font, &regular_font_size_data, &title_font_scale, TITLE_NEWLINE);
+	let _ = write_centered_textbox(&doc, &cover_layer_ref, &mut layer_count, img_data.clone(),
+		background_img_transform, title, &black, TITLE_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut temp_x,
+		&mut temp_y, REGULAR_FONT_TAG, &regular_font, &regular_font_size_data, &title_font_scale, TITLE_NEWLINE);
 
 	// Add next pages
 
@@ -793,7 +873,7 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 	for spell in spell_list
 	{
 		// Create a new page
-		let (page, mut layer_ref) = make_new_page(&doc, &mut layer_count, img_data.clone(), &img_transform);
+		let (page, mut layer_ref) = make_new_page(&doc, &mut layer_count, img_data.clone(), background_img_transform);
 		// Create a new bookmark for this page
 		doc.add_bookmark(spell.name.clone(), page);
 		// Keeps track of the current x and y position to place text at
@@ -803,9 +883,9 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 		// Add text to the page
 
 		// Add the name of the spell as a header
-		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &spell.name,
-			&red, HEADER_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, REGULAR_FONT_TAG, &regular_font,
-			&regular_font_size_data, &header_font_scale, TAB_AMOUNT, HEADER_NEWLINE);
+		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
+			&spell.name, &red, HEADER_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, REGULAR_FONT_TAG,
+			&regular_font, &regular_font_size_data, &header_font_scale, TAB_AMOUNT, HEADER_NEWLINE);
 		// Move the y position down a bit to put some extra space between lines of text
 		y -= HEADER_NEWLINE;
 		// Reset the x position back to the starting position
@@ -813,14 +893,14 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 
 		// Add the level and the spell's school of magic
 		let text = get_level_school_text(&spell);
-		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform, &text,
+		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform, &text,
 			&black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, ITALIC_FONT_TAG, &italic_font,
 			&italic_font_size_data, &body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
 		y -= HEADER_NEWLINE;
 		x = X_START;
 
 		// Add the casting time of the spell
-		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
+		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
 			"Casting Time:", &spell.casting_time.to_string(), &black, &black, BODY_FONT_SIZE, X_START, X_END, Y_START,
 			Y_END, &mut x, &mut y, BOLD_FONT_TAG, REGULAR_FONT_TAG, &bold_font, &regular_font, &bold_font_size_data,
 			&regular_font_size_data, &body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
@@ -829,7 +909,7 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 
 
 		// Add the range of the spell
-		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
+		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
 			"Range:", &spell.range.to_string(), &black, &black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x,
 			&mut y, BOLD_FONT_TAG, REGULAR_FONT_TAG, &bold_font, &regular_font, &bold_font_size_data,
 			&regular_font_size_data, &body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
@@ -837,7 +917,7 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 		x = X_START;
 
 		// Add the components of the spell
-		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
+		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
 			"Components:", &spell.get_component_string(), &black, &black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END,
 			&mut x, &mut y, BOLD_FONT_TAG, REGULAR_FONT_TAG, &bold_font, &regular_font, &bold_font_size_data,
 			&regular_font_size_data, &body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
@@ -845,7 +925,7 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 		x = X_START;
 
 		// Add the duration of the spell
-		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
+		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
 			"Duration:", &spell.duration.to_string(), &black, &black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END,
 			&mut x, &mut y, BOLD_FONT_TAG, REGULAR_FONT_TAG, &bold_font, &regular_font, &bold_font_size_data,
 			&regular_font_size_data, &body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
@@ -853,7 +933,7 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 		x = X_START;
 
 		// Add the spell's description
-		layer_ref = write_spell_description(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
+		layer_ref = write_spell_description(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
 			&spell.description, &black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, &regular_font,
 			&bold_font, &italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data,
 			&italic_font_size_data, &bold_italic_font_size_data, &body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
@@ -864,7 +944,7 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 			y -= BODY_NEWLINE;
 			x = X_START + TAB_AMOUNT;
 			let text = format!("<bi> At Higher Levels. <r> {}", description);
-			layer_ref = write_spell_description(&doc, &layer_ref, &mut layer_count, img_data.clone(), &img_transform,
+			layer_ref = write_spell_description(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
 				&text, &black, BODY_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut x, &mut y, &regular_font, &bold_font,
 				&italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
 				&bold_italic_font_size_data, &body_font_scale, TAB_AMOUNT, BODY_NEWLINE);
@@ -878,7 +958,7 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
     Ok(doc)
 }
 
-// Saves a spellbook to a file
+// Saves a printpdf pdf document of a spellbook to a file
 pub fn save_spellbook(doc: PdfDocumentReference, file_name: &str) -> Result<(), Box<dyn std::error::Error>>
 {
 	let file = fs::File::create(file_name)?;
@@ -915,7 +995,24 @@ mod tests
 		// Create spellbook
 		let spellbook_name = "A Wizard's Very Fancy Spellbook Used for Casting Magical Spells";
 		let spell_list = get_all_phb_spells().unwrap();
-		let doc = generate_spellbook(spellbook_name, &spell_list).unwrap();
+		let font_paths = FontPaths
+		{
+			regular: String::from("fonts/Bookman/Bookman-Regular.otf"),
+			bold: String::from("fonts/Bookman/Bookman-Bold.otf"),
+			italic: String::from("fonts/Bookman/Bookman-Italic.otf"),
+			bold_italic: String::from("fonts/Bookman/Bookman-BoldItalic.otf")
+		};
+		let background_path = "img/parchment.jpg";
+		let background_transform = ImageTransform
+		{
+			translate_x: Some(Mm(0.0)),
+			translate_y: Some(Mm(0.0)),
+			scale_x: Some(1.95),
+			scale_y: Some(2.125),
+			..Default::default()
+		};
+		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, background_path, &background_transform)
+			.unwrap();
 		let _ = save_spellbook(doc, "Spellbook.pdf");
 	}
 
