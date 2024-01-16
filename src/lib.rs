@@ -273,20 +273,14 @@ body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, ne
 	let table_height = row_heights.iter().sum::<f64>() + (((row_heights.len() - 2) as f64) * cell_margin);
 	println!("{}", table_height);
 	// If the table goes off the current page but isn't longer than a whole page
-	/*if *y - table_height < Y_END && table_height <= Y_START - Y_END
+	if *y - table_height < y_low && table_height <= y_high - y_low
 	{
-		// End the current text section
-		layer_ref.end_text_section();
 		// Create a new page
-		(_, layer_ref) = make_new_page(doc, layer_count, background.clone(), img_transform);
-		// Create a new text section
-		layer_ref.begin_text_section();
-		// Set the cursor to the top of the page
-		*y = Y_START;
-		layer_ref.set_text_cursor(Mm(X_START), Mm(*y));
-		// Reset the text color
-		layer_ref.set_fill_color(color.clone());
-	}*/
+		(_, layer_ref) = make_new_page(doc, layer_count, page_width, page_height, background.clone(), img_transform);
+		// Set the x and y text positions to the top-left of the page
+		*x = x_left;
+		*y = y_high;
+	}
 	// If the table is longer than a whole page, just start writing it
 	// Else if the table still goes off the current page but isn't longer than a whole page, make a new page and start writing it on there
 	// Else, just start writing the table
@@ -296,29 +290,47 @@ body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, ne
 
 // Creates a new page and returns the layer for it
 fn make_new_page(doc: &PdfDocumentReference, layer_count: &mut i32, width: f64, height: f64,
-	background: image::DynamicImage, img_transform: &ImageTransform) -> (PdfPageIndex, PdfLayerReference)
-	{
-		// Create a new image since cloning the old one isn't allowed for some reason
-		let img = Image::from_dynamic_image(&background.clone());
-		// Create a new page
-		let (page, layer) = doc.add_page(Mm(width), Mm(height), format!("Layer {}", layer_count));
-		// Increment the layer / page count
-		*layer_count += 1;
-		// Get the new layer
-		let layer_ref = doc.get_page(page).get_layer(layer);
-		// Add the background image to the page
-		img.add_to_layer(layer_ref.clone(), *img_transform);
-		(page, layer_ref)
-	}
+background: image::DynamicImage, img_transform: &ImageTransform) -> (PdfPageIndex, PdfLayerReference)
+{
+	// Create a new image since cloning the old one isn't allowed for some reason
+	let img = Image::from_dynamic_image(&background.clone());
+	// Create a new page
+	let (page, layer) = doc.add_page(Mm(width), Mm(height), format!("Layer {}", layer_count));
+	// Increment the layer / page count
+	*layer_count += 1;
+	// Get the new layer
+	let layer_ref = doc.get_page(page).get_layer(layer);
+	// Add the background image to the page
+	img.add_to_layer(layer_ref.clone(), *img_transform);
+	(page, layer_ref)
+}
+
+// Writes top-left-aligned text into a fixed size text box
+// Returns the last layer of the last page that the text appeared on
+// Otherwise it returns the layer of the current page
+fn write_textbox(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
+background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32,
+page_width: f64, page_height: f64, x_left: f64, x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64,
+font_type: &FontType, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, tab_amount: f64,
+newline_amount: f64) -> PdfLayerReference
+{
+	let layers = write_textbox_getall(doc, layer, layer_count, background.clone(), img_transform, text, color, font_size,
+		page_width, page_height, x_left, x_right, y_high, y_low, x, y, font_type, font, font_size_data, font_scale,
+		tab_amount, newline_amount);
+	layers[layers.len() - 1].clone()
+}
 
 // Writes a line of text into a textbox
 // Returns the layer of a new page if one had to be created for this line to be applied
 // Otherwise it returns the layer of the current page
+// Also returns a bool of whether or not a new page was created
 fn apply_textbox_line(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32,
 page_width: f64, page_height: f64, x_left: f64, x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64,
-font: &IndirectFontRef, newline_amount: f64) -> PdfLayerReference
+font: &IndirectFontRef, newline_amount: f64) -> (PdfLayerReference, bool)
 {
+	// Whether or not a new page was created
+	let mut new_page = false;
 	// The layer that will get returned
 	let mut layer_ref = (*layer).clone();
 	// Move the text down a level for the new line
@@ -326,6 +338,7 @@ font: &IndirectFontRef, newline_amount: f64) -> PdfLayerReference
 	// if the y level is below the bottom of the text box
 	if *y < y_low
 	{
+		new_page = true;
 		// Create a new page
 		(_, layer_ref) = make_new_page(doc, layer_count, page_width, page_height, background.clone(), img_transform);
 		// Set the y level to the top of this page
@@ -343,25 +356,24 @@ font: &IndirectFontRef, newline_amount: f64) -> PdfLayerReference
 	layer_ref.write_text(text, &font);
 	// End the text section on the page
 	layer_ref.end_text_section();
-	// Return the most recent page
-	layer_ref
+	// Return the most recent page and whether or not a new page was created
+	(layer_ref, new_page)
 }
 
-// Writes top-left-aligned text into a fixed size text box
-// Returns the last layer of the last page that the text appeared on
-// Otherwise it returns the layer of the current page
-fn write_textbox(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
+// Does the same thing as write_textbox(), except it returns layers of all pages created while writing this textbox
+// Layer of current page is also returned in vec as first element
+fn write_textbox_getall(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32,
 page_width: f64, page_height: f64, x_left: f64, x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64,
 font_type: &FontType, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, tab_amount: f64,
-newline_amount: f64) -> PdfLayerReference
+newline_amount: f64) -> Vec<PdfLayerReference>
 {
+	// Vec of layers of all new pages created to print this textbox
+	let mut layers: Vec<PdfLayerReference> = vec![(*layer).clone()];
 	// If either dimensions of the text box overlap each other, do nothing
-	if x_left >= x_right || y_high <= y_low { return (*layer).clone(); }
+	if x_left >= x_right || y_high <= y_low { return layers; }
 	// If the x position starts past the right side of the text box, reset it to the left side plus the tab amount
 	if *x > x_right { *x = x_left + tab_amount; }
-	// The layer that will get returned
-	let mut layer_ref = (*layer).clone();
 	// Keeps track of the ending position of the last line
 	let mut last_x = *x;
 	// Adjusts the x position to be tabbed over on new paragraphs
@@ -396,9 +408,14 @@ newline_amount: f64) -> PdfLayerReference
 			if new_line_end > x_right
 			{
 				// Write the current line to the page
-				layer_ref = apply_textbox_line(doc, &layer_ref, layer_count, background.clone(), img_transform, &line,
-					color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y, font,
-					newline_adjuster);
+				let (new_layer, new_page) = apply_textbox_line(doc, &layers[layers.len() - 1], layer_count,
+					background.clone(), img_transform, &line, color, font_size, page_width, page_height, x_left, x_right,
+					y_high, y_low, x, y, font, newline_adjuster);
+				// If a new page was created, push the new layer to the layers vec
+				if new_page
+				{
+					layers.push(new_layer);
+				}
 				// Set the newline adjuster to the newline amount so it's not 0 after the first line
 				newline_adjuster = newline_amount;
 				// Set the x position to the left side of the text box to undo tabbing on the first line of new paragraphs
@@ -410,8 +427,14 @@ newline_amount: f64) -> PdfLayerReference
 			else { line = new_line; }
 		}
 		// Write all remaining text to the page
-		layer_ref = apply_textbox_line(doc, &layer_ref, layer_count, background.clone(), img_transform, &line, color,
-			font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y, font, newline_adjuster);
+		let (new_layer, new_page) = apply_textbox_line(doc, &layers[layers.len() - 1], layer_count, background.clone(),
+			img_transform, &line, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y, font,
+			newline_adjuster);
+		// If a new page was created, push the new layer to the layers vec
+		if new_page
+		{
+			layers.push(new_layer);
+		}
 		// Set the newline adjuster to the newline amount so it's not 0 after the first line
 		newline_adjuster = newline_amount;
 		// Calculate where the end of the last line that was written is and save it
@@ -420,7 +443,7 @@ newline_amount: f64) -> PdfLayerReference
 	// Set the x position to the end of the last line that was written
 	*x = last_x;
 	// Return the last layer that the text appeared on
-	layer_ref
+	layers
 }
 
 // Writes vertically and horizontally centered text into a fixed size text box
@@ -488,7 +511,7 @@ font_type: &FontType, font: &IndirectFontRef, font_size_data: &Font, font_scale:
 		// Place the x position in the correct place to have this line be horizontally centered
 		*x = (textbox_width / 2.0) - (width as f64 / 2.0) + x_left;
 		// Apply each line of text to the page
-		layer_ref = apply_textbox_line(doc, &layer_ref, layer_count, background.clone(), img_transform, &l, color,
+		(layer_ref, _) = apply_textbox_line(doc, &layer_ref, layer_count, background.clone(), img_transform, &l, color,
 			font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y, font, newline_adjuster);
 		// Set the newline adjuster so every line after the first actually gets moved down
 		newline_adjuster = newline_amount;
