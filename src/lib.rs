@@ -132,7 +132,7 @@ x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64, font: &Indirect
 	layer_ref
 }
 
-// Writes left-aligned text into a fixed size text box
+// Writes top-left-aligned text into a fixed size text box
 // Returns the last layer of the last page that the text appeared on
 // Otherwise it returns the layer of the current page
 fn write_textbox(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
@@ -203,6 +203,79 @@ font_size_data: &Font, font_scale: &Scale, tab_amount: f64, newline_amount: f64)
 	// Set the x position to the end of the last line that was written
 	*x = last_x;
 	// Return the last layer that the text appeared on
+	layer_ref
+}
+
+// Writes vertically and horizontally centered text into a fixed size text box
+// Returns the last layer of the last page that the text appeared on
+// Otherwise it returns the layer of the current page
+fn write_centered_textbox(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
+background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32, x_left: f64,
+x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64, font_tag: &str, font: &IndirectFontRef,
+font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
+{
+	// If either dimensions of the text box overlap each other, do nothing
+	if x_left >= x_right || y_high <= y_low { return (*layer).clone(); }
+	// If the x position starts past the right side of the text box, reset it to the left side plus the tab amount
+	if *x > x_right { *x = x_left; }
+	// Calculate the width and height of the text box
+	let textbox_width = x_right - x_left;
+	let textbox_height = y_high - y_low;
+	// The layer that will get returned
+	let mut layer_ref = (*layer).clone();
+	// Keeps track of the ending position of the last line
+	let mut last_x = *x;
+	// Adjusts the y position to a new line before applying a line
+	// Will be 0 for the first line so the first line prints exactly where the y position is
+	let mut newline_adjuster = 0.0;
+	// Split the text up into tokens
+	let tokens: Vec<_> = text.split_whitespace().collect();
+	// If there are no tokens, do nothing
+	if tokens.len() < 1 { return layer_ref; }
+	// Create a vector of lines that will be written into the textbox
+	let mut lines: Vec<String> = Vec::new();
+	// Create a string that will be used to combine text together until it's too long to be on a line
+	let mut line = String::from(tokens[0]);
+	// Loop through each token after the first
+	for token in &tokens[1..]
+	{
+		// Create a new line that will be used to measure if the current line is long enough to fill the textbox space
+		let new_line = format!("{} {}", line, token);
+		// Calculate the width of this new line
+		let width = calc_text_width(&new_line, font_tag, font_size_data, font_scale);
+		// If the width of the new line is wider than the text box
+		if width > textbox_width
+		{
+			// Add the current line to the lines vec
+			lines.push(line);
+			// Reset the current line to the current token
+			line = token.to_string();
+		}
+		// Else, add the current token to the current line
+		else { line = new_line; }
+	}
+	// Add any remaining text to the lines vec
+	lines.push(line);
+	// Calculate the maximum number of lines per textbox
+	let max_lines = (textbox_height / newline_amount).floor() as usize;
+	// If there are more lines than can fit on one page, just set the y value to the top of the textbox
+	if lines.len() > max_lines { *y = y_high; }
+	// If all of the lines can fit on one page, set the y value to the top of where the text will start
+	else { *y = (y_high / 2.0) + (lines.len() - 1) as f64 / 2.0 * newline_amount; }
+	// Loop through each line
+	for l in lines
+	{
+		// Calculate the width of this line
+		let width = calc_text_width(&l, font_tag, font_size_data, font_scale);
+		// Place the x position in the correct place to have this line be horizontally centered
+		*x = (textbox_width / 2.0) - (width as f64 / 2.0) + x_left;
+		// Apply each line of text to the page
+		layer_ref = apply_textbox_line(doc, &layer_ref, layer_count, background.clone(), img_transform, &l, color, font_size,
+			x_left, x_right, y_high, y_low, x, y, font, newline_adjuster);
+		// Set the newline adjuster so every line after the first actually gets moved down
+		newline_adjuster = newline_amount;
+	}
+	// Return the newest layer
 	layer_ref
 }
 
@@ -433,75 +506,6 @@ img_transform: &ImageTransform) -> (PdfPageIndex, PdfLayerReference)
 	// Add the background image to the page
 	img.add_to_layer(layer_ref.clone(), *img_transform);
 	(page, layer_ref)
-}
-
-// Adds title text for the cover page
-fn add_title_text(layer: &PdfLayerReference, text: &str, color: &Color, font_size: f32, font_tag: &str,
-font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, newline_amount: f64)
-{
-	// Set the text color
-	layer.set_fill_color(color.clone());
-	// Begins a text section
-	layer.begin_text_section();
-	// Sets the font and cursor location
-	layer.set_font(font, font_size as f64);
-	// Split the text into tokens by whitespace
-	let mut tokens = text.split_whitespace();
-	let mut tokens_vec = tokens.collect::<Vec<&str>>();
-	// If there are no tokens
-	if tokens_vec.len() < 1
-	{
-		// Add the text "Spellbook" to the title text
-		tokens = "Spellbook".split_whitespace();
-		tokens_vec = tokens.collect::<Vec<&str>>();
-	}
-	// Creates a vec of the lines that the title text will be put into
-	let mut lines = Vec::<String>::new();
-	// Create a string that will become a line to add to the page made up of tokens
-	let mut line = tokens_vec[0].to_string();
-	// Loop through each token after the first
-	for token in &tokens_vec[1..]
-	{
-		// Create a new line to test if the current line is long enough for a newline
-		let new_line = format!("{} {}", line, token);
-		// Calculate the width of the line with this token added
-		let width = calc_text_width(&new_line, font_tag, font_size_data, font_scale);
-		// If the line is too long with this token added
-		if width as f64 > X_END - X_START
-		{
-			// Add the line without this token to the lines vec
-			lines.push(line);
-			// Reset the current line to just the current token
-			line = token.to_string();
-		}
-		// If this line still isn't long enough, add the current token to the line
-		else { line = new_line; }
-	}
-	// Add the last line to the lines vec
-	lines.push(line);
-	// Calculate the maximum number of lines that can fit on the cover page
-	let max_lines = (PAGE_HEIGHT / newline_amount).floor() as usize;
-	// Only use the first max_lines number of lines if there are too many to fit on the page
-	lines.truncate(max_lines);
-	// Calculate where to start printing the lines based on the number of lines and the height of the lines
-	let mut y = (PAGE_HEIGHT / 2.0) + (lines.len() - 1) as f64 / 2.0 * newline_amount;
-	// Loop through each line in the title text
-	for l in lines
-	{
-		// Calculate the width of text without the new token added
-		let width = calc_text_width(&l, font_tag, &font_size_data, &font_scale);
-		// Set the cursor so the text gets put in the middle of the page
-		layer.set_text_cursor(Mm((PAGE_WIDTH / 2.0) - (width as f64 / 2.0)), Mm(y));
-		// Write the line without the current token
-		layer.write_text(l, &font);
-		// Begin a new text section
-		layer.end_text_section();
-		layer.begin_text_section();
-		// Move the cursor down a line
-		y -= newline_amount;
-	}
-	// End this text section
-	layer.end_text_section();
 }
 
 // Does stuff that's required when changing fonts
@@ -775,9 +779,13 @@ pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>)
 	// Counter variable for naming each layer incrementally
 	let mut layer_count = 1;
 
+	let mut temp_x: f64 = 0.0;
+	let mut temp_y: f64 = 0.0;
+
     // Add text using the custom font to the page
-	add_title_text(&cover_layer_ref, title, &black, TITLE_FONT_SIZE, REGULAR_FONT_TAG, &regular_font,
-		&regular_font_size_data, &title_font_scale, TITLE_NEWLINE);
+	let _ = write_centered_textbox(&doc, &cover_layer_ref, &mut layer_count, img_data.clone(), &img_transform,
+		title, &black, TITLE_FONT_SIZE, X_START, X_END, Y_START, Y_END, &mut temp_x, &mut temp_y,
+		REGULAR_FONT_TAG, &regular_font, &regular_font_size_data, &title_font_scale, TITLE_NEWLINE);
 
 	// Add next pages
 
