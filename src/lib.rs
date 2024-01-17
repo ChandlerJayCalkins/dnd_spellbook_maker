@@ -310,40 +310,40 @@ background: image::DynamicImage, img_transform: &ImageTransform) -> (PdfPageInde
 // Otherwise it returns the layer of the current page
 // Also returns a bool of whether or not a new page was created
 fn apply_textbox_line(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
-	background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32,
-	page_width: f64, page_height: f64, x_left: f64, x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64,
-	font: &IndirectFontRef, newline_amount: f64) -> (PdfLayerReference, bool)
+background: image::DynamicImage, img_transform: &ImageTransform, text: &str, color: &Color, font_size: f32,
+page_width: f64, page_height: f64, x_left: f64, x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64,
+font: &IndirectFontRef, newline_amount: f64) -> (PdfLayerReference, bool)
+{
+	// Whether or not a new page was created
+	let mut new_page = false;
+	// The layer that will get returned
+	let mut layer_ref = (*layer).clone();
+	// Move the text down a level for the new line
+	*y -= newline_amount;
+	// if the y level is below the bottom of the text box
+	if *y < y_low
 	{
-		// Whether or not a new page was created
-		let mut new_page = false;
-		// The layer that will get returned
-		let mut layer_ref = (*layer).clone();
-		// Move the text down a level for the new line
-		*y -= newline_amount;
-		// if the y level is below the bottom of the text box
-		if *y < y_low
-		{
-			new_page = true;
-			// Create a new page
-			(_, layer_ref) = make_new_page(doc, layer_count, page_width, page_height, background.clone(), img_transform);
-			// Set the y level to the top of this page
-			*y = y_high;
-		}
-		// Create a new text section on the page
-		layer_ref.begin_text_section();
-		// Set the text cursor on the page
-		layer_ref.set_text_cursor(Mm(*x), Mm(*y));
-		// Set the font and font size
-		layer_ref.set_font(font, font_size as f64);
-		// Set the text color
-		layer_ref.set_fill_color(color.clone());
-		// Write the text to the page
-		layer_ref.write_text(text, &font);
-		// End the text section on the page
-		layer_ref.end_text_section();
-		// Return the most recent page and whether or not a new page was created
-		(layer_ref, new_page)
+		new_page = true;
+		// Create a new page
+		(_, layer_ref) = make_new_page(doc, layer_count, page_width, page_height, background.clone(), img_transform);
+		// Set the y level to the top of this page
+		*y = y_high;
 	}
+	// Create a new text section on the page
+	layer_ref.begin_text_section();
+	// Set the text cursor on the page
+	layer_ref.set_text_cursor(Mm(*x), Mm(*y));
+	// Set the font and font size
+	layer_ref.set_font(font, font_size as f64);
+	// Set the text color
+	layer_ref.set_fill_color(color.clone());
+	// Write the text to the page
+	layer_ref.write_text(text, &font);
+	// End the text section on the page
+	layer_ref.end_text_section();
+	// Return the most recent page and whether or not a new page was created
+	(layer_ref, new_page)
+}
 
 // Writes top-left-aligned text into a fixed size text box
 // Returns the last layer of the last page that the text appeared on
