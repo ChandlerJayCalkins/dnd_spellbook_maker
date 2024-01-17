@@ -78,11 +78,14 @@ header_font_type: &FontType, body_font_size_data: &Font, header_font_size_data: 
 	widths
 }
 
-/*fn write_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
+// Writes a table to the pdf doc
+fn write_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, table: &Vec<Vec<Vec<String>>>, color: &Color,
 font_size: f32, x: &mut f64, y: &mut f64, body_font: &IndirectFontRef, header_font: &IndirectFontRef,
-body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
+body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64)
+-> Vec<PdfLayerReference>
 {
+	let mut layers = vec![(*layer).clone()];
 	for row in table
 	{
 		for cell in row
@@ -90,9 +93,10 @@ body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, ne
 
 		}
 	}
-}*/
+	layers
+}
 
-// Writes a table to the pdf doc
+// Creates a table from a string of tokens with table tags and writes it to the pdf doc
 fn create_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, table_string: &str, color: &Color, font_size: f32,
 page_width: f64, page_height: f64, x_left: f64, x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64,
