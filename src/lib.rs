@@ -86,7 +86,7 @@ table: &Vec<Vec<Vec<String>>>, text_color: &Color, font_size: f32, page_width: f
 table_x_end: f32, column_starts: &Vec<f32>, column_widths: &Vec<f32>, centered_columns: &Vec<bool>, y_high: f32,
 y_low: f32, x: &mut f32, y: &mut f32, body_font_type: &FontType, header_font_type: &FontType,
 body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data: &Font, header_font_size_data: &Font,
-font_scale: &Scale, off_row_color: &Color, cell_horizontal_margin: f32, cell_vertical_margin: f32, newline_amount: f32)
+font_scale: &Scale, table_options: &TableOptions, newline_amount: f32)
 -> PdfLayerReference
 {
 	// Create a vec of all layers of pages that are used to write the table to
@@ -101,13 +101,18 @@ font_scale: &Scale, off_row_color: &Color, cell_horizontal_margin: f32, cell_ver
 	// Keeps track of the last x position
 	let mut last_x = *x;
 	let mut off_row = false;
+	let mut vertical_margin_adjuster = 0.0;
+	let (r, g, b) = table_options.off_row_color();
+	let off_row_color = Color::Rgb(Rgb::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, None));
 
+	*y -= table_options.outer_vertical_margin();
 	let start_y = *y;
 	*y += font_size * 0.1;
 
 	for row in table
 	{
-		*y -= cell_vertical_margin;
+		*y -= vertical_margin_adjuster;
+		vertical_margin_adjuster = table_options.vertical_cell_margin();
 		let y_row_start = *y;
 		let mut row_layers_index = layers_index;
 		let mut row_off_row_lines: usize = 0;
@@ -138,7 +143,7 @@ font_scale: &Scale, off_row_color: &Color, cell_horizontal_margin: f32, cell_ver
 							is_closed: false
 						};
 						let last_layer_index = layers.len() - 1;
-						layers[last_layer_index].set_outline_color((*off_row_color).clone());
+						layers[last_layer_index].set_outline_color(off_row_color.clone());
 						let line_height = calc_text_height(font_scalars, current_font_type, current_font_size_data,
 							font_scale, font_size, newline_amount, 1);
 						layers[last_layer_index].set_outline_thickness(line_height * 4.0);
@@ -158,12 +163,14 @@ font_scale: &Scale, off_row_color: &Color, cell_horizontal_margin: f32, cell_ver
 
 	*y = start_y;
 	layers_index = 0;
+	vertical_margin_adjuster = 0.0;
 
 	// Loop through each row in the table
 	for row in table
 	{
 		// Decrease the y position by the vertical cell margin to keep the table that distance away from text above it
-		*y -= cell_vertical_margin;
+		*y -= vertical_margin_adjuster;
+		vertical_margin_adjuster = table_options.vertical_cell_margin();
 		// Create a variable to keep track of where to reset the y value to after writing each cell in this row
 		let y_row_start = *y;
 		// Create an index to keep track of what page this row starts on
@@ -232,7 +239,7 @@ background: image::DynamicImage, img_transform: &ImageTransform, font_scalars: &
 text_color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32, x_right: f32, y_high: f32, y_low: f32,
 x: &mut f32, y: &mut f32, body_font_type: &FontType, header_font_type: &FontType, body_font: &IndirectFontRef,
 header_font: &IndirectFontRef, body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale,
-off_row_color: &Color, cell_horizontal_margin: f32, cell_vertical_margin: f32, newline_amount: f32) -> PdfLayerReference
+table_options: &TableOptions, newline_amount: f32) -> PdfLayerReference
 {
 	// Tags for delimiting rows and columns in the table
 	const ROW_TAG: &str = "<row>";
@@ -297,10 +304,10 @@ off_row_color: &Color, cell_horizontal_margin: f32, cell_vertical_margin: f32, n
 	let mut sorted_max_widths = max_column_widths.clone();
 	sorted_max_widths.sort_by(|(_, a), (_, b)| a.partial_cmp(&b).expect("Error sorting table widths"));
 	// Get the width of the entire table
-	let mut table_width = x_right - x_left - 2.0;
+	let mut table_width = x_right - x_left - (table_options.outer_horizontal_margin() * 2.0);
 	// Calculate the default column width
 	let mut default_column_width =
-		(table_width - cell_horizontal_margin * ((column_count as f32) - 1.0)) / column_count as f32;
+		(table_width - table_options.horizontal_cell_margin() * ((column_count as f32) - 1.0)) / column_count as f32;
 	// Keeps track of the number of reamining columns to calculate width for
 	let mut remaining_columns = column_count as f32 - 1.0;
 
@@ -329,7 +336,7 @@ off_row_color: &Color, cell_horizontal_margin: f32, cell_vertical_margin: f32, n
 	// Create a vec of the starting x position for the text in each column
 	let mut column_starts: Vec<f32> = Vec::with_capacity(column_count);
 	// Create a variable that keeps track of the starting x position of the next column
-	let mut current_x = x_left + 1.0;
+	let mut current_x = x_left + table_options.outer_horizontal_margin();
 
 	// Loop through each column width
 	for width in &column_widths
@@ -337,16 +344,16 @@ off_row_color: &Color, cell_horizontal_margin: f32, cell_vertical_margin: f32, n
 		// Push those coordinates to the vec
 		column_starts.push(current_x);
 		// Set the start x position to the position of the next column
-		current_x += width + cell_horizontal_margin;
+		current_x += width + table_options.horizontal_cell_margin();
 	}
 
 	// Calculate the sum of the widths of each column
 	let actual_table_width: f32 =
-		column_widths.iter().sum::<f32>() + cell_horizontal_margin * ((column_count as f32) - 1.0);
+		column_widths.iter().sum::<f32>() + table_options.horizontal_cell_margin() * ((column_count as f32) - 1.0);
 	// Make the table width smaller if the columns aren't going to take up the whole page
 	table_width = table_width.min(actual_table_width);
 	let table_start = x_left;
-	let table_end = table_start + table_width + 2.0;
+	let table_end = table_start + table_width + (table_options.outer_horizontal_margin() * 2.0);
 	// Create a new 3D table vec for storing the rows, columns, and each line in a cell
 	let mut table: Vec<Vec<Vec<String>>> = Vec::new();
 	// Used for storing the height of each row in a table
@@ -428,7 +435,8 @@ off_row_color: &Color, cell_horizontal_margin: f32, cell_vertical_margin: f32, n
 	}
 
 	// Calculate the height of the entire table
-	let table_height = row_heights.iter().sum::<f32>() + (((row_heights.len() - 2) as f32) * cell_vertical_margin);
+	let table_height =
+		row_heights.iter().sum::<f32>() + (((row_heights.len() - 2) as f32) * table_options.vertical_cell_margin());
 	// If the table goes off the current page but isn't longer than a whole page
 	if *y - table_height < y_low && table_height <= y_high - y_low
 	{
@@ -442,7 +450,7 @@ off_row_color: &Color, cell_horizontal_margin: f32, cell_vertical_margin: f32, n
 	write_table(doc, &layer_ref, layer_count, background.clone(), img_transform, font_scalars, &table, text_color,
 		font_size, page_width, page_height, table_start, table_end, &column_starts, &column_widths, &centered_columns,
 		y_high, y_low, x, y, body_font_type, header_font_type, body_font, header_font, body_font_size_data,
-		header_font_size_data, font_scale, off_row_color, cell_horizontal_margin, cell_vertical_margin, newline_amount)
+		header_font_size_data, font_scale, table_options, newline_amount)
 }
 
 // Creates a new page and returns the layer for it
@@ -720,8 +728,8 @@ background: image::DynamicImage, img_transform: &ImageTransform, font_scalars: &
 color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32, x_right: f32, y_high: f32, y_low: f32,
 x: &mut f32, y: &mut f32, regular_font: &IndirectFontRef, bold_font: &IndirectFontRef, italic_font: &IndirectFontRef,
 bold_italic_font: &IndirectFontRef, regular_font_size_data: &Font, bold_font_size_data: &Font,
-italic_font_size_data: &Font, bold_italic_font_size_data: &Font, font_scale: &Scale, tab_amount: f32,
-table_off_row_color: &Color, cell_horizontal_margin: f32, cell_vertical_margin: f32, newline_amount: f32)
+italic_font_size_data: &Font, bold_italic_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions,
+tab_amount: f32, newline_amount: f32)
 -> PdfLayerReference
 {
 	// The layer that gets returned
@@ -837,10 +845,9 @@ table_off_row_color: &Color, cell_horizontal_margin: f32, cell_vertical_margin: 
 						create_table(doc, &new_layer, layer_count, background.clone(), img_transform, font_scalars,
 							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
 							&regular_font_type, &bold_font_type, regular_font, bold_font, regular_font_size_data,
-							bold_font_size_data, font_scale, table_off_row_color, cell_horizontal_margin,
-							cell_vertical_margin, newline_amount);
+							bold_font_size_data, font_scale, table_options, newline_amount);
 						// Move the y position down away from the table
-						*y -= cell_vertical_margin;
+						*y -= table_options.outer_vertical_margin();
 						// Reset the x position to the left side of the textbox
 						*x = x_left;
 						// Reset the buffer
@@ -1169,8 +1176,9 @@ impl PageSizeData
 
 // Generates a printpdf pdf document of a spellbook with spells from the spell_list parameter
 pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>, font_paths: &FontPaths,
-page_size_data: &PageSizeData, font_size_data: &FontSizeData, font_scalars: &FontScalars, background_img_path: &str,
-background_img_transform: &ImageTransform) -> Result<PdfDocumentReference, Box<dyn std::error::Error>>
+page_size_data: &PageSizeData, font_size_data: &FontSizeData, font_scalars: &FontScalars, table_options: &TableOptions,
+background_img_path: &str, background_img_transform: &ImageTransform)
+-> Result<PdfDocumentReference, Box<dyn std::error::Error>>
 {
 	// Text colors
 	let black = Color::Rgb(Rgb::new(0.0, 0.0, 0.0, None));
@@ -1345,8 +1353,8 @@ background_img_transform: &ImageTransform) -> Result<PdfDocumentReference, Box<d
 			background_img_transform, font_scalars, &spell.description, &black, font_size_data.body_font_size(),
 			page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font,
 			&bold_font, &italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data,
-			&italic_font_size_data, &bold_italic_font_size_data, &body_font_scale, font_size_data.tab_amount(),
-			&light_purple, CELL_HORIZONTAL_MARGIN, CELL_VERTICAL_MARGIN, font_size_data.body_newline_amount());
+			&italic_font_size_data, &bold_italic_font_size_data, &body_font_scale, table_options,
+			font_size_data.tab_amount(), font_size_data.body_newline_amount());
 
 		// If the spell has an upcast description
 		if let Some(description) = &spell.upcast_description
@@ -1358,8 +1366,8 @@ background_img_transform: &ImageTransform) -> Result<PdfDocumentReference, Box<d
 				background_img_transform, font_scalars, &text, &black, font_size_data.body_font_size(), page_size_data.width,
 				page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font, &bold_font,
 				&italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
-				&bold_italic_font_size_data, &body_font_scale, font_size_data.tab_amount(), &light_purple,
-				CELL_HORIZONTAL_MARGIN, CELL_VERTICAL_MARGIN, font_size_data.body_newline_amount());
+				&bold_italic_font_size_data, &body_font_scale, table_options, font_size_data.tab_amount(),
+				font_size_data.body_newline_amount());
 		}
 
 		// Increment the layer counter
@@ -1425,6 +1433,8 @@ mod tests
 		let font_size_data = FontSizeData::new(32.0, 24.0, 12.0, 10.0, 12.0, 8.0, 5.0).unwrap();
 		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
 		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
+		// Parameters for table margins / padding and off-row color / scaling
+		let table_options = TableOptions::new(10.0, 8.0, 2.0, 8.0, 4.0, (213, 209, 224)).unwrap();
 		// File path to the background image
 		let background_path = "img/parchment.jpg";
 		// Image transform data for the background image
@@ -1438,7 +1448,7 @@ mod tests
 		};
 		// Creates the spellbook
 		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &font_size_data,
-			&font_scalars, background_path, &background_transform).unwrap();
+			&font_scalars, &table_options, background_path, &background_transform).unwrap();
 		// Saves the spellbook to a pdf document
 		let _ = save_spellbook(doc, "Spellbook.pdf");
 	}
