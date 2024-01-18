@@ -940,6 +940,159 @@ pub struct FontPaths
 	pub bold_italic: String
 }
 
+// Holds data for what font sizes to use and how far down newlines should go (in mm)
+pub struct FontSizeData
+{
+	title_font_size: f32,
+	header_font_size: f32,
+	body_font_size: f32,
+	tab_amount: f32,
+	title_newline_amount: f32,
+	header_newline_amount: f32,
+	body_newline_amount: f32
+}
+
+impl FontSizeData
+{
+	// Constructor
+	pub fn new(title_font_size: f32, header_font_size: f32, body_font_size: f32, tab_amount: f32,
+	title_newline_amount: f32, header_newline_amount: f32, body_newline_amount: f32) -> Result<Self, String>
+	{
+		// Makes sure no values are below 0
+		if title_font_size < 0.0 { Err(String::from("Invalid title_font_size.")) }
+		else if header_font_size < 0.0 { Err(String::from("Invalid header_font_size.")) }
+		else if body_font_size < 0.0 { Err(String::from("Invalid body_font_size.")) }
+		else if tab_amount < 0.0 { Err(String::from("Invalid tab_amount.")) }
+		else if title_newline_amount < 0.0 { Err(String::from("Invalid title_newline_amount.")) }
+		else if header_newline_amount < 0.0 { Err(String::from("Invalid header_newline_amount.")) }
+		else if body_newline_amount < 0.0 { Err(String::from("Invalid body_newline_amount.")) }
+		else
+		{
+			Ok(Self
+			{
+				title_font_size: title_font_size,
+				header_font_size: header_font_size,
+				body_font_size: body_font_size,
+				tab_amount: tab_amount,
+				title_newline_amount: title_newline_amount,
+				header_newline_amount: header_newline_amount,
+				body_newline_amount: body_newline_amount
+			})
+		}
+	}
+
+	// Getters
+	pub fn title_font_size(&self) -> f32 { self.title_font_size }
+	pub fn header_font_size(&self) -> f32 { self.header_font_size }
+	pub fn body_font_size(&self) -> f32 { self.body_font_size }
+	pub fn tab_amount(&self) -> f32 { self.tab_amount }
+	pub fn title_newline_amount(&self) -> f32 { self.title_newline_amount }
+	pub fn header_newline_amount(&self) -> f32 { self.header_newline_amount }
+	pub fn body_newline_amount(&self) -> f32 { self.body_newline_amount }
+}
+
+// Holds scalar values to convert rusttype font units to printpdf millimeters (Mm)
+pub struct FontScalars
+{
+	regular: f32,
+	bold: f32,
+	italic: f32,
+	bold_italic: f32
+}
+
+impl FontScalars
+{
+	// Constructor
+	pub fn new(regular: f32, bold: f32, italic: f32, bold_italic: f32) -> Result<Self, String>
+	{
+		if regular < 0.0 { Err(String::from("Invalid regular scalar.")) }
+		else if bold < 0.0 { Err(String::from("Invalid bold scalar.")) }
+		else if italic < 0.0 { Err(String::from("Invalid italic scalar.")) }
+		else if bold_italic < 0.0 { Err(String::from("Invalid bold_italic scalar.")) }
+		else
+		{
+			Ok(Self
+			{
+				regular: regular,
+				bold: bold,
+				italic: italic,
+				bold_italic: bold_italic
+			})
+		}
+	}
+
+	// Getters
+	pub fn regular_scalar(&self) -> f32 { self.regular }
+	pub fn bold_scalar(&self) -> f32 { self.bold }
+	pub fn italic_scalar(&self) -> f32 { self.italic }
+	pub fn bold_italic_scalar(&self) -> f32 { self.bold }
+}
+
+// Holds data for formatting tables
+pub struct TableOptions
+{
+	horizontal_cell_margin: f32,
+	vertical_cell_margin: f32,
+	outer_horizontal_margin: f32,
+	outer_vertical_margin: f32,
+	off_row_color_lines_height_scalar: f32,
+	// RGB
+	off_row_color: (u8, u8, u8)
+}
+
+impl TableOptions
+{
+	// Constructor
+	pub fn new(horizontal_cell_margin: f32, vertical_cell_margin: f32, outer_horizontal_margin: f32,
+	outer_vertical_margin: f32, off_row_color_lines_height_scalar: f32, off_row_color: (u8, u8, u8))
+	-> Result<Self, String>
+	{
+		// Makes sure none of the float values are below 0
+		if horizontal_cell_margin < 0.0 { Err(String::from("Invalid horizontal_cell_margin.")) }
+		else if vertical_cell_margin < 0.0 { Err(String::from("Invalid vertical_cell_margin.")) }
+		else if outer_horizontal_margin < 0.0 { Err(String::from("Invalid outer_horizontal_margin.")) }
+		else if outer_vertical_margin < 0.0 { Err(String::from("Invalid outer_vertical_margin.")) }
+		else if off_row_color_lines_height_scalar < 0.0
+		{ Err(String::from("Invalid off_row_color_lines_height_scalar.")) }
+		else
+		{
+			Ok(Self
+			{
+				horizontal_cell_margin: horizontal_cell_margin,
+				vertical_cell_margin: vertical_cell_margin,
+				outer_horizontal_margin: outer_horizontal_margin,
+				outer_vertical_margin: outer_vertical_margin,
+				off_row_color_lines_height_scalar: off_row_color_lines_height_scalar,
+				off_row_color: off_row_color
+			})
+		}
+	}
+
+	// Getters
+	pub fn horizontal_cell_margin(&self) -> f32 { self.horizontal_cell_margin }
+	pub fn vertical_cell_margin(&self) -> f32 { self.vertical_cell_margin }
+	pub fn outer_horizontal_margin(&self) -> f32 { self.outer_horizontal_margin }
+	pub fn outer_vertical_margin(&self) -> f32 { self.outer_vertical_margin }
+	pub fn off_row_color_lines_height_scalar(&self) -> f32 { self.off_row_color_lines_height_scalar }
+	pub fn off_row_color(&self) -> (u8, u8, u8) { self.off_row_color }
+	// Gives specific values for each rgb value for the off row color
+	pub fn off_row_red(&self) -> u8 { self.off_row_color.0 }
+	pub fn off_row_green(&self) -> u8 { self.off_row_color.1 }
+	pub fn off_row_blue(&self) -> u8 { self.off_row_color.2 }
+}
+
+// Holds the RGB colors for every piece of text in the spellbook
+pub struct TextColors
+{
+	pub title_color: (u8, u8, u8),
+	pub level_school_color: (u8, u8, u8),
+	pub field_name_color: (u8, u8, u8),
+	pub field_text_color: (u8, u8, u8),
+	pub description_color: (u8, u8, u8),
+	pub table_header_color: (u8, u8, u8),
+	pub table_body_color: (u8, u8, u8)
+}
+
 // Contains the data for determining the size of the page and the margins between eacg side of the page and the text
 pub struct PageSizeData
 {
@@ -1001,12 +1154,12 @@ impl PageSizeData
 	}
 
 	// Getters
-	pub fn get_width(&self) -> f32 { self.width }
-	pub fn get_height(&self) -> f32 { self.height }
-	pub fn get_left_margin(&self) -> f32 { self.left_margin }
-	pub fn get_right_margin(&self) -> f32 { self.right_margin }
-	pub fn get_top_margin(&self) -> f32 { self.top_margin }
-	pub fn get_bottom_margin(&self) -> f32 { self.bottom_margin }
+	pub fn width(&self) -> f32 { self.width }
+	pub fn height(&self) -> f32 { self.height }
+	pub fn left_margin(&self) -> f32 { self.left_margin }
+	pub fn right_margin(&self) -> f32 { self.right_margin }
+	pub fn top_margin(&self) -> f32 { self.top_margin }
+	pub fn bottom_margin(&self) -> f32 { self.bottom_margin }
 
 	// Returns whether or not all of the margins are the same for this object
 	pub fn has_same_margins(&self) -> bool
@@ -1018,7 +1171,7 @@ impl PageSizeData
 
 // Generates a printpdf pdf document of a spellbook with spells from the spell_list parameter
 pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>, font_paths: &FontPaths,
-page_size_data: &PageSizeData, tab_amount: f32, background_img_path: &str, background_img_transform: &ImageTransform)
+page_size_data: &PageSizeData, font_size_data: &FontSizeData, background_img_path: &str, background_img_transform: &ImageTransform)
 -> Result<PdfDocumentReference, Box<dyn std::error::Error>>
 {
 	// Text colors
@@ -1060,26 +1213,16 @@ page_size_data: &PageSizeData, tab_amount: f32, background_img_path: &str, backg
 		None => panic!("Could not convert bold italic font data to bytes.")
 	};
 
-	// Define font sizes
-	const TITLE_FONT_SIZE: f32 = 32.0;
-	const HEADER_FONT_SIZE: f32 = 24.0;
-	const BODY_FONT_SIZE: f32 = 12.0;
-
 	// Create font scale objects for each font size
-	let title_font_scale = Scale::uniform(TITLE_FONT_SIZE);
-	let header_font_scale = Scale::uniform(HEADER_FONT_SIZE);
-	let body_font_scale = Scale::uniform(BODY_FONT_SIZE);
+	let title_font_scale = Scale::uniform(font_size_data.title_font_size());
+	let header_font_scale = Scale::uniform(font_size_data.header_font_size());
+	let body_font_scale = Scale::uniform(font_size_data.body_font_size());
 
 	// Font types for calculating size of text with certain fonts
 	let regular_font_type = FontType::Regular;
 	let bold_font_type = FontType::Bold;
 	let italic_font_type = FontType::Italic;
 	let bold_italic_font_type = FontType::Italic;
-
-	// Number of millimeters to go downwards for newlines
-	const TITLE_NEWLINE: f32 = 12.0;
-	const HEADER_NEWLINE: f32 = 8.0;
-	const BODY_NEWLINE: f32 = 5.0;
 
 	// Number of millimeters between cells in tables
 	const CELL_HORIZONTAL_MARGIN: f32 = 10.0;
@@ -1115,7 +1258,7 @@ page_size_data: &PageSizeData, tab_amount: f32, background_img_path: &str, backg
 	let x_left = page_size_data.left_margin;
 	let x_right = page_size_data.width - page_size_data.right_margin;
 	let y_top = page_size_data.height - page_size_data.top_margin;
-	let y_bottom = page_size_data.bottom_margin;
+	let y_low = page_size_data.bottom_margin;
 
 	// Temporary x and y position values needed to call write_centered_textbox
 	let mut temp_x: f32 = 0.0;
@@ -1123,9 +1266,9 @@ page_size_data: &PageSizeData, tab_amount: f32, background_img_path: &str, backg
 
     // Add text using the custom font to the page
 	let _ = write_centered_textbox(&doc, &cover_layer_ref, &mut layer_count, img_data.clone(),
-		background_img_transform, title, &black, TITLE_FONT_SIZE, page_size_data.width, page_size_data.height, x_left,
-		x_right, y_top, y_bottom, &mut temp_x, &mut temp_y, &regular_font_type, &regular_font, &regular_font_size_data,
-		&title_font_scale, TITLE_NEWLINE);
+		background_img_transform, title, &black, font_size_data.title_font_size(), page_size_data.width,
+		page_size_data.height, x_left, x_right, y_top, y_low, &mut temp_x, &mut temp_y, &regular_font_type,
+		&regular_font, &regular_font_size_data, &title_font_scale, font_size_data.title_newline_amount());
 
 	// Add next pages
 
@@ -1145,79 +1288,80 @@ page_size_data: &PageSizeData, tab_amount: f32, background_img_path: &str, backg
 
 		// Add the name of the spell as a header
 		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
-			&spell.name, &red, HEADER_FONT_SIZE, page_size_data.width, page_size_data.height, x_left, x_right, y_top,
-			y_bottom, &mut x, &mut y, &regular_font_type, &regular_font, &regular_font_size_data, &header_font_scale,
-			tab_amount, HEADER_NEWLINE);
+			&spell.name, &red, font_size_data.header_font_size(), page_size_data.width, page_size_data.height, x_left,
+			x_right, y_top, y_low, &mut x, &mut y, &regular_font_type, &regular_font, &regular_font_size_data,
+			&header_font_scale, font_size_data.tab_amount(), font_size_data.header_newline_amount());
 		// Move the y position down a bit to put some extra space between lines of text
-		y -= HEADER_NEWLINE;
+		y -= font_size_data.header_newline_amount();
 		// Reset the x position back to the starting position
 		x = x_left;
 
 		// Add the level and the spell's school of magic
 		let text = get_level_school_text(&spell);
 		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform, &text,
-			&black, BODY_FONT_SIZE, page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_bottom, &mut x,
-			&mut y, &italic_font_type, &italic_font, &italic_font_size_data, &body_font_scale, tab_amount, BODY_NEWLINE);
-		y -= HEADER_NEWLINE;
+			&black, font_size_data.body_font_size(), page_size_data.width, page_size_data.height, x_left, x_right, y_top,
+			y_low, &mut x, &mut y, &italic_font_type, &italic_font, &italic_font_size_data, &body_font_scale,
+			font_size_data.tab_amount(), font_size_data.body_newline_amount());
+		y -= font_size_data.header_newline_amount();
 		x = x_left;
 
 		// Add the casting time of the spell
 		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
-			"Casting Time:", &spell.casting_time.to_string(), &black, &black, BODY_FONT_SIZE, page_size_data.width,
-			page_size_data.height, x_left, x_right, y_top, y_bottom, &mut x, &mut y, &bold_font_type, &regular_font_type,
-			&bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale, tab_amount,
-			BODY_NEWLINE);
-		y -= BODY_NEWLINE;
+			"Casting Time:", &spell.casting_time.to_string(), &black, &black, font_size_data.body_font_size(),
+			page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &bold_font_type,
+			&regular_font_type, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
+			font_size_data.tab_amount(), font_size_data.body_newline_amount());
+		y -= font_size_data.body_newline_amount();
 		x = x_left;
 
 
 		// Add the range of the spell
 		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
-			"Range:", &spell.range.to_string(), &black, &black, BODY_FONT_SIZE, page_size_data.width,
-			page_size_data.height, x_left, x_right, y_top, y_bottom, &mut x, &mut y, &bold_font_type, &regular_font_type,
-			&bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale, tab_amount,
-			BODY_NEWLINE);
-		y -= BODY_NEWLINE;
+			"Range:", &spell.range.to_string(), &black, &black, font_size_data.body_font_size(), page_size_data.width,
+			page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &bold_font_type, &regular_font_type,
+			&bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
+			font_size_data.tab_amount(), font_size_data.body_newline_amount());
+		y -= font_size_data.body_newline_amount();
 		x = x_left;
 
 		// Add the components of the spell
 		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
-			"Components:", &spell.get_component_string(), &black, &black, BODY_FONT_SIZE, page_size_data.width,
-			page_size_data.height, x_left, x_right, y_top, y_bottom, &mut x, &mut y, &bold_font_type,
+			"Components:", &spell.get_component_string(), &black, &black, font_size_data.body_font_size(),
+			page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &bold_font_type,
 			&regular_font_type, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data,
-			&body_font_scale, tab_amount, BODY_NEWLINE);
-		y -= BODY_NEWLINE;
+			&body_font_scale, font_size_data.tab_amount(), font_size_data.body_newline_amount());
+		y -= font_size_data.body_newline_amount();
 		x = x_left;
 
 		// Add the duration of the spell
 		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
-			"Duration:", &spell.duration.to_string(), &black, &black, BODY_FONT_SIZE, page_size_data.width,
-			page_size_data.height, x_left, x_right, y_top, y_bottom, &mut x, &mut y, &bold_font_type, &regular_font_type,
-			&bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale, tab_amount,
-			BODY_NEWLINE);
-		y -= HEADER_NEWLINE;
+			"Duration:", &spell.duration.to_string(), &black, &black, font_size_data.body_font_size(),
+			page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &bold_font_type,
+			&regular_font_type, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
+			font_size_data.tab_amount(), font_size_data.body_newline_amount());
+		y -= font_size_data.header_newline_amount();
 		x = x_left;
 
 		// Add the spell's description
 		layer_ref = write_spell_description(&doc, &layer_ref, &mut layer_count, img_data.clone(),
-			background_img_transform, &spell.description, &black, BODY_FONT_SIZE, page_size_data.width,
-			page_size_data.height, x_left, x_right, y_top, y_bottom, &mut x, &mut y, &regular_font, &bold_font,
+			background_img_transform, &spell.description, &black, font_size_data.body_font_size(), page_size_data.width,
+			page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font, &bold_font,
 			&italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
-			&bold_italic_font_size_data, &body_font_scale, tab_amount, &light_purple, CELL_HORIZONTAL_MARGIN,
-			CELL_VERTICAL_MARGIN, BODY_NEWLINE);
+			&bold_italic_font_size_data, &body_font_scale, font_size_data.tab_amount(), &light_purple,
+			CELL_HORIZONTAL_MARGIN, CELL_VERTICAL_MARGIN, font_size_data.body_newline_amount());
 
 		// If the spell has an upcast description
 		if let Some(description) = &spell.upcast_description
 		{
-			y -= BODY_NEWLINE;
-			x = x_left + tab_amount;
+			y -= font_size_data.body_newline_amount();
+			x = x_left + font_size_data.tab_amount();
 			let text = format!("<bi> At Higher Levels. <r> {}", description);
 			layer_ref = write_spell_description(&doc, &layer_ref, &mut layer_count, img_data.clone(),
-				background_img_transform, &text, &black, BODY_FONT_SIZE, page_size_data.width, page_size_data.height,
-				x_left, x_right, y_top, y_bottom, &mut x, &mut y, &regular_font, &bold_font, &italic_font,
-				&bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
-				&bold_italic_font_size_data, &body_font_scale, tab_amount, &light_purple, CELL_HORIZONTAL_MARGIN,
-				CELL_VERTICAL_MARGIN, BODY_NEWLINE);
+				background_img_transform, &text, &black, font_size_data.body_font_size(), page_size_data.width,
+				page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font, &bold_font,
+				&italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
+				&bold_italic_font_size_data, &body_font_scale, font_size_data.tab_amount(), &light_purple,
+				CELL_HORIZONTAL_MARGIN, CELL_VERTICAL_MARGIN, font_size_data.body_newline_amount());
 		}
 
 		// Increment the layer counter
@@ -1279,8 +1423,8 @@ mod tests
 		};
 		// Parameters for determining the size of the page and the text margins on the page
 		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
-		// The amount that text tabs in on new paragraphs
-		let tab_amount = 10.0;
+		// Parameters for determining font sizes, the tab amount, and newline amounts
+		let font_size_data = FontSizeData::new(32.0, 24.0, 12.0, 10.0, 12.0, 8.0, 5.0).unwrap();
 		// File path to the background image
 		let background_path = "img/parchment.jpg";
 		// Image transform data for the background image
@@ -1293,7 +1437,7 @@ mod tests
 			..Default::default()
 		};
 		// Creates the spellbook
-		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, tab_amount,
+		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &font_size_data,
 			background_path, &background_transform).unwrap();
 		// Saves the spellbook to a pdf document
 		let _ = save_spellbook(doc, "Spellbook.pdf");
