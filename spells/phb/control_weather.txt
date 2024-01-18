@@ -30,6 +30,7 @@ Stage | Condition
 <table>
 <b> Wind
 <table>
+Stage | Condition
 <row> 1 | Calm
 <row> 2 | Moderate wind
 <row> 3 | Strong wind
