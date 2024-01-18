@@ -82,51 +82,79 @@ header_font_type: &FontType, body_font_size_data: &Font, header_font_size_data: 
 fn write_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, table: &Vec<Vec<Vec<String>>>, color: &Color,
 font_size: f32, page_width: f64, page_height: f64, column_bounds: &Vec<(f64, f64)>, column_widths: &Vec<f64>,
-default_column_width: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64, body_font_type: &FontType, header_font_type: &FontType,
-body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data: &Font, header_font_size_data: &Font,
-font_scale: &Scale, cell_horitontal_margin: f64, cell_vertical_margin: f64, newline_amount: f64) -> PdfLayerReference
+centered_columns: &Vec<bool>, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64, body_font_type: &FontType,
+header_font_type: &FontType, body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data: &Font,
+header_font_size_data: &Font, font_scale: &Scale, cell_horitontal_margin: f64, cell_vertical_margin: f64,
+newline_amount: f64) -> PdfLayerReference
 {
+	// Create a vec of all layers of pages that are used to write the table to
 	let mut layers = vec![(*layer).clone()];
+	// Index of the most recent page created
 	let mut layers_index = 0;
+	// Data for the current font that is being used
+	// Starts with header font for first row
 	let mut current_font = header_font;
 	let mut current_font_size_data = header_font_size_data;
 	let mut current_font_type = header_font_type;
+	// Keeps track of the last x position
+	let mut last_x = *x;
+	// Loop through each row in the table
 	for row in table
 	{
+		// Decrease the y position by the vertical cell margin to keep the table that distance away from text above it
 		*y -= cell_vertical_margin;
+		// Create a variable to keep track of where to reset the y value to after writing each cell in this row
 		let y_start = *y;
+		// Create an index to keep track of what page this row starts on
+		// This makes it so each cell in this row gets written to the correct page
 		let mut row_layers_index = layers_index;
+		// Variable to keep track of the column data in column_widths and column_bounds
 		let mut column_index = 0;
+		// Loop through each cell in this row
 		for cell in row
 		{
+			// The amount the text goes down on each newline
+			// Starts as 0 so the first line in this cell doesn't get moved down from the correct position
 			let mut newline_adjuster = 0.0;
+			// Reset the y position to the top of the row
 			*y = y_start;
-			let mut temp_layers_index = row_layers_index;
-			let mut centered = false;
-			if column_widths[column_index] < default_column_width
-			{
-				centered = true;
-			}
+			// Create an index to give to apply_textbox_line and keep track of the current page being used
+			let mut cell_layers_index = row_layers_index;
+			// Loop through each line in this cell
 			for line in cell
 			{
-				if centered
+				// Calculate the width of this line
+				let line_width = calc_text_width(&line, current_font_type, current_font_size_data, font_scale);
+				// If this cell is in a centered column
+				if centered_columns[column_index]
 				{
-					let line_width = calc_text_width(&line, current_font_type, current_font_size_data, font_scale);
+					// Set the x position to make the line centered
 					*x = (column_widths[column_index] / 2.0) - (line_width as f64 / 2.0) + column_bounds[column_index].0;
 				}
+				// If this isn't a centered column, set the x position to the left side of the cell
 				else { *x = column_bounds[column_index].0; }
-				apply_textbox_line(doc, &mut layers, &mut temp_layers_index, layer_count, background.clone(),
+				// Set the last_x position to be at the end of this line
+				last_x = *x + line_width;
+				// Write the line of text
+				apply_textbox_line(doc, &mut layers, &mut cell_layers_index, layer_count, background.clone(),
 					img_transform, &line, color, font_size, page_width, page_height, column_bounds[column_index].0,
 					column_bounds[column_index].1, y_high, y_low, x, y, current_font, newline_adjuster);
+				// Start going down a line when creating a new line after the first line gets applied
 				newline_adjuster = newline_amount;
 			}
-			layers_index = std::cmp::max(layers_index, temp_layers_index);
+			// If any new pages were created, increase the layers index
+			layers_index = std::cmp::max(layers_index, cell_layers_index);
+			// Increase the column index to the next column
 			column_index += 1;
 		}
+		// Start using the body font after the first row
 		current_font = body_font;
 		current_font_size_data = body_font_size_data;
 		current_font_type = body_font_type;
 	}
+	// Set the x position to the end of the last line
+	*x = last_x;
+	// Return the most recent layer
 	layers[layers.len() - 1].clone()
 }
 
@@ -194,6 +222,9 @@ cell_vertical_margin: f64, newline_amount: f64) -> PdfLayerReference
 	// then if any columns have a max width less than that, remove the space that column doesn't need
 	// and split it up among the rest of the columns
 	let mut column_widths = vec![0.0; column_count];
+	// Vec of whether or not each column should be centered
+	// Being centered or not is deteremined whether or not the column is less wide than the default column width
+	let mut centered_columns = vec![false; column_count];
 	// Sort the max width of each column from least to greatest
 	let mut sorted_max_widths = max_column_widths.clone();
 	sorted_max_widths.sort_by(|(_, a), (_, b)| a.partial_cmp(&b).expect("Error sorting table widths"));
@@ -214,6 +245,8 @@ cell_vertical_margin: f64, newline_amount: f64) -> PdfLayerReference
 		{
 			// Set that column's width to it's max width
 			column_widths[index] = max_width as f64;
+			// Make this column a centered column
+			centered_columns[index] = true;
 			// Adjust the default column width to take up the space this column didn't use
 			default_column_width += (default_column_width - max_width as f64) / remaining_columns;
 			// Decrease the number of columns left to calculate the width of
@@ -338,7 +371,7 @@ cell_vertical_margin: f64, newline_amount: f64) -> PdfLayerReference
 	}
 	// Write the table and return the last layer that was used
 	write_table(doc, &layer_ref, layer_count, background.clone(), img_transform, &table, color, font_size, page_width,
-		page_height, &column_bounds, &column_widths, default_column_width, y_high, y_low, x, y, body_font_type,
+		page_height, &column_bounds, &column_widths, &centered_columns, y_high, y_low, x, y, body_font_type,
 		header_font_type, body_font, header_font, body_font_size_data, header_font_size_data, font_scale,
 		cell_horizontal_margin, cell_vertical_margin, newline_amount)
 }
@@ -620,7 +653,7 @@ page_width: f64, page_height: f64, x_left: f64, x_right: f64, y_high: f64, y_low
 regular_font: &IndirectFontRef, bold_font: &IndirectFontRef, italic_font: &IndirectFontRef,
 bold_italic_font: &IndirectFontRef, regular_font_size_data: &Font, bold_font_size_data: &Font,
 italic_font_size_data: &Font, bold_italic_font_size_data: &Font, font_scale: &Scale, tab_amount: f64,
-newline_amount: f64) -> PdfLayerReference
+cell_horizontal_margin: f64, cell_vertical_margin: f64, newline_amount: f64) -> PdfLayerReference
 {
 	// The layer that gets returned
 	let mut new_layer = (*layer).clone();
@@ -735,8 +768,11 @@ newline_amount: f64) -> PdfLayerReference
 						create_table(doc, &new_layer, layer_count, background.clone(), img_transform, &buffer, color,
 							font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y, &regular_font_type,
 							&bold_font_type, regular_font, bold_font, regular_font_size_data, bold_font_size_data,
-							font_scale, 10.0, 8.0, newline_amount);
-						*y -= 8.0 - newline_amount;
+							font_scale, cell_horizontal_margin, cell_vertical_margin, newline_amount);
+						// Move the y position down away from the table
+						*y -= cell_vertical_margin;
+						// Reset the x position to the left side of the textbox
+						*x = x_left;
 						// Reset the buffer
 						buffer = String::new();
 						// Reset the font to regular font
@@ -978,6 +1014,10 @@ page_size_data: &PageSizeData, tab_amount: f64, background_img_path: &str, backg
 	const HEADER_NEWLINE: f64 = 8.0;
 	const BODY_NEWLINE: f64 = 5.0;
 
+	// Number of millimeters between cells in tables
+	const CELL_HORIZONTAL_MARGIN: f64 = 10.0;
+	const CELL_VERTICAL_MARGIN: f64 = 8.0;
+
 	// Load background image
 	let img_data = image::open(background_img_path)?;
     let img1 = Image::from_dynamic_image(&img_data.clone());
@@ -1096,7 +1136,8 @@ page_size_data: &PageSizeData, tab_amount: f64, background_img_path: &str, backg
 			background_img_transform, &spell.description, &black, BODY_FONT_SIZE, page_size_data.width,
 			page_size_data.height, x_left, x_right, y_top, y_bottom, &mut x, &mut y, &regular_font, &bold_font,
 			&italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
-			&bold_italic_font_size_data, &body_font_scale, tab_amount, BODY_NEWLINE);
+			&bold_italic_font_size_data, &body_font_scale, tab_amount, CELL_HORIZONTAL_MARGIN, CELL_VERTICAL_MARGIN,
+			BODY_NEWLINE);
 
 		// If the spell has an upcast description
 		if let Some(description) = &spell.upcast_description
@@ -1108,7 +1149,8 @@ page_size_data: &PageSizeData, tab_amount: f64, background_img_path: &str, backg
 				background_img_transform, &text, &black, BODY_FONT_SIZE, page_size_data.width, page_size_data.height,
 				x_left, x_right, y_top, y_bottom, &mut x, &mut y, &regular_font, &bold_font, &italic_font,
 				&bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
-				&bold_italic_font_size_data, &body_font_scale, tab_amount, BODY_NEWLINE);
+				&bold_italic_font_size_data, &body_font_scale, tab_amount, CELL_HORIZONTAL_MARGIN, CELL_VERTICAL_MARGIN,
+				BODY_NEWLINE);
 		}
 
 		// Increment the layer counter
