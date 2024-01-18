@@ -82,17 +82,47 @@ header_font_type: &FontType, body_font_size_data: &Font, header_font_size_data: 
 fn write_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, table: &Vec<Vec<Vec<String>>>, color: &Color,
 font_size: f32, page_width: f64, page_height: f64, column_bounds: &Vec<(f64, f64)>, column_widths: &Vec<f64>,
-default_column_width: f64, x_left: f64, x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64,
+default_column_width: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64, body_font_type: &FontType, header_font_type: &FontType,
 body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data: &Font, header_font_size_data: &Font,
 font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
 {
 	let mut layers = vec![(*layer).clone()];
+	let mut layers_index = 0;
+	let mut current_font = header_font;
+	let mut current_font_size_data = header_font_size_data;
+	let mut current_font_type = header_font_type;
 	for row in table
 	{
+		let y_start = *y;
+		let mut row_layers_index = layers_index;
+		let mut column_index = 0;
 		for cell in row
 		{
-
+			*y = y_start;
+			let mut temp_layers_index = row_layers_index;
+			let mut centered = false;
+			if column_widths[column_index] < default_column_width
+			{
+				centered = true;
+			}
+			for line in cell
+			{
+				if centered
+				{
+					let line_width = calc_text_width(&line, current_font_type, current_font_size_data, font_scale);
+					*x = (column_widths[column_index] / 2.0) - (line_width as f64 / 2.0) + column_bounds[column_index].0;
+				}
+				else { *x = column_bounds[column_index].0; }
+				apply_textbox_line(doc, &mut layers, &mut temp_layers_index, layer_count, background.clone(),
+					img_transform, &line, color, font_size, page_width, page_height, column_bounds[column_index].0,
+					column_bounds[column_index].1, y_high, y_low, x, y, current_font, newline_amount);
+			}
+			layers_index = std::cmp::max(layers_index, temp_layers_index);
+			column_index += 1;
 		}
+		current_font = body_font;
+		current_font_size_data = body_font_size_data;
+		current_font_type = body_font_type;
 	}
 	layers[layers.len() - 1].clone()
 }
@@ -303,8 +333,8 @@ body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, ce
 	}
 	// Write the table and return the last layer that was used
 	write_table(doc, &layer_ref, layer_count, background.clone(), img_transform, &table, color, font_size, page_width,
-		page_height, &column_bounds, &column_widths, default_column_width, x_left, x_right, y_high, y_low, x, y,
-		body_font, header_font, body_font_size_data, header_font_size_data, font_scale, newline_amount)
+		page_height, &column_bounds, &column_widths, default_column_width, y_high, y_low, x, y, body_font_type,
+		header_font_type, body_font, header_font, body_font_size_data, header_font_size_data, font_scale, newline_amount)
 }
 
 // Creates a new page and returns the layer for it
