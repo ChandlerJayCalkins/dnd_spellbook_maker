@@ -20,7 +20,7 @@ trait SpellFileString: Sized
 
 // The level of a spell
 // 0 is a cantrip, max level is 9
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Level
 {
 	Cantrip,
@@ -119,7 +119,7 @@ impl From<Level> for u8
 }
 
 // The school of magic a spell belongs to
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MagicSchool
 {
 	Abjuration,

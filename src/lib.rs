@@ -81,9 +81,10 @@ header_font_type: &FontType, body_font_size_data: &Font, header_font_size_data: 
 // Writes a table to the pdf doc
 fn write_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, table: &Vec<Vec<Vec<String>>>, color: &Color,
-font_size: f32, x: &mut f64, y: &mut f64, body_font: &IndirectFontRef, header_font: &IndirectFontRef,
-body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64)
--> Vec<PdfLayerReference>
+font_size: f32, page_width: f64, page_height: f64, column_bounds: &Vec<(f64, f64)>, column_widths: &Vec<f64>,
+default_column_width: f64, x_left: f64, x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64,
+body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data: &Font, header_font_size_data: &Font,
+font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
 {
 	let mut layers = vec![(*layer).clone()];
 	for row in table
@@ -93,7 +94,7 @@ body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, ne
 
 		}
 	}
-	layers
+	layers[layers.len() - 1].clone()
 }
 
 // Creates a table from a string of tokens with table tags and writes it to the pdf doc
@@ -101,7 +102,8 @@ fn create_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_cou
 background: image::DynamicImage, img_transform: &ImageTransform, table_string: &str, color: &Color, font_size: f32,
 page_width: f64, page_height: f64, x_left: f64, x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64,
 body_font_type: &FontType, header_font_type: &FontType, body_font: &IndirectFontRef, header_font: &IndirectFontRef,
-body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
+body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, cell_margin: f64, newline_amount: f64)
+-> PdfLayerReference
 {
 	// Tags for delimiting rows and columns in the table
 	const ROW_TAG: &str = "<row>";
@@ -165,8 +167,6 @@ body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, ne
 	println!("{:?}", sorted_max_widths);
 	// Get the width of the entire table
 	let mut table_width = x_right - x_left;
-	// Space between cells in the table
-	let cell_margin = 10.0;
 	// Calculate the default column width
 	let mut default_column_width = (table_width - cell_margin * ((column_count as f64) - 1.0)) / column_count as f64;
 	println!("{}", default_column_width);
@@ -192,6 +192,22 @@ body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, ne
 		}
 	}
 	println!("{:?}", column_widths);
+	// Create a vec of thex position left and right bounds of each column
+	let mut column_bounds: Vec<(f64, f64)> = Vec::with_capacity(column_count);
+	// Create a variable that keeps track of the starting x position of the next column
+	let mut current_x = x_left;
+	// Loop through each column width
+	for width in &column_widths
+	{
+		// Calculate the start and end coordinates for this column
+		let left = current_x;
+		let right = left + width;
+		// Push those coordinates to the vec
+		column_bounds.push((left, right));
+		// Set the start x position to the position of the next column
+		current_x = right + cell_margin;
+	}
+	println!("{:?}", column_bounds);
 	// Calculate the sum of the widths of each column
 	let actual_table_width: f64 = column_widths.iter().sum::<f64>() + cell_margin * ((column_count as f64) - 1.0);
 	println!("{}", actual_table_width);
@@ -285,11 +301,10 @@ body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, ne
 		*x = x_left;
 		*y = y_high;
 	}
-	// If the table is longer than a whole page, just start writing it
-	// Else if the table still goes off the current page but isn't longer than a whole page, make a new page and start writing it on there
-	// Else, just start writing the table
-	// Return the last layer that was used
-	layer_ref
+	// Write the table and return the last layer that was used
+	write_table(doc, &layer_ref, layer_count, background.clone(), img_transform, &table, color, font_size, page_width,
+		page_height, &column_bounds, &column_widths, default_column_width, x_left, x_right, y_high, y_low, x, y,
+		body_font, header_font, body_font_size_data, header_font_size_data, font_scale, newline_amount)
 }
 
 // Creates a new page and returns the layer for it
@@ -684,7 +699,7 @@ newline_amount: f64) -> PdfLayerReference
 						create_table(doc, &new_layer, layer_count, background.clone(), img_transform, &buffer, color,
 							font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y, &regular_font_type,
 							&bold_font_type, regular_font, bold_font, regular_font_size_data, bold_font_size_data,
-							font_scale, newline_amount);
+							font_scale, 10.0, newline_amount);
 						// Reset the buffer
 						buffer = String::new();
 						// Reset the font to regular font
