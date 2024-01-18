@@ -31,6 +31,8 @@ fn calc_text_width(font_scalars: &FontScalars, text: &str, font_type: &FontType,
 fn calc_text_height(font_scalars: &FontScalars, font_type: &FontType, font_size_data: &Font, font_scale: &Scale,
 font_size: f32, newline_amount: f32, lines: usize) -> f32
 {
+	// If there are no lines, return 0 for the height
+	if lines == 0 { return 0.0; }
 	// Calculate the amount of space every newline takes up
 	let line_height = ((lines - 1) as f32) * newline_amount;
 	// Calculate the height of a the lower half and the upper half of a line of text in this font
@@ -82,7 +84,7 @@ font_scale: &Scale) -> Vec<(usize, f32)>
 
 // Writes a table to the pdf doc
 fn write_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
-background: image::DynamicImage, img_transform: &ImageTransform, font_scalars: &FontScalars,
+background: image::DynamicImage, img_transform: &ImageTransform, font_scalars: &FontScalars, title_lines: &Vec<String>,
 table: &Vec<Vec<Vec<String>>>, text_color: &Color, font_size: f32, page_width: f32, page_height: f32, table_x_start: f32,
 table_x_end: f32, column_starts: &Vec<f32>, column_widths: &Vec<f32>, centered_columns: &Vec<bool>, y_high: f32,
 y_low: f32, x: &mut f32, y: &mut f32, body_font_type: &FontType, header_font_type: &FontType,
@@ -106,6 +108,20 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32)
 	// Adjusts the y position by a certain amount between rows
 	// Starts as 0 so the first row doesn't get moved down at all from the starting position
 	let mut vertical_margin_adjuster = 0.0;
+	if title_lines.len() > 0
+	{
+		let table_width = table_x_end - table_x_start - table_options.outer_horizontal_margin();
+		let mut newline_adjuster = 0.0;
+		for line in title_lines
+		{
+			let line_width = calc_text_width(font_scalars, &line, current_font_type, current_font_size_data, font_scale);
+			*x = (table_width / 2.0) - (line_width / 2.0) + table_x_start;
+			apply_textbox_line(doc, &mut layers, &mut layers_index, layer_count, background.clone(),img_transform, &line,
+				text_color, font_size, page_width, page_height, y_high, y_low, x, y, current_font, newline_adjuster);
+			newline_adjuster = newline_amount;
+		}
+		*y -= table_options.vertical_cell_margin();
+	}
 	// Construct the off row color object
 	let (r, g, b) = table_options.off_row_color();
 	let off_row_color = Color::Rgb(Rgb::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, None));
@@ -146,7 +162,7 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32)
 			{
 				// Apply empty text to go to a new line and create a new page if needed
 				apply_textbox_line(doc, &mut layers, &mut cell_layers_index, layer_count, background.clone(),
-					img_transform, "", text_color, font_size, page_width, page_height, y_high, y_low, x, y,current_font,
+					img_transform, "", text_color, font_size, page_width, page_height, y_high, y_low, x, y, current_font,
 					newline_adjuster);
 				// If this is an off row
 				if off_row
@@ -302,6 +318,7 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLay
 	if tokens[0] == TITLE_TAG
 	{
 		start_index = 2;
+
 		for &token in &tokens[1..]
 		{
 			let escape_title = format!("\\{}", TITLE_TAG).as_str();
@@ -343,6 +360,7 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLay
 			table_vec[end_index].push(cell.trim());
 		}
 	}
+
 	// Loop through each row in the table to add extra columns
 	let mut index = 0;
 	while index < table_vec.len()
@@ -381,7 +399,7 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLay
 	// Keeps track of the number of reamining columns to calculate width for
 	let mut remaining_columns = column_count as f32 - 1.0;
 
-	// Loop through each max column width in order of least to greatest
+	// Loop through each max column width in order of least to greatest to calculate the column's actual width
 	for (index, max_width) in sorted_max_widths
 	{
 		// If the column's max width is less than the default column width
@@ -408,7 +426,7 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLay
 	// Create a variable that keeps track of the starting x position of the next column
 	let mut current_x = x_left + table_options.outer_horizontal_margin();
 
-	// Loop through each column width
+	// Loop through each column width to calculate the starting x positions for each column
 	for width in &column_widths
 	{
 		// Push those coordinates to the vec
@@ -430,6 +448,8 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLay
 	let mut row_heights: Vec<f32> = Vec::new();
 	// Flag to tell if header text is currently being processed
 	let mut header = true;
+
+	// Loop through the table vec to split each cell of text into lines
 
 	// Loops through each row in the table
 	for row in table_vec
@@ -504,9 +524,34 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLay
 		header = false;
 	}
 
+	let mut title_lines: Vec<String> = Vec::new();
+	let title_max_width = table_width - (table_options.outer_horizontal_margin() * 2.0);
+	if title_tokens.len() > 0
+	{
+		let mut title_line = title_tokens[0].to_string();
+		for token in &title_tokens[1..]
+		{
+			let new_line = format!("{} {}", title_line, token);
+			let width = calc_text_width(font_scalars, &new_line, header_font_type, header_font_size_data, font_scale);
+			if width > title_max_width
+			{
+				title_lines.push(title_line);
+				title_line = token.to_string();
+			}
+			else { title_line = new_line; }
+		}
+		title_lines.push(title_line);
+	}
+
 	// Calculate the height of the entire table
-	let table_height =
+	let mut table_height =
 		row_heights.iter().sum::<f32>() + (((row_heights.len() - 2) as f32) * table_options.vertical_cell_margin());
+	if title_lines.len() > 0
+	{
+		table_height += calc_text_height(font_scalars, header_font_type, header_font_size_data, font_scale, font_size,
+			newline_amount, title_lines.len()) + table_options.vertical_cell_margin();
+	}
+	
 	// If the table goes off the current page but isn't longer than a whole page
 	if *y - table_height < y_low && table_height <= y_high - y_low
 	{
@@ -517,10 +562,10 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLay
 		*y = y_high;
 	}
 	// Write the table and return the last layer that was used
-	write_table(doc, &layer_ref, layer_count, background.clone(), img_transform, font_scalars, &table, text_color,
-		font_size, page_width, page_height, table_start, table_end, &column_starts, &column_widths, &centered_columns,
-		y_high, y_low, x, y, body_font_type, header_font_type, body_font, header_font, body_font_size_data,
-		header_font_size_data, font_scale, table_options, newline_amount)
+	write_table(doc, &layer_ref, layer_count, background.clone(), img_transform, font_scalars, &title_lines, &table,
+		text_color, font_size, page_width, page_height, table_start, table_end, &column_starts, &column_widths,
+		&centered_columns, y_high, y_low, x, y, body_font_type, header_font_type, body_font, header_font,
+		body_font_size_data, header_font_size_data, font_scale, table_options, newline_amount)
 }
 
 // Creates a new page and returns the layer for it
