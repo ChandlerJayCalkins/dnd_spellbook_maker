@@ -109,8 +109,6 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32)
 	// Construct the off row color object
 	let (r, g, b) = table_options.off_row_color();
 	let off_row_color = Color::Rgb(Rgb::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, None));
-	// Decrease the y position by the outer vertical margin to it's the desired distance below previous text
-	*y -= table_options.outer_vertical_margin();
 	// Keep track of the starting y position so the y position can be reset to it after applying the off row color lines
 	let start_y = *y;
 	// Increase the y position a bit so it lines up with the text lines
@@ -292,14 +290,36 @@ body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data:
 font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLayerReference
 {
 	// Tags for delimiting rows and columns in the table
+	const TITLE_TAG: &str = "<title>";
 	const ROW_TAG: &str = "<row>";
 	const COLUMN_TAG: &str = "|";
 	// The layer that gets returned
 	let mut layer_ref = (*layer).clone();
+	let tokens: Vec<_> = table_string.split_whitespace().collect();
+	if tokens.len() < 1 { return layer_ref; }
+	let mut title_tokens: Vec<&str> = Vec::new();
+	let mut start_index = 0;
+	if tokens[0] == TITLE_TAG
+	{
+		start_index = 2;
+		for &token in &tokens[1..]
+		{
+			let escape_title = format!("\\{}", TITLE_TAG).as_str();
+			if token == TITLE_TAG { break; }
+			else
+			{
+				let escape_title = format!("\\{}", TITLE_TAG);
+				let add_token = if token == escape_title.as_str() { TITLE_TAG } else { token };
+				title_tokens.push(add_token);
+			}
+			start_index += 1;
+		}
+	}
+	let new_table_string = tokens[start_index..].join(" ");
 	// Split the table string up into rows by the row tag
-	let rows: Vec<_> = table_string.split(ROW_TAG).collect();
+	let rows: Vec<_> = new_table_string.split(ROW_TAG).collect();
 	// If there are no rows, do nothing
-	if rows.len() < 2 { return layer_ref; }
+	if rows.len() < 1 { return layer_ref; }
 	// Keeps track of the number of columns
 	let mut column_count = 0;
 	// 2D vec that will store the strings in the table
@@ -891,6 +911,8 @@ tab_amount: f32, newline_amount: f32)
 					{
 						// End table processing
 						in_table = false;
+						// Move y position down away from text to the table
+						*y -= table_options.outer_vertical_margin();
 						// Create the table and write it to the document
 						create_table(doc, &new_layer, layer_count, background.clone(), img_transform, font_scalars,
 							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
