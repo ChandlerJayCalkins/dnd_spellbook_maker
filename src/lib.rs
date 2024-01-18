@@ -84,7 +84,7 @@ background: image::DynamicImage, img_transform: &ImageTransform, table: &Vec<Vec
 font_size: f32, page_width: f64, page_height: f64, column_bounds: &Vec<(f64, f64)>, column_widths: &Vec<f64>,
 default_column_width: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64, body_font_type: &FontType, header_font_type: &FontType,
 body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data: &Font, header_font_size_data: &Font,
-font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
+font_scale: &Scale, cell_horitontal_margin: f64, cell_vertical_margin: f64, newline_amount: f64) -> PdfLayerReference
 {
 	let mut layers = vec![(*layer).clone()];
 	let mut layers_index = 0;
@@ -93,11 +93,13 @@ font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
 	let mut current_font_type = header_font_type;
 	for row in table
 	{
+		*y -= cell_vertical_margin;
 		let y_start = *y;
 		let mut row_layers_index = layers_index;
 		let mut column_index = 0;
 		for cell in row
 		{
+			let mut newline_adjuster = 0.0;
 			*y = y_start;
 			let mut temp_layers_index = row_layers_index;
 			let mut centered = false;
@@ -115,7 +117,8 @@ font_scale: &Scale, newline_amount: f64) -> PdfLayerReference
 				else { *x = column_bounds[column_index].0; }
 				apply_textbox_line(doc, &mut layers, &mut temp_layers_index, layer_count, background.clone(),
 					img_transform, &line, color, font_size, page_width, page_height, column_bounds[column_index].0,
-					column_bounds[column_index].1, y_high, y_low, x, y, current_font, newline_amount);
+					column_bounds[column_index].1, y_high, y_low, x, y, current_font, newline_adjuster);
+				newline_adjuster = newline_amount;
 			}
 			layers_index = std::cmp::max(layers_index, temp_layers_index);
 			column_index += 1;
@@ -132,8 +135,8 @@ fn create_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_cou
 background: image::DynamicImage, img_transform: &ImageTransform, table_string: &str, color: &Color, font_size: f32,
 page_width: f64, page_height: f64, x_left: f64, x_right: f64, y_high: f64, y_low: f64, x: &mut f64, y: &mut f64,
 body_font_type: &FontType, header_font_type: &FontType, body_font: &IndirectFontRef, header_font: &IndirectFontRef,
-body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, cell_margin: f64, newline_amount: f64)
--> PdfLayerReference
+body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, cell_horizontal_margin: f64,
+cell_vertical_margin: f64, newline_amount: f64) -> PdfLayerReference
 {
 	// Tags for delimiting rows and columns in the table
 	const ROW_TAG: &str = "<row>";
@@ -198,7 +201,8 @@ body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, ce
 	// Get the width of the entire table
 	let mut table_width = x_right - x_left;
 	// Calculate the default column width
-	let mut default_column_width = (table_width - cell_margin * ((column_count as f64) - 1.0)) / column_count as f64;
+	let mut default_column_width =
+		(table_width - cell_horizontal_margin * ((column_count as f64) - 1.0)) / column_count as f64;
 	println!("{}", default_column_width);
 	// Keeps track of the number of reamining columns to calculate width for
 	let mut remaining_columns = column_count as f64 - 1.0;
@@ -235,11 +239,12 @@ body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, ce
 		// Push those coordinates to the vec
 		column_bounds.push((left, right));
 		// Set the start x position to the position of the next column
-		current_x = right + cell_margin;
+		current_x = right + cell_horizontal_margin;
 	}
 	println!("{:?}", column_bounds);
 	// Calculate the sum of the widths of each column
-	let actual_table_width: f64 = column_widths.iter().sum::<f64>() + cell_margin * ((column_count as f64) - 1.0);
+	let actual_table_width: f64 =
+		column_widths.iter().sum::<f64>() + cell_horizontal_margin * ((column_count as f64) - 1.0);
 	println!("{}", actual_table_width);
 	// Make the table width smaller if the columns aren't going to take up the whole page
 	table_width = table_width.min(actual_table_width);
@@ -320,7 +325,7 @@ body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, ce
 	println!("{:?}", table);
 	println!("{:?}", row_heights);
 	// Calculate the height of the entire table
-	let table_height = row_heights.iter().sum::<f64>() + (((row_heights.len() - 2) as f64) * cell_margin);
+	let table_height = row_heights.iter().sum::<f64>() + (((row_heights.len() - 2) as f64) * cell_vertical_margin);
 	println!("{}", table_height);
 	// If the table goes off the current page but isn't longer than a whole page
 	if *y - table_height < y_low && table_height <= y_high - y_low
@@ -334,7 +339,8 @@ body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale, ce
 	// Write the table and return the last layer that was used
 	write_table(doc, &layer_ref, layer_count, background.clone(), img_transform, &table, color, font_size, page_width,
 		page_height, &column_bounds, &column_widths, default_column_width, y_high, y_low, x, y, body_font_type,
-		header_font_type, body_font, header_font, body_font_size_data, header_font_size_data, font_scale, newline_amount)
+		header_font_type, body_font, header_font, body_font_size_data, header_font_size_data, font_scale,
+		cell_horizontal_margin, cell_vertical_margin, newline_amount)
 }
 
 // Creates a new page and returns the layer for it
@@ -729,7 +735,8 @@ newline_amount: f64) -> PdfLayerReference
 						create_table(doc, &new_layer, layer_count, background.clone(), img_transform, &buffer, color,
 							font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y, &regular_font_type,
 							&bold_font_type, regular_font, bold_font, regular_font_size_data, bold_font_size_data,
-							font_scale, 10.0, newline_amount);
+							font_scale, 10.0, 8.0, newline_amount);
+						*y -= 8.0 - newline_amount;
 						// Reset the buffer
 						buffer = String::new();
 						// Reset the font to regular font
