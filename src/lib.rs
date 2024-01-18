@@ -17,7 +17,8 @@ enum FontType
 }
 
 // Calculates the width of text with a certain font in printpdf millimeters (Mm)
-fn calc_text_width(font_scalars: &FontScalars, text: &str, font_type: &FontType, font_size_data: &Font, font_scale: &Scale) -> f32
+fn calc_text_width(font_scalars: &FontScalars, text: &str, font_type: &FontType, font_size_data: &Font, font_scale: &Scale)
+-> f32
 {
 	let width = font_size_data.layout(text, *font_scale, point(0.0, 0.0))
 		.map(|g| g.position().x + g.unpositioned().h_metrics().advance_width)
@@ -100,76 +101,126 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32)
 	let mut current_font_type = header_font_type;
 	// Keeps track of the last x position
 	let mut last_x = *x;
+	// Used for telling when to place the off row color lines
 	let mut off_row = false;
+	// Adjusts the y position by a certain amount between rows
+	// Starts as 0 so the first row doesn't get moved down at all from the starting position
 	let mut vertical_margin_adjuster = 0.0;
+	// Construct the off row color object
 	let (r, g, b) = table_options.off_row_color();
 	let off_row_color = Color::Rgb(Rgb::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, None));
-
+	// Decrease the y position by the outer vertical margin to it's the desired distance below previous text
 	*y -= table_options.outer_vertical_margin();
+	// Keep track of the starting y position so the y position can be reset to it after applying the off row color lines
 	let start_y = *y;
+	// Increase the y position a bit so it lines up with the text lines
 	*y += font_size * 0.1;
 
+	// Loop through the table a first time to apply the off row color lines
+
+	// Loop through each row in the table
 	for row in table
 	{
+		// Decrease the y position by the vertical margin adjuster
 		*y -= vertical_margin_adjuster;
+		// Set the vertical margin adjuster to the desired value so it doesn't go down by 0 after the first row
 		vertical_margin_adjuster = table_options.vertical_cell_margin();
+		// Keep track of where the y position starts for this row so it can be reset to it after writing each cell
 		let y_row_start = *y;
+		// Create an index for the layers vec that keeps track of the page this row starts being written on
 		let mut row_layers_index = layers_index;
+		// Keeps track of how many off row color lines have already been applied to this row
 		let mut row_off_row_lines: usize = 0;
+		// Loop through each cell in this row
 		for cell in row
 		{
+			// Adjusts the y position by a certain amount between lines
 			let mut newline_adjuster = 0.0;
+			// Reset the y position to the starting position for this row
 			*y = y_row_start;
+			// Create an index for the layers vec that keeps track of what page this cell is currently writing to
 			let mut cell_layers_index = row_layers_index;
+			// Keeps track of how many lines this cell has gone through so it can start applying new off row color lines
+			// when needed
 			let mut cell_off_row_lines: usize = 0;
+			// Loop through each line in this cell
 			for line in cell
 			{
+				// Apply empty text to go to a new line and create a new page if needed
 				apply_textbox_line(doc, &mut layers, &mut cell_layers_index, layer_count, background.clone(),
 					img_transform, "", text_color, font_size, page_width, page_height, y_high, y_low, x, y,current_font,
 					newline_adjuster);
+				// If this is an off row
 				if off_row
 				{
+					// Increment the number of lines this cell has gone through
 					cell_off_row_lines += 1;
+					// If this cell has gone through more lines than there are off row color lines
 					if cell_off_row_lines > row_off_row_lines
 					{
+						// Create a new off row color lines
+
+						// Create the starting and ending points of the line
 						let points = vec!
 						[
 							(Point::new(Mm(table_x_start), Mm(*y)), false),
 							(Point::new(Mm(table_x_end), Mm(*y)), false)
 						];
+						// Create the line object
 						let line = Line
 						{
 							points: points,
 							is_closed: false
 						};
-						let last_layer_index = layers.len() - 1;
-						layers[last_layer_index].set_outline_color(off_row_color.clone());
+						// Set the color of the line
+						layers[cell_layers_index].set_outline_color(off_row_color.clone());
+						// Calculate the height of the current line of text
 						let line_height = calc_text_height(font_scalars, current_font_type, current_font_size_data,
 							font_scale, font_size, newline_amount, 1);
-						layers[last_layer_index].set_outline_thickness(line_height * 4.0);
-						layers[last_layer_index].add_line(line);
+						// Set the thickness of the off row color line
+						layers[cell_layers_index]
+							.set_outline_thickness(line_height * table_options.off_row_color_lines_height_scalar());
+						// Add the line
+						layers[cell_layers_index].add_line(line);
 					}
 				}
+
+				// Set the newline adjuster to the newline amount so it's not 0 after the first line
 				newline_adjuster = newline_amount;
-				row_off_row_lines = cell_off_row_lines;
 			}
 
 			// If any new pages were created, increase the layers index
 			layers_index = std::cmp::max(layers_index, cell_layers_index);
+			// Set the number of off row color lines applied for this row to the max of this cell's lines and the current
+			// row total
+			row_off_row_lines = std::cmp::max(row_off_row_lines, cell_off_row_lines);
 		}
 
+		// Start using the body font after the first row
+		current_font = body_font;
+		current_font_size_data = body_font_size_data;
+		current_font_type = body_font_type;
+		// Flip the off row flag
 		off_row = !off_row;
 	}
 
+	// Reset the y position back to the top of the table
 	*y = start_y;
+	// Reset the layers vec index back to the first page
 	layers_index = 0;
+	// Reset the vertical margin adjuster to 0 so it doesn't go down at all for the first row
 	vertical_margin_adjuster = 0.0;
+	// Reset the font back to the header font for the first row again
+	current_font = header_font;
+	current_font_size_data = header_font_size_data;
+	current_font_type = header_font_type;
 
 	// Loop through each row in the table
 	for row in table
 	{
-		// Decrease the y position by the vertical cell margin to keep the table that distance away from text above it
+		// Decrease the y position by a row margin
 		*y -= vertical_margin_adjuster;
+		// Set the vertical margin adjuster to the row margin amount so it's not 0 after the first row
 		vertical_margin_adjuster = table_options.vertical_cell_margin();
 		// Create a variable to keep track of where to reset the y value to after writing each cell in this row
 		let y_row_start = *y;
@@ -224,7 +275,6 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32)
 		current_font = body_font;
 		current_font_size_data = body_font_size_data;
 		current_font_type = body_font_type;
-		off_row = !off_row;
 	}
 
 	// Set the x position to the end of the last line
@@ -236,10 +286,10 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32)
 // Creates a table from a string of tokens with table tags and writes it to the pdf doc
 fn create_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background: image::DynamicImage, img_transform: &ImageTransform, font_scalars: &FontScalars, table_string: &str,
-text_color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32, x_right: f32, y_high: f32, y_low: f32,
-x: &mut f32, y: &mut f32, body_font_type: &FontType, header_font_type: &FontType, body_font: &IndirectFontRef,
-header_font: &IndirectFontRef, body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale,
-table_options: &TableOptions, newline_amount: f32) -> PdfLayerReference
+text_color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32, x_right: f32, y_high: f32,
+y_low: f32, x: &mut f32, y: &mut f32, body_font_type: &FontType, header_font_type: &FontType,
+body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data: &Font, header_font_size_data: &Font,
+font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLayerReference
 {
 	// Tags for delimiting rows and columns in the table
 	const ROW_TAG: &str = "<row>";
@@ -780,8 +830,8 @@ tab_amount: f32, newline_amount: f32)
 							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
 							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount, newline_amount);
 						// Do some other things to prepare for writing more text
-						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type, current_font_size_data,
-							font_scale, tab_amount, newline_amount);
+						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type,
+							current_font_size_data, font_scale, tab_amount, newline_amount);
 						// Change the font that is currently being used
 						current_font = regular_font;
 						current_font_size_data = regular_font_size_data;
@@ -796,8 +846,8 @@ tab_amount: f32, newline_amount: f32)
 						new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, font_scalars,
 							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
 							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount, newline_amount);
-						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type, current_font_size_data,
-							font_scale, tab_amount, newline_amount);
+						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type,
+							current_font_size_data, font_scale, tab_amount, newline_amount);
 						current_font = bold_font;
 						current_font_size_data = bold_font_size_data;
 						last_font_type = bold_font_type;
@@ -811,8 +861,8 @@ tab_amount: f32, newline_amount: f32)
 						new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, font_scalars,
 							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
 							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount, newline_amount);
-						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type, current_font_size_data,
-							font_scale, tab_amount, newline_amount);
+						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type,
+							current_font_size_data, font_scale, tab_amount, newline_amount);
 						current_font = italic_font;
 						current_font_size_data = italic_font_size_data;
 						last_font_type = italic_font_type;
@@ -826,8 +876,8 @@ tab_amount: f32, newline_amount: f32)
 						new_layer = write_textbox(doc, layer, layer_count, background.clone(), img_transform, font_scalars,
 							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
 							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount, newline_amount);
-						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type, current_font_size_data,
-							font_scale, tab_amount, newline_amount);
+						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type,
+							current_font_size_data, font_scale, tab_amount, newline_amount);
 						current_font = bold_italic_font;
 						current_font_size_data = bold_italic_font_size_data;
 						last_font_type = bold_italic_font_type;
@@ -1294,9 +1344,10 @@ background_img_path: &str, background_img_transform: &ImageTransform)
 
 		// Add the name of the spell as a header
 		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
-			font_scalars, &spell.name, &red, font_size_data.header_font_size(), page_size_data.width, page_size_data.height,
-			x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font_type, &regular_font, &regular_font_size_data,
-			&header_font_scale, font_size_data.tab_amount(), font_size_data.header_newline_amount());
+			font_scalars, &spell.name, &red, font_size_data.header_font_size(), page_size_data.width,
+			page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font_type, &regular_font,
+			&regular_font_size_data, &header_font_scale, font_size_data.tab_amount(),
+			font_size_data.header_newline_amount());
 		// Move the y position down a bit to put some extra space between lines of text
 		y -= font_size_data.header_newline_amount();
 		// Reset the x position back to the starting position
@@ -1363,11 +1414,11 @@ background_img_path: &str, background_img_transform: &ImageTransform)
 			x = x_left + font_size_data.tab_amount();
 			let text = format!("<bi> At Higher Levels. <r> {}", description);
 			layer_ref = write_spell_description(&doc, &layer_ref, &mut layer_count, img_data.clone(),
-				background_img_transform, font_scalars, &text, &black, font_size_data.body_font_size(), page_size_data.width,
-				page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font, &bold_font,
-				&italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
-				&bold_italic_font_size_data, &body_font_scale, table_options, font_size_data.tab_amount(),
-				font_size_data.body_newline_amount());
+				background_img_transform, font_scalars, &text, &black, font_size_data.body_font_size(),
+				page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font,
+				&bold_font, &italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data,
+				&italic_font_size_data, &bold_italic_font_size_data, &body_font_scale, table_options,
+				font_size_data.tab_amount(), font_size_data.body_newline_amount());
 		}
 
 		// Increment the layer counter
