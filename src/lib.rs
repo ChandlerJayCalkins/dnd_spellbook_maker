@@ -929,8 +929,8 @@ tab_amount: f32, newline_amount: f32)
 					if current_font != regular_font
 					{
 						// Write the buffer of text to the spellbook with the last font
-						new_layer = write_textbox(doc, layer, layer_count, background_img_data, font_scalars, &buffer,
-							color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
+						new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars,
+							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
 							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount,
 							newline_amount);
 						// Do some other things to prepare for writing more text
@@ -947,8 +947,8 @@ tab_amount: f32, newline_amount: f32)
 				{
 					if current_font != bold_font
 					{
-						new_layer = write_textbox(doc, layer, layer_count, background_img_data, font_scalars, &buffer,
-							color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
+						new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars,
+							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
 							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount,
 							newline_amount);
 						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type,
@@ -963,8 +963,8 @@ tab_amount: f32, newline_amount: f32)
 				{
 					if current_font != italic_font
 					{
-						new_layer = write_textbox(doc, layer, layer_count, background_img_data, font_scalars, &buffer,
-							color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
+						new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars,
+							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
 							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount,
 							newline_amount);
 						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type,
@@ -979,8 +979,8 @@ tab_amount: f32, newline_amount: f32)
 				{
 					if current_font != bold_italic_font
 					{
-						new_layer = write_textbox(doc, layer, layer_count, background_img_data, font_scalars, &buffer,
-							color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
+						new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars,
+							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
 							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount,
 							newline_amount);
 						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type,
@@ -1021,8 +1021,8 @@ tab_amount: f32, newline_amount: f32)
 						// Begin table processing
 						in_table = true;
 						// Write out the buffer to the document
-						new_layer = write_textbox(doc, layer, layer_count, background_img_data, font_scalars, &buffer,
-							color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
+						new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars,
+							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
 							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount,
 							newline_amount);
 						// Reset the buffer
