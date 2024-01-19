@@ -136,6 +136,8 @@ header_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions, 
 	let off_row_color = Color::Rgb(Rgb::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, None));
 	// Keep track of the starting y position so the y position can be reset to it after applying the off row color lines
 	let start_y = *y;
+	// Keep track of the starting layer index so it can be reset it after applying the off row color lines
+	let start_layers_index = layers_index;
 	// Increase the y position a bit so it lines up with the text lines
 	*y += font_size * 0.1;
 
@@ -230,7 +232,7 @@ header_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions, 
 	// Reset the y position back to the top of the table
 	*y = start_y;
 	// Reset the layers vec index back to the first page
-	layers_index = 0;
+	layers_index = start_layers_index;
 	// Reset the vertical margin adjuster to 0 so it doesn't go down at all for the first row
 	vertical_margin_adjuster = 0.0;
 	// Reset the font back to the header font for the first row again
