@@ -999,10 +999,10 @@ tab_amount: f32, newline_amount: f32)
 						// Move y position down away from text to the table
 						*y -= table_options.outer_vertical_margin();
 						// Create the table and write it to the document
-						create_table(doc, &new_layer, layer_count, background_img_data, font_scalars, &buffer, color,
-							font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y, &regular_font_type,
-							&bold_font_type, regular_font, bold_font, regular_font_size_data, bold_font_size_data,
-							font_scale, table_options, newline_amount);
+						new_layer = create_table(doc, &new_layer, layer_count, background_img_data, font_scalars, &buffer,
+							color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
+							&regular_font_type, &bold_font_type, regular_font, bold_font, regular_font_size_data,
+							bold_font_size_data, font_scale, table_options, newline_amount);
 						// Move the y position down away from the table
 						*y -= table_options.outer_vertical_margin();
 						// Reset the x position to the left side of the textbox
