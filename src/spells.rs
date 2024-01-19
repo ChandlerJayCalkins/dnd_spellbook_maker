@@ -1254,7 +1254,7 @@ impl Spell
 			// If there are no tokens in the line, skip it
 			if tokens.len() < 1 { continue; }
 			// Figure out what kind of field this line is based on the first token
-			match tokens[0]
+			match tokens[0].to_lowercase().as_str()
 			{
 				// Name field
 				"name:" =>

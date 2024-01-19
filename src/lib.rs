@@ -1574,39 +1574,60 @@ pub fn save_spellbook(doc: PdfDocumentReference, file_name: &str) -> Result<(), 
 	Ok(())
 }
 
+// Error for when a file name could not be retrieved when processing spell files in get_all_spells_in_folder()
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SpellFileNameReadError;
+// Makes the struct displayable
+impl std::fmt::Display for SpellFileNameReadError
+{
+	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result
+	{
+		write!(f, "Couldn't find a file name.")
+	}
+}
+// Makes the struct officially an error
+impl std::error::Error for SpellFileNameReadError {}
+
+// Takes a path to a directory with only spell files inside and returns a vec of every spell in that folder
+pub fn get_all_spells_in_folder(folder_path: &str) -> Result<Vec<spells::Spell>, Box<dyn std::error::Error>>
+{
+	// Gets a list of every file in the folder
+	let file_paths = fs::read_dir(folder_path)?;
+	// Create a list of the spells that will be returned
+	let mut spell_list = Vec::new();
+	// Loop through each file in the folder
+	for file_path in file_paths
+	{
+		// Attempt to get a path to the file
+		let file_name_option = file_path?.path();
+		// Attempt to turn the path into a string
+		let file_name = match file_name_option.to_str()
+		{
+			// If an str of the path was retrieved successfully, obtain it
+			Some(name) => name,
+			// If an str of the path could not be gotten, return an error
+			None => return Err(Box::new(SpellFileNameReadError))
+		};
+		// Read the spell file, turn it into a spell, and push it to the spell_list vec
+		spell_list.push(spells::Spell::from_file(file_name)?);
+	}
+	// Return the list of spells
+	Ok(spell_list)
+}
+
 #[cfg(test)]
 mod tests
 {
 	use super::*;
 
-	// Returns a list of every spell from the player's handbook
-	// Returns an error if there was a problem processing one of the spell files
-	fn get_all_phb_spells() -> Result<Vec<spells::Spell>, Box<dyn std::error::Error>>
-	{
-		let phb_path = "spells/phb";
-		let file_paths = fs::read_dir(phb_path)?;
-		let mut spell_list = Vec::new();
-		for file_path in file_paths
-		{
-			let file_name_option = file_path?.path();
-			let file_name = match file_name_option.to_str()
-			{
-				Some(s) => s,
-				None => panic!("Couldn't find file name")
-			};
-			spell_list.push(spells::Spell::from_file(file_name)?);
-		}
-		Ok(spell_list)
-	}
-
-	// Create a spellbook with every spell in it
+	// Create a spellbook with every spell from official d&d mateiral in it
 	#[test]
-	fn the_test()
+	fn complete_spellbook()
 	{
 		// Spellbook's name
 		let spellbook_name = "A Wizard's Very Fancy Spellbook Used for Casting Magical Spells";
-		// List of every spell
-		let spell_list = get_all_phb_spells().unwrap();
+		// List of every spell in the player's handbook folder
+		let spell_list = get_all_spells_in_folder("spells/players_handbook").unwrap();
 		// File paths to the fonts needed
 		let font_paths = FontPaths
 		{
@@ -1644,7 +1665,45 @@ mod tests
 		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &font_size_data,
 			&text_colors, &font_scalars, &table_options, &Some((background_path, &background_transform))).unwrap();
 		// Saves the spellbook to a pdf document
-		let _ = save_spellbook(doc, "Spellbook.pdf");
+		let _ = save_spellbook(doc, "Complete Spellbook.pdf");
+	}
+
+	// Stress testing the text formatting
+	#[test]
+	fn necronomicon()
+	{
+		// Spellbook's name
+		let spellbook_name =
+		"THE NECROBOMBINOMICON AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A";
+		// List of every spell in the stress test folder
+		let spell_list = get_all_spells_in_folder("spells/necronomicon").unwrap();
+		// File paths to the fonts needed
+		let font_paths = FontPaths
+		{
+			regular: String::from("fonts/Bookman/Bookman-Regular.otf"),
+			bold: String::from("fonts/Bookman/Bookman-Bold.otf"),
+			italic: String::from("fonts/Bookman/Bookman-Italic.otf"),
+			bold_italic: String::from("fonts/Bookman/Bookman-BoldItalic.otf")
+		};
+		// Parameters for determining the size of the page and the text margins on the page
+		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
+		// Parameters for determining font sizes, the tab amount, and newline amounts
+		let font_size_data = FontSizeData::new(32.0, 24.0, 12.0, 10.0, 12.0, 8.0, 5.0).unwrap();
+		let text_colors = TextColors
+		{
+			title_color: (0, 0, 0),
+			header_color: (115, 26, 26),
+			body_color: (0, 0, 0)
+		};
+		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
+		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
+		// Parameters for table margins / padding and off-row color / scaling
+		let table_options = TableOptions::new(10.0, 8.0, 2.0, 8.0, 4.0, (213, 209, 224)).unwrap();
+		// Creates the spellbook
+		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &font_size_data,
+			&text_colors, &font_scalars, &table_options, &None).unwrap();
+		// Saves the spellbook to a pdf document
+		let _ = save_spellbook(doc, "NECRONOMICON.pdf");
 	}
 
 	// For creating spellbooks for myself and friends while I work on creating a ui to use this library
@@ -1654,20 +1713,20 @@ mod tests
 		let mut spell_list = Vec::new();
 		let spell_paths = vec!
 		[
-			"spells/phb/prestidigitation.txt",
-			"spells/phb/mending.txt",
-			"spells/phb/mage_hand.txt",
-			"spells/phb/fire_bolt.txt",
+			"spells/players_handbook/prestidigitation.txt",
+			"spells/players_handbook/mending.txt",
+			"spells/players_handbook/mage_hand.txt",
+			"spells/players_handbook/fire_bolt.txt",
 			"spells/strix/silvery_barbs.txt",
-			"spells/phb/color_spray.txt",
-			"spells/phb/magic_missile.txt",
-			"spells/phb/ice_knife.txt",
-			"spells/phb/mage_armor.txt",
-			"spells/phb/unseen_servant.txt",
-			"spells/phb/detect_magic.txt",
-			"spells/phb/alarm.txt",
-			"spells/phb/cloud_of_daggers.txt",
-			"spells/phb/scorching_ray.txt"
+			"spells/players_handbook/color_spray.txt",
+			"spells/players_handbook/magic_missile.txt",
+			"spells/players_handbook/ice_knife.txt",
+			"spells/players_handbook/mage_armor.txt",
+			"spells/players_handbook/unseen_servant.txt",
+			"spells/players_handbook/detect_magic.txt",
+			"spells/players_handbook/alarm.txt",
+			"spells/players_handbook/cloud_of_daggers.txt",
+			"spells/players_handbook/scorching_ray.txt"
 		];
 		for path in spell_paths
 		{
