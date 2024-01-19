@@ -1395,10 +1395,6 @@ table_options: &TableOptions, background_img_path: &str, background_img_transfor
 	let italic_font_type = FontType::Italic;
 	let bold_italic_font_type = FontType::Italic;
 
-	// Number of millimeters between cells in tables
-	const CELL_HORIZONTAL_MARGIN: f32 = 10.0;
-	const CELL_VERTICAL_MARGIN: f32 = 8.0;
-
 	// Load background image
 	let img_data = image::open(background_img_path)?;
 	// Create printpdf image object to add background to cover page
