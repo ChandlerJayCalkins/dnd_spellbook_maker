@@ -702,8 +702,9 @@ font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 {
 	// If either dimensions of the text box overlap each other, do nothing
 	if x_left >= x_right || y_high <= y_low { return; }
-	// If the x position starts past the right side of the text box, reset it to the left side plus the tab amount
-	if *x > x_right { *x = x_left + tab_amount; }
+	// If the x position starts past the right side of the text box
+	// Reset it to the left side plus the tab amount and go to a newline
+	if *x > x_right { *x = x_left + tab_amount; *y -= newline_amount; }
 	// Keeps track of the ending position of the last line
 	let mut last_x = *x;
 	// Adjusts the x position to be tabbed over on new paragraphs
@@ -794,8 +795,9 @@ font_size_data: &Font, font_scale: &Scale, newline_amount: f32)
 {
 	// If either dimensions of the text box overlap each other, do nothing
 	if x_left >= x_right || y_high <= y_low { return; }
-	// If the x position starts past the right side of the text box, reset it to the left side plus the tab amount
-	if *x > x_right { *x = x_left; }
+	// If the x position starts past the right side of the text box
+	// Reset it to the left side and go to a newline
+	if *x > x_right { *x = x_left; *y -= newline_amount; }
 	// Calculate the width and height of the text box
 	let textbox_width = x_right - x_left;
 	let textbox_height = y_high - y_low;
