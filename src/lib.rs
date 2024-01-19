@@ -1,9 +1,8 @@
 use std::fs;
-extern crate image;
+pub extern crate image;
 pub use printpdf::*;
-use rusttype::{Font, Scale, point};
+pub use rusttype::{Font, Scale, point};
 pub mod spells;
-pub mod phb_spells;
 
 // Used for conveying what type of font is being used
 // Mostly used for font units to mm conversion
@@ -29,7 +28,7 @@ fn calc_text_width(font_scalars: &FontScalars, text: &str, font_type: &FontType,
 
 // Calculates the height of a number of lines of text given the font, font size, newline size, and number of lines
 fn calc_text_height(font_scalars: &FontScalars, font_type: &FontType, font_size_data: &Font, font_scale: &Scale,
-font_size: f32, newline_amount: f32, lines: usize) -> f32
+newline_amount: f32, lines: usize) -> f32
 {
 	// If there are no lines, return 0 for the height
 	if lines == 0 { return 0.0; }
@@ -152,7 +151,7 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32)
 		// Keep track of where the y position starts for this row so it can be reset to it after writing each cell
 		let y_row_start = *y;
 		// Create an index for the layers vec that keeps track of the page this row starts being written on
-		let mut row_layers_index = layers_index;
+		let row_layers_index = layers_index;
 		// Keeps track of how many off row color lines have already been applied to this row
 		let mut row_off_row_lines: usize = 0;
 		// Loop through each cell in this row
@@ -168,7 +167,7 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32)
 			// when needed
 			let mut cell_off_row_lines: usize = 0;
 			// Loop through each line in this cell
-			for line in cell
+			for _ in cell
 			{
 				// Apply empty text to go to a new line and create a new page if needed
 				apply_textbox_line(doc, &mut layers, &mut cell_layers_index, layer_count, background,
@@ -200,7 +199,7 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32)
 						layers[cell_layers_index].set_outline_color(off_row_color.clone());
 						// Calculate the height of the current line of text
 						let line_height = calc_text_height(font_scalars, current_font_type, current_font_size_data,
-							font_scale, font_size, newline_amount, 1);
+							font_scale, newline_amount, 1);
 						// Set the thickness of the off row color line
 						layers[cell_layers_index]
 							.set_outline_thickness(line_height * table_options.off_row_color_lines_height_scalar());
@@ -250,7 +249,7 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32)
 		let y_row_start = *y;
 		// Create an index to keep track of what page this row starts on
 		// This makes it so each cell in this row gets written to the correct page
-		let mut row_layers_index = layers_index;
+		let row_layers_index = layers_index;
 		// Variable to keep track of the column data in column_widths and column_starts
 		let mut column_index = 0;
 
@@ -526,12 +525,12 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLay
 			// Calculate the height of this cell
 			let cell_height = if header
 			{
-				calc_text_height(font_scalars, header_font_type, header_font_size_data, font_scale, font_size,
+				calc_text_height(font_scalars, header_font_type, header_font_size_data, font_scale,
 					newline_amount, table[last_row][last_col].len())
 			}
 			else
 			{
-				calc_text_height(font_scalars, body_font_type, body_font_size_data, font_scale, font_size,
+				calc_text_height(font_scalars, body_font_type, body_font_size_data, font_scale,
 					newline_amount, table[last_row][last_col].len())
 			};
 			// Replace the total height for this row if this cell's height is larger than the previous amount
@@ -582,7 +581,7 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLay
 	if title_lines.len() > 0
 	{
 		// Add the height of the title into the table height calculation
-		table_height += calc_text_height(font_scalars, header_font_type, header_font_size_data, font_scale, font_size,
+		table_height += calc_text_height(font_scalars, header_font_type, header_font_size_data, font_scale,
 			newline_amount, title_lines.len()) + table_options.vertical_cell_margin();
 	}
 	
@@ -795,8 +794,6 @@ font_size_data: &Font, font_scale: &Scale, newline_amount: f32)
 	// Calculate the width and height of the text box
 	let textbox_width = x_right - x_left;
 	let textbox_height = y_high - y_low;
-	// Keeps track of the ending position of the last line
-	let mut last_x = *x;
 	// Adjusts the y position to a new line before applying a line
 	// Will be 0 for the first line so the first line prints exactly where the y position is
 	let mut newline_adjuster = 0.0;
@@ -844,6 +841,8 @@ font_size_data: &Font, font_scale: &Scale, newline_amount: f32)
 		// Apply each line of text to the page
 		apply_textbox_line(doc, layers, layers_index, layer_count, background, img_transform, &l, color,
 			font_size, page_width, page_height, y_high, y_low, x, y, font, newline_adjuster);
+		// Set the x position to the end of the line
+		*x += width;
 		// Set the newline adjuster so every line after the first actually gets moved down
 		newline_adjuster = newline_amount;
 	}
@@ -1061,7 +1060,7 @@ newline_amount: f32) -> PdfLayerReference
 	let sideshift = calc_text_width(font_scalars, " ", field_name_font_type, field_name_font_size_data, font_scale);
 	*x += sideshift;
 	// Write the text for that field to the document
-	new_layer = write_textbox(doc, layer, layer_count, background, img_transform, font_scalars, field_text,
+	new_layer = write_textbox(doc, &new_layer, layer_count, background, img_transform, font_scalars, field_text,
 		field_text_color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
 		field_text_font_type, field_text_font, field_text_font_size_data, font_scale, tab_amount, newline_amount);
 	// Return the last layer that was created for this text
@@ -1181,7 +1180,7 @@ impl FontScalars
 	pub fn regular_scalar(&self) -> f32 { self.regular }
 	pub fn bold_scalar(&self) -> f32 { self.bold }
 	pub fn italic_scalar(&self) -> f32 { self.italic }
-	pub fn bold_italic_scalar(&self) -> f32 { self.bold }
+	pub fn bold_italic_scalar(&self) -> f32 { self.bold_italic }
 }
 
 // Holds data for formatting tables
@@ -1393,7 +1392,7 @@ table_options: &TableOptions, background_img_path: &str, background_img_transfor
 	let regular_font_type = FontType::Regular;
 	let bold_font_type = FontType::Bold;
 	let italic_font_type = FontType::Italic;
-	let bold_italic_font_type = FontType::Italic;
+	//let bold_italic_font_type = FontType::Italic;
 
 	// Load background image
 	let img_data = image::open(background_img_path)?;
@@ -1525,7 +1524,7 @@ table_options: &TableOptions, background_img_path: &str, background_img_transfor
 			y -= font_size_data.body_newline_amount();
 			x = x_left + font_size_data.tab_amount();
 			let text = format!("<bi> At Higher Levels. <r> {}", description);
-			layer_ref = write_spell_description(&doc, &layer_ref, &mut layer_count, &img_data,
+			_ = write_spell_description(&doc, &layer_ref, &mut layer_count, &img_data,
 				background_img_transform, font_scalars, &text, &body_color, font_size_data.body_font_size(),
 				page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font,
 				&bold_font, &italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data,
@@ -1549,30 +1548,30 @@ pub fn save_spellbook(doc: PdfDocumentReference, file_name: &str) -> Result<(), 
 	Ok(())
 }
 
-// Returns a list of every spell from the player's handbook
-// Returns an error if there was a problem processing one of the spell files
-fn get_all_phb_spells() -> Result<Vec<spells::Spell>, Box<dyn std::error::Error>>
-{
-	let phb_path = "spells/phb";
-	let file_paths = fs::read_dir(phb_path)?;
-	let mut spell_list = Vec::new();
-	for file_path in file_paths
-	{
-		let file_name_option = file_path?.path();
-		let file_name = match file_name_option.to_str()
-		{
-			Some(s) => s,
-			None => panic!("Couldn't find file name")
-		};
-		spell_list.push(spells::Spell::from_file(file_name)?);
-	}
-	Ok(spell_list)
-}
-
 #[cfg(test)]
 mod tests
 {
 	use super::*;
+
+	// Returns a list of every spell from the player's handbook
+	// Returns an error if there was a problem processing one of the spell files
+	fn get_all_phb_spells() -> Result<Vec<spells::Spell>, Box<dyn std::error::Error>>
+	{
+		let phb_path = "spells/phb";
+		let file_paths = fs::read_dir(phb_path)?;
+		let mut spell_list = Vec::new();
+		for file_path in file_paths
+		{
+			let file_name_option = file_path?.path();
+			let file_name = match file_name_option.to_str()
+			{
+				Some(s) => s,
+				None => panic!("Couldn't find file name")
+			};
+			spell_list.push(spells::Spell::from_file(file_name)?);
+		}
+		Ok(spell_list)
+	}
 
 	// Create a spellbook with every spell in it
 	#[test]

@@ -585,7 +585,7 @@ impl SpellFileString for Range
 		{
 			Self::Yourself(o) =>
 			{
-				let mut text = String::from("self");
+				let text = String::from("self");
 				match o
 				{
 					Some(aoe) => format!("{} {}", text, aoe.to_spell_file_string()),
