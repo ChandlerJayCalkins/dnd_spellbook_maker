@@ -1401,7 +1401,8 @@ table_options: &TableOptions, background_img_path: &str, background_img_transfor
 
 	// Load background image
 	let img_data = image::open(background_img_path)?;
-    let img1 = Image::from_dynamic_image(&img_data.clone());
+	// Create printpdf image object to add background to cover page
+    let cover_img = Image::from_dynamic_image(&img_data.clone());
 
     // Create PDF document
     let (doc, cover_page, cover_layer) = PdfDocument::new(title, Mm(page_size_data.width), Mm(page_size_data.height),
@@ -1420,7 +1421,7 @@ table_options: &TableOptions, background_img_path: &str, background_img_transfor
 	let cover_layer_ref = doc.get_page(cover_page).get_layer(cover_layer);
 
 	// Add the background image to the page
-	img1.add_to_layer(cover_layer_ref.clone(), *background_img_transform);
+	cover_img.add_to_layer(cover_layer_ref.clone(), *background_img_transform);
 
 	// Counter variable for naming each layer incrementally
 	let mut layer_count = 1;
