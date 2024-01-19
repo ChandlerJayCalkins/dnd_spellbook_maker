@@ -108,18 +108,28 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32)
 	// Adjusts the y position by a certain amount between rows
 	// Starts as 0 so the first row doesn't get moved down at all from the starting position
 	let mut vertical_margin_adjuster = 0.0;
+	// If there is a title
 	if title_lines.len() > 0
 	{
+		// Calculate the width of the table as far as the text goes
 		let table_width = table_x_end - table_x_start - table_options.outer_horizontal_margin();
+		// Create a newline adjuster to move the y position down before every line
+		// Starts as 0 so it doesn't move down at all for the first line
 		let mut newline_adjuster = 0.0;
+		// Loop through each line in the title to apply it
 		for line in title_lines
 		{
+			// Calculate the width of this line
 			let line_width = calc_text_width(font_scalars, &line, current_font_type, current_font_size_data, font_scale);
+			// Set the x position to have the line be centered above the table
 			*x = (table_width / 2.0) - (line_width / 2.0) + table_x_start;
+			// Apply the line to the page
 			apply_textbox_line(doc, &mut layers, &mut layers_index, layer_count, background.clone(),img_transform, &line,
 				text_color, font_size, page_width, page_height, y_high, y_low, x, y, current_font, newline_adjuster);
+			// Set the newline adjuster to be the newline amount so it isn't 0 after the first line
 			newline_adjuster = newline_amount;
 		}
+		// Move the y position down by a vertical cell margin so there's space between the title and the header row
 		*y -= table_options.vertical_cell_margin();
 	}
 	// Construct the off row color object
@@ -311,28 +321,38 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLay
 	const COLUMN_TAG: &str = "|";
 	// The layer that gets returned
 	let mut layer_ref = (*layer).clone();
+	// Get a vec of all tokens in the table string
 	let tokens: Vec<_> = table_string.split_whitespace().collect();
+	// If there are no tokens in the table string, do nothing
 	if tokens.len() < 1 { return layer_ref; }
+	// Get a vec of all the tokens in the title, if there is a title
 	let mut title_tokens: Vec<&str> = Vec::new();
-	let mut start_index = 0;
+	// Index of the token after the last title token
+	let mut after_title_index = 0;
+	// If the first token in the table string is the title tag, then the table has a title
 	if tokens[0] == TITLE_TAG
 	{
-		start_index = 2;
+		// Shift the index of where the rest of the table starts over to the earliest possible end of the title
+		after_title_index = 2;
 
+		// Loop through each token in the table string after the first to build the title vec
 		for &token in &tokens[1..]
 		{
-			let escape_title = format!("\\{}", TITLE_TAG).as_str();
+			// If the token is the title tag, the title is over so stop looping
 			if token == TITLE_TAG { break; }
 			else
 			{
-				let escape_title = format!("\\{}", TITLE_TAG);
-				let add_token = if token == escape_title.as_str() { TITLE_TAG } else { token };
+				// If the token starts with an escape backslash, remove it
+				let add_token = if token.starts_with("\\") { &token[1..] } else { token };
+				// Push the token to the title tokens vec
 				title_tokens.push(add_token);
 			}
-			start_index += 1;
+			// Increase the index of the start of the rest of the table string if this token wasn't the ending title token
+			after_title_index += 1;
 		}
 	}
-	let new_table_string = tokens[start_index..].join(" ");
+	// Combine all tokens after the header back into a new table string
+	let new_table_string = tokens[after_title_index..].join(" ");
 	// Split the table string up into rows by the row tag
 	let rows: Vec<_> = new_table_string.split(ROW_TAG).collect();
 	// If there are no rows, do nothing
@@ -524,30 +544,44 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLay
 		header = false;
 	}
 
+	// Create a vec of all the tokens in the title combined into lines
 	let mut title_lines: Vec<String> = Vec::new();
+	// Calculate the maximum width of the title to be no wider than the text in the table
 	let title_max_width = table_width - (table_options.outer_horizontal_margin() * 2.0);
+	// If there is a title
 	if title_tokens.len() > 0
 	{
+		// Create a buffer line to combine tokens into until it takes up enough width
 		let mut title_line = title_tokens[0].to_string();
+		// Loop through each token after the first to combine them into lines
 		for token in &title_tokens[1..]
 		{
+			// Create a new line to test if another token can be added to the current line
 			let new_line = format!("{} {}", title_line, token);
+			// Calculate the width of this new line
 			let width = calc_text_width(font_scalars, &new_line, header_font_type, header_font_size_data, font_scale);
+			// If the new line is too wide with the new token added
 			if width > title_max_width
 			{
+				// Add the current line to the title lines vec
 				title_lines.push(title_line);
+				// Reset the title line to the current token
 				title_line = token.to_string();
 			}
+			// If the new lines isn't too wide, set the current line to it
 			else { title_line = new_line; }
 		}
+		// Add any remaining text as a line to the title lines
 		title_lines.push(title_line);
 	}
 
 	// Calculate the height of the entire table
 	let mut table_height =
 		row_heights.iter().sum::<f32>() + (((row_heights.len() - 2) as f32) * table_options.vertical_cell_margin());
+	// If there is a title
 	if title_lines.len() > 0
 	{
+		// Add the height of the title into the table height calculation
 		table_height += calc_text_height(font_scalars, header_font_type, header_font_size_data, font_scale, font_size,
 			newline_amount, title_lines.len()) + table_options.vertical_cell_margin();
 	}
