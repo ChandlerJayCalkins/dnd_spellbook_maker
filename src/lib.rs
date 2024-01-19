@@ -16,8 +16,8 @@ enum FontType
 }
 
 // Calculates the width of text with a certain font in printpdf millimeters (Mm)
-fn calc_text_width(font_scalars: &FontScalars, text: &str, font_type: &FontType, font_size_data: &Font, font_scale: &Scale)
--> f32
+fn calc_text_width(font_scalars: &FontScalars, text: &str, font_type: &FontType, font_size_data: &Font,
+font_scale: &Scale) -> f32
 {
 	let width = font_size_data.layout(text, *font_scale, point(0.0, 0.0))
 		.map(|g| g.position().x + g.unpositioned().h_metrics().advance_width)
@@ -83,12 +83,12 @@ font_scale: &Scale) -> Vec<(usize, f32)>
 
 // Writes a table to the pdf doc
 fn write_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
-background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars, title_lines: &Vec<String>,
-table: &Vec<Vec<Vec<String>>>, text_color: &Color, font_size: f32, page_width: f32, page_height: f32, table_x_start: f32,
-table_x_end: f32, column_starts: &Vec<f32>, column_widths: &Vec<f32>, centered_columns: &Vec<bool>, y_high: f32,
-y_low: f32, x: &mut f32, y: &mut f32, body_font_type: &FontType, header_font_type: &FontType,
-body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data: &Font, header_font_size_data: &Font,
-font_scale: &Scale, table_options: &TableOptions, newline_amount: f32)
+background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars,
+title_lines: &Vec<String>, table: &Vec<Vec<Vec<String>>>, text_color: &Color, font_size: f32, page_width: f32,
+page_height: f32, table_x_start: f32, table_x_end: f32, column_starts: &Vec<f32>, column_widths: &Vec<f32>,
+centered_columns: &Vec<bool>, y_high: f32, y_low: f32, x: &mut f32, y: &mut f32, body_font_type: &FontType,
+header_font_type: &FontType, body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data: &Font,
+header_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions, newline_amount: f32)
 -> PdfLayerReference
 {
 	// Create a vec of all layers of pages that are used to write the table to
@@ -310,9 +310,9 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32)
 fn create_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
 background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars, table_string: &str,
 text_color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32, x_right: f32, y_high: f32,
-y_low: f32, x: &mut f32, y: &mut f32, body_font_type: &FontType, header_font_type: &FontType,
-body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data: &Font, header_font_size_data: &Font,
-font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLayerReference
+y_low: f32, x: &mut f32, y: &mut f32, body_font_type: &FontType, header_font_type: &FontType, body_font: &IndirectFontRef,
+header_font: &IndirectFontRef, body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale,
+table_options: &TableOptions, newline_amount: f32) -> PdfLayerReference
 {
 	// Tags for delimiting rows and columns in the table
 	const TITLE_TAG: &str = "<title>";
@@ -764,10 +764,10 @@ font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 // Returns the last layer of the last page that the text appeared on
 // Otherwise it returns the layer of the current page
 fn write_centered_textbox(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
-background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars, text: &str, color: &Color,
-font_size: f32, page_width: f32, page_height: f32, x_left: f32, x_right: f32, y_high: f32, y_low: f32, x: &mut f32,
-y: &mut f32, font_type: &FontType, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, newline_amount: f32)
--> PdfLayerReference
+background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars, text: &str,
+color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32, x_right: f32, y_high: f32, y_low: f32,
+x: &mut f32, y: &mut f32, font_type: &FontType, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale,
+newline_amount: f32) -> PdfLayerReference
 {
 	// Create a vec with just the current layer in it
 	let mut layers = vec![(*layer).clone()];
@@ -927,9 +927,10 @@ tab_amount: f32, newline_amount: f32)
 					if current_font != regular_font
 					{
 						// Write the buffer of text to the spellbook with the last font
-						new_layer = write_textbox(doc, layer, layer_count, background_img_data, font_scalars,
-							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
-							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount, newline_amount);
+						new_layer = write_textbox(doc, layer, layer_count, background_img_data, font_scalars, &buffer,
+							color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
+							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount,
+							newline_amount);
 						// Do some other things to prepare for writing more text
 						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type,
 							current_font_size_data, font_scale, tab_amount, newline_amount);
@@ -944,9 +945,10 @@ tab_amount: f32, newline_amount: f32)
 				{
 					if current_font != bold_font
 					{
-						new_layer = write_textbox(doc, layer, layer_count, background_img_data, font_scalars,
-							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
-							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount, newline_amount);
+						new_layer = write_textbox(doc, layer, layer_count, background_img_data, font_scalars, &buffer,
+							color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
+							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount,
+							newline_amount);
 						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type,
 							current_font_size_data, font_scale, tab_amount, newline_amount);
 						current_font = bold_font;
@@ -959,9 +961,10 @@ tab_amount: f32, newline_amount: f32)
 				{
 					if current_font != italic_font
 					{
-						new_layer = write_textbox(doc, layer, layer_count, background_img_data, font_scalars,
-							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
-							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount, newline_amount);
+						new_layer = write_textbox(doc, layer, layer_count, background_img_data, font_scalars, &buffer,
+							color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
+							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount,
+							newline_amount);
 						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type,
 							current_font_size_data, font_scale, tab_amount, newline_amount);
 						current_font = italic_font;
@@ -974,9 +977,10 @@ tab_amount: f32, newline_amount: f32)
 				{
 					if current_font != bold_italic_font
 					{
-						new_layer = write_textbox(doc, layer, layer_count, background_img_data, font_scalars,
-							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
-							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount, newline_amount);
+						new_layer = write_textbox(doc, layer, layer_count, background_img_data, font_scalars, &buffer,
+							color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
+							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount,
+							newline_amount);
 						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type,
 							current_font_size_data, font_scale, tab_amount, newline_amount);
 						current_font = bold_italic_font;
@@ -995,10 +999,10 @@ tab_amount: f32, newline_amount: f32)
 						// Move y position down away from text to the table
 						*y -= table_options.outer_vertical_margin();
 						// Create the table and write it to the document
-						create_table(doc, &new_layer, layer_count, background_img_data, font_scalars,
-							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
-							&regular_font_type, &bold_font_type, regular_font, bold_font, regular_font_size_data,
-							bold_font_size_data, font_scale, table_options, newline_amount);
+						create_table(doc, &new_layer, layer_count, background_img_data, font_scalars, &buffer, color,
+							font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y, &regular_font_type,
+							&bold_font_type, regular_font, bold_font, regular_font_size_data, bold_font_size_data,
+							font_scale, table_options, newline_amount);
 						// Move the y position down away from the table
 						*y -= table_options.outer_vertical_margin();
 						// Reset the x position to the left side of the textbox
@@ -1015,8 +1019,8 @@ tab_amount: f32, newline_amount: f32)
 						// Begin table processing
 						in_table = true;
 						// Write out the buffer to the document
-						new_layer = write_textbox(doc, layer, layer_count, background_img_data, font_scalars,
-							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
+						new_layer = write_textbox(doc, layer, layer_count, background_img_data, font_scalars, &buffer,
+							color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
 							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount,
 							newline_amount);
 						// Reset the buffer
@@ -1038,8 +1042,8 @@ tab_amount: f32, newline_amount: f32)
 		buffer += "\n";
 	}
 	// Write any remaining text to the spellbook
-	new_layer = write_textbox(doc, layer, layer_count, background_img_data, font_scalars, &buffer, color,
-		font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y, &last_font_type, current_font,
+	new_layer = write_textbox(doc, layer, layer_count, background_img_data, font_scalars, &buffer, color, font_size,
+		page_width, page_height, x_left, x_right, y_high, y_low, x, y, &last_font_type, current_font,
 		current_font_size_data, font_scale, tab_amount, newline_amount);
 	// Return the last layer that was created for this text
 	new_layer
