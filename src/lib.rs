@@ -1241,12 +1241,8 @@ impl TableOptions
 pub struct TextColors
 {
 	pub title_color: (u8, u8, u8),
-	pub level_school_color: (u8, u8, u8),
-	pub field_name_color: (u8, u8, u8),
-	pub field_text_color: (u8, u8, u8),
-	pub description_color: (u8, u8, u8),
-	pub table_header_color: (u8, u8, u8),
-	pub table_body_color: (u8, u8, u8)
+	pub header_color: (u8, u8, u8),
+	pub body_color: (u8, u8, u8)
 }
 
 // Contains the data for determining the size of the page and the margins between eacg side of the page and the text
@@ -1334,7 +1330,6 @@ background_img_path: &str, background_img_transform: &ImageTransform)
 	// Text colors
 	let black = Color::Rgb(Rgb::new(0.0, 0.0, 0.0, None));
 	let red: Color = Color::Rgb(Rgb::new(0.45, 0.1, 0.1, None));
-	let light_purple: Color = Color::Rgb(Rgb::new(0.835, 0.82, 0.878, None));
 	
     // Load custom font
 
