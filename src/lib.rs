@@ -1044,7 +1044,7 @@ tab_amount: f32, newline_amount: f32)
 		buffer += "\n";
 	}
 	// Write any remaining text to the spellbook
-	new_layer = write_textbox(doc, layer, layer_count, background_img_data, font_scalars, &buffer, color, font_size,
+	new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars, &buffer, color, font_size,
 		page_width, page_height, x_left, x_right, y_high, y_low, x, y, &last_font_type, current_font,
 		current_font_size_data, font_scale, tab_amount, newline_amount);
 	// Return the last layer that was created for this text
