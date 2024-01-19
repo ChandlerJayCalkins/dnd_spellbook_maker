@@ -1323,13 +1323,32 @@ impl PageSizeData
 
 // Generates a printpdf pdf document of a spellbook with spells from the spell_list parameter
 pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>, font_paths: &FontPaths,
-page_size_data: &PageSizeData, font_size_data: &FontSizeData, font_scalars: &FontScalars, table_options: &TableOptions,
-background_img_path: &str, background_img_transform: &ImageTransform)
+page_size_data: &PageSizeData, font_size_data: &FontSizeData, text_colors: &TextColors, font_scalars: &FontScalars,
+table_options: &TableOptions, background_img_path: &str, background_img_transform: &ImageTransform)
 -> Result<PdfDocumentReference, Box<dyn std::error::Error>>
 {
-	// Text colors
-	let black = Color::Rgb(Rgb::new(0.0, 0.0, 0.0, None));
-	let red: Color = Color::Rgb(Rgb::new(0.45, 0.1, 0.1, None));
+	// Construct the text colors
+	let title_color = Color::Rgb(Rgb::new
+	(
+		text_colors.title_color.0 as f32 / 255.0,
+		text_colors.title_color.1 as f32 / 255.0,
+		text_colors.title_color.2 as f32 / 255.0,
+		None
+	));
+	let header_color = Color::Rgb(Rgb::new
+	(
+		text_colors.header_color.0 as f32 / 255.0,
+		text_colors.header_color.1 as f32 / 255.0,
+		text_colors.header_color.2 as f32 / 255.0,
+		None
+	));
+	let body_color = Color::Rgb(Rgb::new
+	(
+		text_colors.body_color.0 as f32 / 255.0,
+		text_colors.body_color.1 as f32 / 255.0,
+		text_colors.body_color.2 as f32 / 255.0,
+		None
+	));
 	
     // Load custom font
 
@@ -1418,7 +1437,7 @@ background_img_path: &str, background_img_transform: &ImageTransform)
 
     // Add text using the custom font to the page
 	let _ = write_centered_textbox(&doc, &cover_layer_ref, &mut layer_count, img_data.clone(),
-		background_img_transform, font_scalars, title, &black, font_size_data.title_font_size(), page_size_data.width,
+		background_img_transform, font_scalars, title, &title_color, font_size_data.title_font_size(), page_size_data.width,
 		page_size_data.height, x_left, x_right, y_top, y_low, &mut temp_x, &mut temp_y, &regular_font_type,
 		&regular_font, &regular_font_size_data, &title_font_scale, font_size_data.title_newline_amount());
 
@@ -1440,7 +1459,7 @@ background_img_path: &str, background_img_transform: &ImageTransform)
 
 		// Add the name of the spell as a header
 		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
-			font_scalars, &spell.name, &red, font_size_data.header_font_size(), page_size_data.width,
+			font_scalars, &spell.name, &header_color, font_size_data.header_font_size(), page_size_data.width,
 			page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font_type, &regular_font,
 			&regular_font_size_data, &header_font_scale, font_size_data.tab_amount(),
 			font_size_data.header_newline_amount());
@@ -1452,7 +1471,7 @@ background_img_path: &str, background_img_transform: &ImageTransform)
 		// Add the level and the spell's school of magic
 		let text = get_level_school_text(&spell);
 		layer_ref = write_textbox(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
-			font_scalars, &text, &black, font_size_data.body_font_size(), page_size_data.width, page_size_data.height,
+			font_scalars, &text, &body_color, font_size_data.body_font_size(), page_size_data.width, page_size_data.height,
 			x_left, x_right, y_top, y_low, &mut x, &mut y, &italic_font_type, &italic_font, &italic_font_size_data,
 			&body_font_scale, font_size_data.tab_amount(), font_size_data.body_newline_amount());
 		y -= font_size_data.header_newline_amount();
@@ -1460,7 +1479,7 @@ background_img_path: &str, background_img_transform: &ImageTransform)
 
 		// Add the casting time of the spell
 		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
-			font_scalars, "Casting Time:", &spell.casting_time.to_string(), &black, &black,
+			font_scalars, "Casting Time:", &spell.casting_time.to_string(), &body_color, &body_color,
 			font_size_data.body_font_size(), page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low,
 			&mut x, &mut y, &bold_font_type, &regular_font_type, &bold_font, &regular_font, &bold_font_size_data,
 			&regular_font_size_data, &body_font_scale, font_size_data.tab_amount(), font_size_data.body_newline_amount());
@@ -1470,7 +1489,7 @@ background_img_path: &str, background_img_transform: &ImageTransform)
 
 		// Add the range of the spell
 		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
-			font_scalars, "Range:", &spell.range.to_string(), &black, &black, font_size_data.body_font_size(),
+			font_scalars, "Range:", &spell.range.to_string(), &body_color, &body_color, font_size_data.body_font_size(),
 			page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &bold_font_type,
 			&regular_font_type, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
 			font_size_data.tab_amount(), font_size_data.body_newline_amount());
@@ -1479,7 +1498,7 @@ background_img_path: &str, background_img_transform: &ImageTransform)
 
 		// Add the components of the spell
 		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
-			font_scalars, "Components:", &spell.get_component_string(), &black, &black, font_size_data.body_font_size(),
+			font_scalars, "Components:", &spell.get_component_string(), &body_color, &body_color, font_size_data.body_font_size(),
 			page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &bold_font_type,
 			&regular_font_type, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data,
 			&body_font_scale, font_size_data.tab_amount(), font_size_data.body_newline_amount());
@@ -1488,7 +1507,7 @@ background_img_path: &str, background_img_transform: &ImageTransform)
 
 		// Add the duration of the spell
 		layer_ref = write_spell_field(&doc, &layer_ref, &mut layer_count, img_data.clone(), background_img_transform,
-			font_scalars, "Duration:", &spell.duration.to_string(), &black, &black, font_size_data.body_font_size(),
+			font_scalars, "Duration:", &spell.duration.to_string(), &body_color, &body_color, font_size_data.body_font_size(),
 			page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &bold_font_type,
 			&regular_font_type, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
 			font_size_data.tab_amount(), font_size_data.body_newline_amount());
@@ -1497,7 +1516,7 @@ background_img_path: &str, background_img_transform: &ImageTransform)
 
 		// Add the spell's description
 		layer_ref = write_spell_description(&doc, &layer_ref, &mut layer_count, img_data.clone(),
-			background_img_transform, font_scalars, &spell.description, &black, font_size_data.body_font_size(),
+			background_img_transform, font_scalars, &spell.description, &body_color, font_size_data.body_font_size(),
 			page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font,
 			&bold_font, &italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data,
 			&italic_font_size_data, &bold_italic_font_size_data, &body_font_scale, table_options,
@@ -1510,7 +1529,7 @@ background_img_path: &str, background_img_transform: &ImageTransform)
 			x = x_left + font_size_data.tab_amount();
 			let text = format!("<bi> At Higher Levels. <r> {}", description);
 			layer_ref = write_spell_description(&doc, &layer_ref, &mut layer_count, img_data.clone(),
-				background_img_transform, font_scalars, &text, &black, font_size_data.body_font_size(),
+				background_img_transform, font_scalars, &text, &body_color, font_size_data.body_font_size(),
 				page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font,
 				&bold_font, &italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data,
 				&italic_font_size_data, &bold_italic_font_size_data, &body_font_scale, table_options,
@@ -1578,6 +1597,12 @@ mod tests
 		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
 		// Parameters for determining font sizes, the tab amount, and newline amounts
 		let font_size_data = FontSizeData::new(32.0, 24.0, 12.0, 10.0, 12.0, 8.0, 5.0).unwrap();
+		let text_colors = TextColors
+		{
+			title_color: (0, 0, 0),
+			header_color: (115, 26, 26),
+			body_color: (0, 0, 0)
+		};
 		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
 		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
 		// Parameters for table margins / padding and off-row color / scaling
@@ -1595,7 +1620,7 @@ mod tests
 		};
 		// Creates the spellbook
 		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &font_size_data,
-			&font_scalars, &table_options, background_path, &background_transform).unwrap();
+			&text_colors, &font_scalars, &table_options, background_path, &background_transform).unwrap();
 		// Saves the spellbook to a pdf document
 		let _ = save_spellbook(doc, "Spellbook.pdf");
 	}
