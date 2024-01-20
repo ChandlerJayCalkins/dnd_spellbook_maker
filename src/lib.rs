@@ -310,11 +310,11 @@ header_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions, 
 
 // Creates a table from a string of tokens with table tags and writes it to the pdf doc
 fn create_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, layer_count: &mut i32,
-background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars, table_string: &str,
-text_color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32, x_right: f32, y_high: f32,
-y_low: f32, x: &mut f32, y: &mut f32, body_font_type: &FontType, header_font_type: &FontType, body_font: &IndirectFontRef,
-header_font: &IndirectFontRef, body_font_size_data: &Font, header_font_size_data: &Font, font_scale: &Scale,
-table_options: &TableOptions, newline_amount: f32) -> PdfLayerReference
+background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars,
+table_tokens: &Vec<&str>, text_color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32,
+x_right: f32, y_high: f32, y_low: f32, x: &mut f32, y: &mut f32, body_font_type: &FontType, header_font_type: &FontType,
+body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data: &Font, header_font_size_data: &Font,
+font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLayerReference
 {
 	// Tags for delimiting rows and columns in the table
 	const TITLE_TAG: &str = "<title>";
@@ -322,22 +322,20 @@ table_options: &TableOptions, newline_amount: f32) -> PdfLayerReference
 	const COLUMN_TAG: &str = "|";
 	// The layer that gets returned
 	let mut layer_ref = (*layer).clone();
-	// Get a vec of all tokens in the table string
-	let tokens: Vec<_> = table_string.split_whitespace().collect();
-	// If there are no tokens in the table string, do nothing
-	if tokens.len() < 1 { return layer_ref; }
+	// If there are no tokens in the table, do nothing
+	if table_tokens.len() < 1 { return layer_ref; }
 	// Get a vec of all the tokens in the title, if there is a title
 	let mut title_tokens: Vec<&str> = Vec::new();
 	// Index of the token after the last title token
 	let mut after_title_index = 0;
-	// If the first token in the table string is the title tag, then the table has a title
-	if tokens[0] == TITLE_TAG
+	// If the first token in the table is the title tag, then the table has a title
+	if table_tokens[0] == TITLE_TAG
 	{
 		// Shift the index of where the rest of the table starts over to the earliest possible end of the title
 		after_title_index = 2;
 
-		// Loop through each token in the table string after the first to build the title vec
-		for &token in &tokens[1..]
+		// Loop through each token in the table after the first to build the title vec
+		for &token in &table_tokens[1..]
 		{
 			// If the token is the title tag, the title is over so stop looping
 			if token == TITLE_TAG { break; }
@@ -352,10 +350,10 @@ table_options: &TableOptions, newline_amount: f32) -> PdfLayerReference
 			after_title_index += 1;
 		}
 	}
-	// Combine all tokens after the header back into a new table string
-	let new_table_string = tokens[after_title_index..].join(" ");
-	// Split the table string up into rows by the row tag
-	let rows: Vec<_> = new_table_string.split(ROW_TAG).collect();
+	// Combine all tokens after the header back into a string
+	let table_string = table_tokens[after_title_index..].join(" ");
+	// Split the string up into rows by the row tag
+	let rows: Vec<_> = table_string.split(ROW_TAG).collect();
 	// If there are no rows, do nothing
 	if rows.len() < 1 { return layer_ref; }
 	// Keeps track of the number of columns
@@ -891,6 +889,7 @@ tab_amount: f32, newline_amount: f32)
 	let mut new_layer = (*layer).clone();
 	// A buffer of text that gets written to the spellbook when the font changes, a table is inserted, or the text ends
 	let mut buffer = String::new();
+	let mut table_tokens: Vec<&str> = Vec::new();
 	// Font types
 	let regular_font_type = FontType::Regular;
 	let bold_font_type = FontType::Bold;
@@ -1003,16 +1002,16 @@ tab_amount: f32, newline_amount: f32)
 						// Move y position down away from text to the table
 						*y -= table_options.outer_vertical_margin();
 						// Create the table and write it to the document
-						new_layer = create_table(doc, &new_layer, layer_count, background_img_data, font_scalars, &buffer,
-							color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
-							&regular_font_type, &bold_font_type, regular_font, bold_font, regular_font_size_data,
+						new_layer = create_table(doc, &new_layer, layer_count, background_img_data, font_scalars,
+							&table_tokens, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x,
+							y, &regular_font_type, &bold_font_type, regular_font, bold_font, regular_font_size_data,
 							bold_font_size_data, font_scale, table_options, newline_amount);
 						// Move the y position down away from the table
 						*y -= table_options.outer_vertical_margin();
 						// Reset the x position to the left side of the textbox
 						*x = x_left;
 						// Reset the buffer
-						buffer = String::new();
+						table_tokens = Vec::new();
 						// Reset the font to regular font
 						current_font = regular_font;
 						current_font_size_data = regular_font_size_data;
@@ -1034,11 +1033,18 @@ tab_amount: f32, newline_amount: f32)
 				// If the token is anything else
 				_ =>
 				{
-					// Add it to the buffer
-					// If the buffer's empty, just set the buffer to the token
-					if buffer.is_empty() { buffer = token.to_string(); }
-					// If the buffer isn't empty, add a space and then the token to the buffer
-					else { buffer = format!("{} {}", buffer, token); }
+					if in_table
+					{
+						table_tokens.push(token);
+					}
+					else
+					{
+						// Add it to the buffer
+						// If the buffer's empty, just set the buffer to the token
+						if buffer.is_empty() { buffer = token.to_string(); }
+						// If the buffer isn't empty, add a space and then the token to the buffer
+						else { buffer = format!("{} {}", buffer, token); }
+					}
 				}
 			}
 		}
