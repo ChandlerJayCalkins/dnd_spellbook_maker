@@ -138,8 +138,10 @@ header_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions, 
 	let start_y = *y;
 	// Keep track of the starting layer index so it can be reset it after applying the off row color lines
 	let start_layers_index = layers_index;
+	// Amount of space to vertically adjust the off row color lines by from the text line positions
+	let off_row_y_adjustment = font_size * 0.1;
 	// Increase the y position a bit so it lines up with the text lines
-	*y += font_size * 0.1;
+	*y += off_row_y_adjustment;
 
 	// Loop through the table a first time to apply the off row color lines
 
@@ -173,8 +175,8 @@ header_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions, 
 			{
 				// Apply empty text to go to a new line and create a new page if needed
 				apply_textbox_line(doc, &mut layers, &mut cell_layers_index, layer_count, background_img_data,
-					"", text_color, font_size, page_width, page_height, y_high, y_low, x, y, current_font,
-					newline_adjuster);
+					"", text_color, font_size, page_width, page_height, y_high + off_row_y_adjustment,
+					y_low + off_row_y_adjustment, x, y, current_font, newline_adjuster);
 				// If this is an off row
 				if off_row
 				{
