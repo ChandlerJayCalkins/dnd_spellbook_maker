@@ -493,14 +493,18 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLay
 			let tokens: Vec<_> = cell.split_whitespace().collect();
 			// If there are not tokens in this cell, continue to next cell
 			if tokens.len() < 1 { column += 1; continue; }
+			// If the first token starts with an escape backslash, remove it
+			let add_first_token = if tokens[0].starts_with('\\') { &tokens[0][1..] } else { tokens[0] };
 			// Create a string that will represent an entire line of text in this cell
-			let mut line = tokens[0].to_string();
+			let mut line = add_first_token.to_string();
 			
 			// Loop through each token after the first
 			for token in &tokens[1..]
 			{
+				// If the token starts with an escape backslash, remove it
+				let add_token = if token.starts_with('\\') { &token[1..] } else { token };
 				// Create a string of a line with the next token added
-				let new_line = format!("{} {}", line, token);
+				let new_line = format!("{} {}", line, add_token);
 				// Calculate the width of this new line (with header or body font)
 				let width = if header
 				{
@@ -513,7 +517,7 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLay
 					// Add the current line
 					table[last_row][last_col].push(line);
 					// Reset the line to the current token
-					line = token.to_string();
+					line = add_token.to_string();
 				}
 				// If the new line isn't too wide, add the current token to the current line
 				else { line = new_line; }
@@ -1039,11 +1043,13 @@ tab_amount: f32, newline_amount: f32)
 					}
 					else
 					{
-						// Add it to the buffer
+						// If the token starts with an escape backslash, remove it
+						let add_token = if token.starts_with('\\') { &token[1..] } else { token };
+						// Add the token to the buffer
 						// If the buffer's empty, just set the buffer to the token
-						if buffer.is_empty() { buffer = token.to_string(); }
+						if buffer.is_empty() { buffer = add_token.to_string(); }
 						// If the buffer isn't empty, add a space and then the token to the buffer
-						else { buffer = format!("{} {}", buffer, token); }
+						else { buffer = format!("{} {}", buffer, add_token); }
 					}
 				}
 			}
