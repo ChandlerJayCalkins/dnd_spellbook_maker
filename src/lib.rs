@@ -931,7 +931,7 @@ tab_amount: f32, newline_amount: f32)
 				REGULAR_FONT_TAG =>
 				{
 					// If the current font is not already set to this font
-					if current_font != regular_font
+					if current_font != regular_font && !in_table
 					{
 						// Write the buffer of text to the spellbook with the last font
 						new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars,
@@ -950,7 +950,7 @@ tab_amount: f32, newline_amount: f32)
 				// Bold font
 				BOLD_FONT_TAG =>
 				{
-					if current_font != bold_font
+					if current_font != bold_font && !in_table
 					{
 						new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars,
 							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
@@ -966,7 +966,7 @@ tab_amount: f32, newline_amount: f32)
 				// Italic font
 				ITALIC_FONT_TAG =>
 				{
-					if current_font != italic_font
+					if current_font != italic_font && !in_table
 					{
 						new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars,
 							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
@@ -982,7 +982,7 @@ tab_amount: f32, newline_amount: f32)
 				// Bold-Italic font
 				BOLD_ITALIC_FONT_TAG | ITALIC_BOLD_FONT_TAG =>
 				{
-					if current_font != bold_italic_font
+					if current_font != bold_italic_font && !in_table
 					{
 						new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars,
 							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
@@ -1037,8 +1037,10 @@ tab_amount: f32, newline_amount: f32)
 				// If the token is anything else
 				_ =>
 				{
+					// If a table is currently being processed
 					if in_table
 					{
+						// Add the token to the table_tokens so it can be added to the table
 						table_tokens.push(token);
 					}
 					else
