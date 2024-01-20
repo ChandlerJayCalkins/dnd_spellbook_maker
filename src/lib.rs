@@ -702,6 +702,7 @@ text: &str, color: &Color, font_size: f32, page_width: f32, page_height: f32, x_
 y_low: f32, x: &mut f32, y: &mut f32, font_type: &FontType, font: &IndirectFontRef, font_size_data: &Font,
 font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 {
+	println!("x at the start: {}", *x);
 	// If either dimensions of the text box overlap each other, do nothing
 	if x_left >= x_right || y_high <= y_low { return; }
 	// If the x position starts past the right side of the text box
@@ -722,8 +723,6 @@ font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 	{
 		// Move the x position to the left side of the box plus the tab amount since it's a new paragraph
 		*x = *x + tab_adjuster;
-		// Sets the tab adjuster to not be 0 anymore after the first paragraph
-		tab_adjuster = tab_amount;
 		// Get a vec of each token in the paragraph
 		let tokens: Vec<_> = paragraph.split_whitespace().collect();
 		// If there are no tokens in this paragraph, skip it
@@ -756,6 +755,8 @@ font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 		// Write all remaining text to the page
 		apply_textbox_line(doc, layers, layers_index, layer_count, background_img_data, &line, color,
 			font_size, page_width, page_height, y_high, y_low, x, y, font, newline_adjuster);
+		// Sets the tab adjuster to not be 0 anymore after the first paragraph
+		tab_adjuster = tab_amount;
 		// Set the newline adjuster to the newline amount so it's not 0 after the first line
 		newline_adjuster = newline_amount;
 		// Calculate where the end of the last line that was written is and save it
@@ -1013,7 +1014,7 @@ tab_amount: f32, newline_amount: f32)
 						// Move the y position down away from the table
 						*y -= table_options.outer_vertical_margin();
 						// Reset the x position to the left side of the textbox
-						*x = x_left;
+						*x = x_left + tab_amount;
 						// Reset the buffer
 						table_tokens = Vec::new();
 						// Reset the font to regular font
