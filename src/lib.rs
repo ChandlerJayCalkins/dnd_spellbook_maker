@@ -139,7 +139,7 @@ header_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions, 
 	// Keep track of the starting layer index so it can be reset it after applying the off row color lines
 	let start_layers_index = layers_index;
 	// Amount of space to vertically adjust the off row color lines by from the text line positions
-	let off_row_color_line_y_adjustment = font_size * 0.1;
+	let off_row_color_line_y_adjustment = font_size * 0.11;
 	// Increase the y position a bit so it lines up with the text lines
 	*y += off_row_color_line_y_adjustment;
 	// Keeps track of the lowest y position of the current row
@@ -1249,6 +1249,7 @@ pub struct TableOptions
 	vertical_cell_margin: f32,
 	outer_horizontal_margin: f32,
 	outer_vertical_margin: f32,
+	off_row_color_lines_y_adjust_scalar: f32,
 	off_row_color_lines_height_scalar: f32,
 	// RGB
 	off_row_color: (u8, u8, u8)
@@ -1258,14 +1259,16 @@ impl TableOptions
 {
 	// Constructor
 	pub fn new(horizontal_cell_margin: f32, vertical_cell_margin: f32, outer_horizontal_margin: f32,
-	outer_vertical_margin: f32, off_row_color_lines_height_scalar: f32, off_row_color: (u8, u8, u8))
-	-> Result<Self, String>
+	outer_vertical_margin: f32, off_row_color_lines_y_adjust_scalar: f32, off_row_color_lines_height_scalar: f32,
+	off_row_color: (u8, u8, u8)) -> Result<Self, String>
 	{
 		// Makes sure none of the float values are below 0
 		if horizontal_cell_margin < 0.0 { Err(String::from("Invalid horizontal_cell_margin.")) }
 		else if vertical_cell_margin < 0.0 { Err(String::from("Invalid vertical_cell_margin.")) }
 		else if outer_horizontal_margin < 0.0 { Err(String::from("Invalid outer_horizontal_margin.")) }
 		else if outer_vertical_margin < 0.0 { Err(String::from("Invalid outer_vertical_margin.")) }
+		else if off_row_color_lines_y_adjust_scalar < 0.0
+		{ Err(String::from("Invalid off_row_color_lines_y_adjust_scalar.")) }
 		else if off_row_color_lines_height_scalar < 0.0
 		{ Err(String::from("Invalid off_row_color_lines_height_scalar.")) }
 		else
@@ -1276,6 +1279,7 @@ impl TableOptions
 				vertical_cell_margin: vertical_cell_margin,
 				outer_horizontal_margin: outer_horizontal_margin,
 				outer_vertical_margin: outer_vertical_margin,
+				off_row_color_lines_y_adjust_scalar: off_row_color_lines_y_adjust_scalar,
 				off_row_color_lines_height_scalar: off_row_color_lines_height_scalar,
 				off_row_color: off_row_color
 			})
@@ -1287,6 +1291,7 @@ impl TableOptions
 	pub fn vertical_cell_margin(&self) -> f32 { self.vertical_cell_margin }
 	pub fn outer_horizontal_margin(&self) -> f32 { self.outer_horizontal_margin }
 	pub fn outer_vertical_margin(&self) -> f32 { self.outer_vertical_margin }
+	pub fn off_row_color_lines_y_adjust_scalar(&self) -> f32 { self.off_row_color_lines_y_adjust_scalar }
 	pub fn off_row_color_lines_height_scalar(&self) -> f32 { self.off_row_color_lines_height_scalar }
 	pub fn off_row_color(&self) -> (u8, u8, u8) { self.off_row_color }
 	// Gives specific values for each rgb value for the off row color
@@ -1701,7 +1706,7 @@ mod tests
 		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
 		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
 		// Parameters for table margins / padding and off-row color / scaling
-		let table_options = TableOptions::new(10.0, 8.0, 2.0, 8.0, 4.0, (213, 209, 224)).unwrap();
+		let table_options = TableOptions::new(10.0, 8.0, 2.0, 8.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
 		// File path to the background image
 		let background_path = "img/parchment.jpg";
 		// Image transform data for the background image
@@ -1750,7 +1755,7 @@ mod tests
 		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
 		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
 		// Parameters for table margins / padding and off-row color / scaling
-		let table_options = TableOptions::new(10.0, 8.0, 2.0, 8.0, 4.0, (213, 209, 224)).unwrap();
+		let table_options = TableOptions::new(10.0, 8.0, 2.0, 8.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
 		// Creates the spellbook
 		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &font_size_data,
 			&text_colors, &font_scalars, &table_options, &None).unwrap();
