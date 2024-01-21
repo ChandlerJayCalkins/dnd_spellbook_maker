@@ -88,8 +88,8 @@ title_lines: &Vec<String>, table: &Vec<Vec<Vec<String>>>, text_color: &Color, fo
 page_height: f32, table_x_start: f32, table_x_end: f32, column_starts: &Vec<f32>, column_widths: &Vec<f32>,
 centered_columns: &Vec<bool>, y_high: f32, y_low: f32, x: &mut f32, y: &mut f32, body_font_type: &FontType,
 header_font_type: &FontType, body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data: &Font,
-header_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions, newline_amount: f32)
--> PdfLayerReference
+header_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions, title_font_scale: &Scale,
+newline_amount: f32) -> PdfLayerReference
 {
 	// Create a vec of all layers of pages that are used to write the table to
 	let mut layers = vec![(*layer).clone()];
@@ -119,12 +119,14 @@ header_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions, 
 		for line in title_lines
 		{
 			// Calculate the width of this line
-			let line_width = calc_text_width(font_scalars, &line, current_font_type, current_font_size_data, font_scale);
+			let line_width = calc_text_width(font_scalars, &line, current_font_type, current_font_size_data,
+				title_font_scale);
 			// Set the x position to have the line be centered above the table
 			*x = (table_width / 2.0) - (line_width / 2.0) + table_x_start;
 			// Apply the line to the page
 			apply_textbox_line(doc, &mut layers, &mut layers_index, layer_count, background_img_data, &line,
-				text_color, font_size, page_width, page_height, y_high, y_low, x, y, current_font, newline_adjuster);
+				text_color, table_options.title_font_size(), page_width, page_height, y_high, y_low, x, y, current_font,
+				newline_adjuster);
 			// Set the newline adjuster to be the newline amount so it isn't 0 after the first line
 			newline_adjuster = newline_amount;
 		}
@@ -347,7 +349,7 @@ background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalar
 table_tokens: &Vec<&str>, text_color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32,
 x_right: f32, y_high: f32, y_low: f32, x: &mut f32, y: &mut f32, body_font_type: &FontType, header_font_type: &FontType,
 body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data: &Font, header_font_size_data: &Font,
-font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLayerReference
+font_scale: &Scale, table_options: &TableOptions, title_font_scale: &Scale, newline_amount: f32) -> PdfLayerReference
 {
 	// Tags for delimiting rows and columns in the table
 	const TITLE_TAG: &str = "<title>";
@@ -595,7 +597,7 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLay
 			// Create a new line to test if another token can be added to the current line
 			let new_line = format!("{} {}", title_line, token);
 			// Calculate the width of this new line
-			let width = calc_text_width(font_scalars, &new_line, header_font_type, header_font_size_data, font_scale);
+			let width = calc_text_width(font_scalars, &new_line, header_font_type, header_font_size_data, title_font_scale);
 			// If the new line is too wide with the new token added
 			if width > title_max_width
 			{
@@ -618,7 +620,7 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLay
 	if title_lines.len() > 0
 	{
 		// Add the height of the title into the table height calculation
-		table_height += calc_text_height(font_scalars, header_font_type, header_font_size_data, font_scale,
+		table_height += calc_text_height(font_scalars, header_font_type, header_font_size_data, title_font_scale,
 			newline_amount, title_lines.len()) + table_options.vertical_cell_margin();
 	}
 	
@@ -635,7 +637,7 @@ font_scale: &Scale, table_options: &TableOptions, newline_amount: f32) -> PdfLay
 	write_table(doc, &layer_ref, layer_count, background_img_data, font_scalars, &title_lines, &table,
 		text_color, font_size, page_width, page_height, table_start, table_end, &column_starts, &column_widths,
 		&centered_columns, y_high, y_low, x, y, body_font_type, header_font_type, body_font, header_font,
-		body_font_size_data, header_font_size_data, font_scale, table_options, newline_amount)
+		body_font_size_data, header_font_size_data, font_scale, table_options, title_font_scale, newline_amount)
 }
 
 // Creates a new page and returns the layer for it
@@ -920,7 +922,7 @@ color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32, x
 x: &mut f32, y: &mut f32, regular_font: &IndirectFontRef, bold_font: &IndirectFontRef, italic_font: &IndirectFontRef,
 bold_italic_font: &IndirectFontRef, regular_font_size_data: &Font, bold_font_size_data: &Font,
 italic_font_size_data: &Font, bold_italic_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions,
-tab_amount: f32, newline_amount: f32)
+table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 -> PdfLayerReference
 {
 	// The layer that gets returned
@@ -1043,7 +1045,7 @@ tab_amount: f32, newline_amount: f32)
 						new_layer = create_table(doc, &new_layer, layer_count, background_img_data, font_scalars,
 							&table_tokens, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x,
 							y, &regular_font_type, &bold_font_type, regular_font, bold_font, regular_font_size_data,
-							bold_font_size_data, font_scale, table_options, newline_amount);
+							bold_font_size_data, font_scale, table_options, table_title_font_scale, newline_amount);
 						// Move the y position down away from the table
 						*y -= table_options.outer_vertical_margin();
 						// Reset the x position to the left side of the textbox
@@ -1245,6 +1247,7 @@ impl FontScalars
 // Holds data for formatting tables
 pub struct TableOptions
 {
+	title_font_size: f32,
 	horizontal_cell_margin: f32,
 	vertical_cell_margin: f32,
 	outer_horizontal_margin: f32,
@@ -1258,12 +1261,13 @@ pub struct TableOptions
 impl TableOptions
 {
 	// Constructor
-	pub fn new(horizontal_cell_margin: f32, vertical_cell_margin: f32, outer_horizontal_margin: f32,
+	pub fn new(title_font_size: f32, horizontal_cell_margin: f32, vertical_cell_margin: f32, outer_horizontal_margin: f32,
 	outer_vertical_margin: f32, off_row_color_lines_y_adjust_scalar: f32, off_row_color_lines_height_scalar: f32,
 	off_row_color: (u8, u8, u8)) -> Result<Self, String>
 	{
 		// Makes sure none of the float values are below 0
-		if horizontal_cell_margin < 0.0 { Err(String::from("Invalid horizontal_cell_margin.")) }
+		if title_font_size < 0.0 { Err(String::from("Invalid title_font_size.")) }
+		else if horizontal_cell_margin < 0.0 { Err(String::from("Invalid horizontal_cell_margin.")) }
 		else if vertical_cell_margin < 0.0 { Err(String::from("Invalid vertical_cell_margin.")) }
 		else if outer_horizontal_margin < 0.0 { Err(String::from("Invalid outer_horizontal_margin.")) }
 		else if outer_vertical_margin < 0.0 { Err(String::from("Invalid outer_vertical_margin.")) }
@@ -1275,6 +1279,7 @@ impl TableOptions
 		{
 			Ok(Self
 			{
+				title_font_size: title_font_size,
 				horizontal_cell_margin: horizontal_cell_margin,
 				vertical_cell_margin: vertical_cell_margin,
 				outer_horizontal_margin: outer_horizontal_margin,
@@ -1287,6 +1292,7 @@ impl TableOptions
 	}
 
 	// Getters
+	pub fn title_font_size(&self) -> f32 { self.title_font_size }
 	pub fn horizontal_cell_margin(&self) -> f32 { self.horizontal_cell_margin }
 	pub fn vertical_cell_margin(&self) -> f32 { self.vertical_cell_margin }
 	pub fn outer_horizontal_margin(&self) -> f32 { self.outer_horizontal_margin }
@@ -1451,6 +1457,7 @@ table_options: &TableOptions, background_img_data: &Option<(&str, &ImageTransfor
 	let title_font_scale = Scale::uniform(font_size_data.title_font_size());
 	let header_font_scale = Scale::uniform(font_size_data.header_font_size());
 	let body_font_scale = Scale::uniform(font_size_data.body_font_size());
+	let table_title_font_scale = Scale::uniform(table_options.title_font_size());
 
 	// Font types for calculating size of text with certain fonts
 	let regular_font_type = FontType::Regular;
@@ -1600,7 +1607,8 @@ table_options: &TableOptions, background_img_data: &Option<(&str, &ImageTransfor
 			&spell.description, &body_color, font_size_data.body_font_size(), page_size_data.width, page_size_data.height,
 			x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
 			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
-			&body_font_scale, table_options, font_size_data.tab_amount(), font_size_data.body_newline_amount());
+			&body_font_scale, table_options, &table_title_font_scale, font_size_data.tab_amount(),
+			font_size_data.body_newline_amount());
 
 		// If the spell has an upcast description
 		if let Some(description) = &spell.upcast_description
@@ -1612,7 +1620,8 @@ table_options: &TableOptions, background_img_data: &Option<(&str, &ImageTransfor
 				font_size_data.body_font_size(), page_size_data.width,page_size_data.height, x_left, x_right, y_top,
 				y_low, &mut x, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
 				&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
-				&body_font_scale, table_options, font_size_data.tab_amount(), font_size_data.body_newline_amount());
+				&body_font_scale, table_options, &table_title_font_scale, font_size_data.tab_amount(),
+				font_size_data.body_newline_amount());
 		}
 
 		// Increment the layer counter
@@ -1706,7 +1715,7 @@ mod tests
 		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
 		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
 		// Parameters for table margins / padding and off-row color / scaling
-		let table_options = TableOptions::new(10.0, 8.0, 2.0, 8.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
+		let table_options = TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
 		// File path to the background image
 		let background_path = "img/parchment.jpg";
 		// Image transform data for the background image
@@ -1755,7 +1764,7 @@ mod tests
 		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
 		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
 		// Parameters for table margins / padding and off-row color / scaling
-		let table_options = TableOptions::new(10.0, 8.0, 2.0, 8.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
+		let table_options = TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
 		// Creates the spellbook
 		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &font_size_data,
 			&text_colors, &font_scalars, &table_options, &None).unwrap();
