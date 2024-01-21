@@ -1,0 +1,21 @@
+name: Creation
+level: 5
+school: illusion
+casting_time: minutes 1
+range: feet 30
+has_v_component
+has_s_component
+m_components: "a tiny piece of matter of the same type of the item you plan to create"
+duration: special
+description: "You pull wisps of shadow material from the Shadowfell to create a nonliving object of vegetable matter within range: soft goods, rope, wood, or something similar. You can also use this spell to create mineral objects such as stone, crystal, or metal. The object created must be no larger than a 5-foot cube, and the object must be of a form and material that you have seen before.
+The duration depends on the object's material. If the object is composed of multiple materials, use the shortest duration.
+<table>
+Material | Duration
+<row> Vegetable matter | 1 day
+<row> Stone or crystal | 12 hours
+<row> Precious metals | 1 hour
+<row> Gems | 10 minutes
+<row> Adamentine or mithral | 1 minute
+<table>
+Using any material created by this spell as another spell's material component causes that spell to fail."
+upcast_description: "When you cast this spell using a spell slot of 6th level or higher, the cube increases by 5 feet for each slot level above 5th."
