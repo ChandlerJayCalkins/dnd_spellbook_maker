@@ -333,6 +333,8 @@ header_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions, 
 		current_font_type = body_font_type;
 	}
 
+	// Set the y position to the lowest y position of the last row
+	*y = row_lowest_y;
 	// Set the x position to the end of the last line
 	*x = last_x;
 	// Return the most recent layer
