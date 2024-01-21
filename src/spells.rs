@@ -555,7 +555,7 @@ impl fmt::Display for AOE
 			Self::Line(l) => format!("{}-foot line", l),
 			Self::Cone(l) => format!("{}-foot cone", l),
 			Self::Cube(l) => format!("{}-foot cube", l),
-			Self::Sphere(r) => format!("{}-foot sphere", r),
+			Self::Sphere(r) => format!("{}-foot radius", r),
 			Self::Cylinder(r, h) => format!("{}-foot radius, {}-foot tall cylinder", r, h),
 			Self::Radius(r) => format!("{}-mile radius", r)
 		};
