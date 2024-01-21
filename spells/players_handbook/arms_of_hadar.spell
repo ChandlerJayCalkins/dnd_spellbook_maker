@@ -1,0 +1,11 @@
+name: Arms of Hadar
+level: 1
+school: conjuration
+casting_time: actions 1
+range: self sphere 10
+has_v_component
+has_s_component
+duration: instant
+description: "You invoke the power of Hadar, the Dark Hunger.
+Tendrils of dark energy erupt from you and batter all creatures within 10 feet of you. Each creature in that area must make a Strength saving throw. On a failed save, a target takes 2d6 necrotic damage and can't take reactions until its next turn. On a successful save, the creature takes half damage, but suffers no other effect."
+upcast_description: "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st."
