@@ -1696,7 +1696,7 @@ mod tests
 		// Parameters for determining the size of the page and the text margins on the page
 		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
 		// Parameters for determining font sizes, the tab amount, and newline amounts
-		let font_size_data = FontSizeData::new(32.0, 24.0, 12.0, 10.0, 12.0, 8.0, 5.0).unwrap();
+		let font_size_data = FontSizeData::new(32.0, 24.0, 12.0, 5.0, 12.0, 8.0, 5.0).unwrap();
 		let text_colors = TextColors
 		{
 			title_color: (0, 0, 0),
@@ -1745,7 +1745,7 @@ mod tests
 		// Parameters for determining the size of the page and the text margins on the page
 		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
 		// Parameters for determining font sizes, the tab amount, and newline amounts
-		let font_size_data = FontSizeData::new(32.0, 24.0, 12.0, 10.0, 12.0, 8.0, 5.0).unwrap();
+		let font_size_data = FontSizeData::new(32.0, 24.0, 12.0, 5.0, 12.0, 8.0, 5.0).unwrap();
 		let text_colors = TextColors
 		{
 			title_color: (0, 0, 0),
