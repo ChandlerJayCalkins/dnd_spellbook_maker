@@ -1668,13 +1668,15 @@ impl Spell
 			// If the new line ends with a quote
 			if desc.ends_with('"')
 			{
-				// If it's just an escape quote
+				// If there's a backslash before the quote (escape backslash)
 				if desc.ends_with("\\\"")
 				{
 					// Remove the escape backslash
 					desc = format!("{}\"", &desc[..desc.len()-2]);
+					// If there is still another backslash even before the one that was removed (escaped backslash)
+					if desc.ends_with("\\\"") { break; }
 				}
-				// If it's a full quote, break
+				// If it's an unescaped quote, break
 				else { break; }
 			}
 			// Go to next line
