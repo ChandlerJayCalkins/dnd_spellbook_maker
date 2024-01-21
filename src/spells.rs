@@ -1665,8 +1665,18 @@ impl Spell
 			let new_line = lines[*line_index].split_whitespace().collect::<Vec<_>>().join(" ");
 			// Combine the new line with the rest of the text
 			desc = format!("{}\n{}", desc, new_line);
-			// If the new line ends with a quote but not an escape quote, end the loop
-			if desc.ends_with('"') && !desc.ends_with("\\\"") { break; }
+			// If the new line ends with a quote
+			if desc.ends_with('"')
+			{
+				// If it's just an escape quote
+				if desc.ends_with("\\\"")
+				{
+					// Remove the escape backslash
+					desc = format!("{}\"", &desc[..desc.len()-2]);
+				}
+				// If it's a full quote, break
+				else { break; }
+			}
 			// Go to next line
 			*line_index += 1;
 			// If there are no lines left and an end quote still hasn't been reached
