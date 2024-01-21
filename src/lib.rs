@@ -139,17 +139,19 @@ header_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions, 
 	// Keep track of the starting layer index so it can be reset it after applying the off row color lines
 	let start_layers_index = layers_index;
 	// Amount of space to vertically adjust the off row color lines by from the text line positions
-	let off_row_y_adjustment = font_size * 0.1;
+	let off_row_color_line_y_adjustment = font_size * 0.1;
 	// Increase the y position a bit so it lines up with the text lines
-	*y += off_row_y_adjustment;
+	*y += off_row_color_line_y_adjustment;
+	// Keeps track of the lowest y position of the current row
+	let mut row_lowest_y = *y;
 
 	// Loop through the table a first time to apply the off row color lines
 
 	// Loop through each row in the table
 	for row in table
 	{
-		// Decrease the y position by the vertical margin adjuster
-		*y -= vertical_margin_adjuster;
+		// Set the y value to just below the last row
+		*y = row_lowest_y - vertical_margin_adjuster;
 		// Set the vertical margin adjuster to the desired value so it doesn't go down by 0 after the first row
 		vertical_margin_adjuster = table_options.vertical_cell_margin();
 		// Keep track of where the y position starts for this row so it can be reset to it after writing each cell
@@ -175,8 +177,8 @@ header_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions, 
 			{
 				// Apply empty text to go to a new line and create a new page if needed
 				apply_textbox_line(doc, &mut layers, &mut cell_layers_index, layer_count, background_img_data,
-					"", text_color, font_size, page_width, page_height, y_high + off_row_y_adjustment,
-					y_low + off_row_y_adjustment, x, y, current_font, newline_adjuster);
+					"", text_color, font_size, page_width, page_height, y_high + off_row_color_line_y_adjustment,
+					y_low + off_row_color_line_y_adjustment, x, y, current_font, newline_adjuster);
 				// If this is an off row
 				if off_row
 				{
@@ -216,8 +218,20 @@ header_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions, 
 				newline_adjuster = newline_amount;
 			}
 
-			// If any new pages were created, increase the layers index
-			layers_index = std::cmp::max(layers_index, cell_layers_index);
+			// If this cell is on the most recently created page and is lower than the lowest y value for this row
+			if cell_layers_index == layers_index && *y < row_lowest_y
+			{
+				// Set the lowest y value for this row to the current y value
+				row_lowest_y = *y;
+			}
+			// If this cell is on a new page
+			else if cell_layers_index > layers_index
+			{
+				// Set the lowest y value for this row to the current y value
+				row_lowest_y = *y;
+				// Set the layers_index for the most recently created page to this cell's layer index
+				layers_index = cell_layers_index;
+			}
 			// Set the number of off row color lines applied for this row to the max of this cell's lines and the current
 			// row total
 			row_off_row_lines = std::cmp::max(row_off_row_lines, cell_off_row_lines);
@@ -231,8 +245,9 @@ header_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions, 
 		off_row = !off_row;
 	}
 
-	// Reset the y position back to the top of the table
+	// Reset the y position back to the top of the table and the lowest y value for the current row
 	*y = start_y;
+	row_lowest_y = start_y;
 	// Reset the layers vec index back to the first page
 	layers_index = start_layers_index;
 	// Reset the vertical margin adjuster to 0 so it doesn't go down at all for the first row
@@ -242,11 +257,13 @@ header_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions, 
 	current_font_size_data = header_font_size_data;
 	current_font_type = header_font_type;
 
+	// Loop through the table a second time to apply the lines of text
+
 	// Loop through each row in the table
 	for row in table
 	{
-		// Decrease the y position by a row margin
-		*y -= vertical_margin_adjuster;
+		// Set the y value to just below the last row
+		*y = row_lowest_y - vertical_margin_adjuster;
 		// Set the vertical margin adjuster to the row margin amount so it's not 0 after the first row
 		vertical_margin_adjuster = table_options.vertical_cell_margin();
 		// Create a variable to keep track of where to reset the y value to after writing each cell in this row
@@ -292,8 +309,20 @@ header_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions, 
 				newline_adjuster = newline_amount;
 			}
 
-			// If any new pages were created, increase the layers index
-			layers_index = std::cmp::max(layers_index, cell_layers_index);
+			// If this cell is on the most recently created page and is lower than the lowest y value for this row
+			if cell_layers_index == layers_index && *y < row_lowest_y
+			{
+				// Set the lowest y value for this row to the current y value
+				row_lowest_y = *y;
+			}
+			// If this cell is on a new page
+			else if cell_layers_index > layers_index
+			{
+				// Set the lowest y value for this row to the current y value
+				row_lowest_y = *y;
+				// Set the layers_index for the most recently created page to this cell's layer index
+				layers_index = cell_layers_index;
+			}
 			// Increase the column index to the next column
 			column_index += 1;
 		}
