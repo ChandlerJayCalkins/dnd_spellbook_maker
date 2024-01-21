@@ -792,12 +792,12 @@ font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 			font_size, page_width, page_height, y_high, y_low, x, y, font, newline_adjuster);
 		// Sets the tab adjuster to not be 0 anymore after the first paragraph
 		tab_adjuster = tab_amount;
-		// Set x position to the left side of the text box to undo tabbing on the first line of new paragraphs
-		*x = x_left;
 		// Set the newline adjuster to the newline amount so it's not 0 after the first line
 		newline_adjuster = newline_amount;
 		// Calculate where the end of the last line that was written is and save it
 		last_x = *x + calc_text_width(font_scalars, &line, font_type, font_size_data, font_scale);
+		// Set x position to the left side of the text box to undo tabbing on the first line of new paragraphs
+		*x = x_left;
 	}
 	// Set the x position to the end of the last line that was written
 	*x = last_x;
