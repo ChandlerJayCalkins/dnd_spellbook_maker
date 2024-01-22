@@ -1573,7 +1573,7 @@ impl Spell
 			if let Some(c) = &self.m_components
 			{
 				// Add the spell's m components
-				spell_data = format!("{}m_components: \"{}\"\n", spell_data, c);
+				spell_data = format!("{}m_components: \"{}\"\n", spell_data, Self::treat_text_field(&c));
 			}
 		}
 		// If this is not supposed to be a compressed file
@@ -1586,7 +1586,7 @@ impl Spell
 			if let Some(c) = &self.m_components
 			{
 				// Add the spell's m components
-				spell_data = format!("{}m_components: \"{}\"\n", spell_data, c);
+				spell_data = format!("{}m_components: \"{}\"\n", spell_data, Self::treat_text_field(&c));
 			}
 			// If the spell has no m components
 			else
@@ -1598,7 +1598,7 @@ impl Spell
 		// Add the spell's duration
 		spell_data = format!("{}duration: {}\n", spell_data, self.duration.to_spell_file_string());
 		// Add the spell's description
-		spell_data = format!("{} description: \"{}\"\n", spell_data, self.description);
+		spell_data = format!("{} description: \"{}\"\n", spell_data, Self::treat_text_field(&(self.description)));
 		// If this is supposed to be a compressed file
 		if compress
 		{
@@ -1606,7 +1606,7 @@ impl Spell
 			if let Some(d) = &self.upcast_description
 			{
 				// Add the spell's upcast description
-				spell_data = format!("{}upcast_description: \"{}\"\n", spell_data, d);
+				spell_data = format!("{}upcast_description: \"{}\"\n", spell_data, Self::treat_text_field(&d));
 			}
 		}
 		// if this is not supposed to be a compressed file
@@ -1616,7 +1616,7 @@ impl Spell
 			if let Some(d) = &self.upcast_description
 			{
 				// Add the spell's upcast description
-				spell_data = format!("{}upcast_description: \"{}\"\n", spell_data, d);
+				spell_data = format!("{}upcast_description: \"{}\"\n", spell_data, Self::treat_text_field(&d));
 			}
 			// If the spell has no upcast description
 			else
@@ -1718,6 +1718,43 @@ impl Spell
 		}
 		// Return the text without the start and end quotes
 		Ok(desc[1..desc.len()-1].to_string())
+	}
+
+	// Treats a text field to prepare it for being stored to a spell file
+	fn treat_text_field(text: &String) -> String
+	{
+		// The text that will be returned
+		let mut treated_text = String::new();
+		// Split the text field into lines
+		let lines = text.split('\n');
+		// Loop through each line in the text field
+		for line in lines
+		{
+			// Add the line to the treated text
+
+			// If the line ends with a quote
+			treated_text += if line.ends_with('"')
+			{
+				// If the line ends with a backslash and a quote
+				if line.ends_with("\\\"")
+				{
+					// Escape both the backslash and the quote with a backslash for each
+					format!("\n{}\\\\\\\"", &line[..line.len()-2])
+				}
+				else
+				{
+					// Escape the quote with a backslash
+					format!("\n{}\\\"", &line[..line.len()-1])
+				}
+			}
+			else
+			{
+				// Just add the line to the text the way it is
+				format!("\n{}", line)
+			}.as_str();
+		}
+		// Return the treated text
+		treated_text
 	}
 
 	// Gets a string of the required components for a spell
