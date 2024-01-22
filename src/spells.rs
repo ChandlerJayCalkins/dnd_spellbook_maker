@@ -1649,11 +1649,19 @@ impl Spell
 
 		// Get the first line of the text field if it does start with a quote
 		let mut desc = current_tokens[1..].join(" ");
-		// If the first line ends with a quote but not an escape quote
-		if desc.ends_with('"') && !desc.ends_with("\\\"")
+		// If the first line ends with a quote
+		if desc.ends_with('"')
 		{
-			// Return that line
-			return Ok(desc[1..desc.len()-1].to_string());
+			// If there's a backslash before the quote (escape backslash)
+			if desc.ends_with("\\\"")
+			{
+				// Remove the escape backslash
+				desc = format!("{}\"", &desc[..desc.len()-2]);
+				// If there is still another backslash even before the one that was removed (escaped backslash)
+				if desc.ends_with("\\\"") { return Ok(desc[1..desc.len()-1].to_string()); }
+			}
+			// If it's an unescaped quote, return the line
+			else { return Ok(desc[1..desc.len()-1].to_string()); }
 		}
 		// Otherwise continue to the next line
 		else { *line_index += 1; }
