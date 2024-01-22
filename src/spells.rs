@@ -1652,13 +1652,23 @@ impl Spell
 		// If the first line ends with a quote
 		if desc.ends_with('"')
 		{
-			// If there's a backslash before the quote (escape backslash)
-			if desc.ends_with("\\\"")
+			// If the line ends with an escaped backslash and an escaped quote
+			if desc.ends_with("\\\\\\\"")
+			{
+				// Remove two of the backslashes so the lines just ends with \"
+				desc = format!("{}\"", &desc[..desc.len()-3])
+			}
+			// If the lines ends with an escaped backslash but an unescaped quote
+			else if desc.ends_with("\\\\\"")
+			{
+				// Remove one of the backslashes and the quote and return the line
+				return Ok(format!("{}\\", &desc[..desc.len()-2]));
+			}
+			// If the line ends with an escaped quote
+			else if desc.ends_with("\\\"")
 			{
 				// Remove the escape backslash
 				desc = format!("{}\"", &desc[..desc.len()-2]);
-				// If there is still another backslash even before the one that was removed (escaped backslash)
-				if desc.ends_with("\\\"") { return Ok(desc[1..desc.len()-1].to_string()); }
 			}
 			// If it's an unescaped quote, return the line
 			else { return Ok(desc[1..desc.len()-1].to_string()); }
@@ -1676,15 +1686,25 @@ impl Spell
 			// If the new line ends with a quote
 			if desc.ends_with('"')
 			{
-				// If there's a backslash before the quote (escape backslash)
-				if desc.ends_with("\\\"")
+				// If the line ends with an escaped backslash and an escaped quote
+				if desc.ends_with("\\\\\\\"")
+				{
+					// Remove two of the backslashes so the lines just ends with \"
+					desc = format!("{}\"", &desc[..desc.len()-3])
+				}
+				// If the lines ends with an escaped backslash but an unescaped quote
+				else if desc.ends_with("\\\\\"")
+				{
+					// Remove one of the backslashes and the quote and return the line
+					break;
+				}
+				// If the line ends with an escaped quote
+				else if desc.ends_with("\\\"")
 				{
 					// Remove the escape backslash
 					desc = format!("{}\"", &desc[..desc.len()-2]);
-					// If there is still another backslash even before the one that was removed (escaped backslash)
-					if desc.ends_with("\\\"") { break; }
 				}
-				// If it's an unescaped quote, break
+				// If it's an unescaped quote, return the line
 				else { break; }
 			}
 			// Go to next line
