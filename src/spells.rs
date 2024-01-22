@@ -1673,12 +1673,18 @@ impl Spell
 			// If it's an unescaped quote, return the line
 			else { return Ok(desc[1..desc.len()-1].to_string()); }
 		}
-		// Otherwise continue to the next line
-		else { *line_index += 1; }
+		// Go to the next line
+		*line_index += 1;
 
 		// Loop until a line that ends with a quote is reached
 		loop
 		{
+			// If there are no lines left and an end quote still hasn't been reached
+			if *line_index >= lines.len()
+			{
+				// Return an error
+				return Err(SpellFileError::get_box(false, file_name, &desc));
+			}
 			// Get the next line
 			let new_line = lines[*line_index].split_whitespace().collect::<Vec<_>>().join(" ");
 			// Combine the new line with the rest of the text
@@ -1709,12 +1715,6 @@ impl Spell
 			}
 			// Go to next line
 			*line_index += 1;
-			// If there are no lines left and an end quote still hasn't been reached
-			if *line_index >= lines.len()
-			{
-				// Return an error
-				return Err(SpellFileError::get_box(false, file_name, &desc));
-			}
 		}
 		// Return the text without the start and end quotes
 		Ok(desc[1..desc.len()-1].to_string())
