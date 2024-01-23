@@ -1,0 +1,11 @@
+name: Goodberry
+level: 1
+school: transmutation
+casting_time: actions 1
+range: touch
+has_v_component
+has_s_component
+m_components: "a sprig of mistletoe"
+duration: instant
+description: "Up to ten berries appear in your hand and are infused with magic for the duration. A creature can use its action to eat one berry. Eating a berry restores 1 hit point, and the berry provides enough nourishment to sustain a creature for one day.
+The berries lose their potency if they have not been consumed within 24 hours of the casting of this spell."
