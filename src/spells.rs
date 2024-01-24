@@ -10,12 +10,10 @@ use std::error;
 // For reading and writing to spell files
 trait SpellFileString: Sized
 {
-	type SpellFileStringError;
-
 	// Turns an object into a string that can be written into a spell file
 	fn to_spell_file_string(&self) -> String;
 	// Tries to turn a string from a spell file into an object
-	fn from_spell_file_string(s: &str) -> Result<Self, Self::SpellFileStringError>;
+	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>;
 }
 
 // The level of a spell
@@ -38,20 +36,22 @@ pub enum Level
 // Allows levels to be written to and read from spell files
 impl SpellFileString for Level
 {
-	type SpellFileStringError = &'static str;
-
 	fn to_spell_file_string(&self) -> String
 	{
 		u8::from(*self).to_string()
 	}
 
-	fn from_spell_file_string(s: &str) -> Result<Self, Self::SpellFileStringError>
+	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>
 	{
 		let parse_result = s.parse::<u8>();
 		match parse_result
 		{
-			Ok(n) => n.try_into(),
-			Err(_) => Err("Invalid level string.")
+			Ok(n) => match Level::try_from(n)
+			{
+				Ok(level) => Ok(level),
+				Err(_) => Err(SpellFileError::get_box(false, file_name, format!("level: {}", s).as_str()))
+			},
+			Err(_) => Err(SpellFileError::get_box(false, file_name, format!("level: {}", s).as_str()))
 		}
 	}
 }
@@ -135,16 +135,18 @@ pub enum MagicSchool
 // Allows magic schools to be written to and read from spell files
 impl SpellFileString for MagicSchool
 {
-	type SpellFileStringError = &'static str;
-
 	fn to_spell_file_string(&self) -> String
 	{
 		self.to_string().to_lowercase()
 	}
 
-	fn from_spell_file_string(s: &str) -> Result<Self, Self::SpellFileStringError>
+	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>
 	{
-		s.try_into()
+		match MagicSchool::try_from(s)
+		{
+			Ok(school) => Ok(school),
+			Err(_) => Err(SpellFileError::get_box(false, file_name, format!("school: {}", s).as_str()))
+		}
 	}
 }
 
@@ -214,8 +216,6 @@ pub enum CastingTime
 // Allows casting times to be written to and read from spell files
 impl SpellFileString for CastingTime
 {
-	type SpellFileStringError = &'static str;
-
 	fn to_spell_file_string(&self) -> String
 	{
 		match self
@@ -234,12 +234,14 @@ impl SpellFileString for CastingTime
 		}
 	}
 
-	fn from_spell_file_string(s: &str) -> Result<Self, Self::SpellFileStringError>
+	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>
 	{
 		// Gets a vec of all the tokens in the string
 		let tokens: Vec<_> = s.split_whitespace().collect();
+		// Error object to be returned for when the string can't be parsed
+		let error = SpellFileError::get_box(false, file_name, format!("casting_time: {}", s).as_str());
 		// If there aren't any tokens in the string, return an error
-		if tokens.len() < 1 { return Err("Invalid CastingTime string."); }
+		if tokens.len() < 1 { return Err(error); }
 		// Determine what type of casting time it is based on the first token
 		match tokens[0].to_lowercase().as_str()
 		{
@@ -252,11 +254,11 @@ impl SpellFileString for CastingTime
 					match tokens[1].parse::<u16>()
 					{
 						Ok(n) => return Ok(Self::Seconds(n)),
-						Err(_) => return Err("Invalid CastingTime string.")
+						Err(_) => return Err(error)
 					}
 				}
 				// If there's no second token, return an error
-				else { return Err("Invalid CastingTime string."); }
+				else { return Err(error); }
 			},
 			"actions" =>
 			{
@@ -267,11 +269,11 @@ impl SpellFileString for CastingTime
 					match tokens[1].parse::<u16>()
 					{
 						Ok(n) => return Ok(Self::Actions(n)),
-						Err(_) => return Err("Invalid CastingTime string.")
+						Err(_) => return Err(error)
 					}
 				}
 				// If there's no second token, return an error
-				else { return Err("Invalid CastingTime string."); }
+				else { return Err(error); }
 			},
 			"bonusaction" =>
 			{
@@ -290,11 +292,11 @@ impl SpellFileString for CastingTime
 					match tokens[1].parse::<u16>()
 					{
 						Ok(n) => return Ok(Self::Minutes(n)),
-						Err(_) => return Err("Invalid CastingTime string.")
+						Err(_) => return Err(error)
 					}
 				}
 				// If there's no second token, return an error
-				else { return Err("Invalid CastingTime string."); }
+				else { return Err(error); }
 			},
 			"hours" =>
 			{
@@ -305,11 +307,11 @@ impl SpellFileString for CastingTime
 					match tokens[1].parse::<u16>()
 					{
 						Ok(n) => return Ok(Self::Hours(n)),
-						Err(_) => return Err("Invalid CastingTime string.")
+						Err(_) => return Err(error)
 					}
 				}
 				// Try to parse that second token into a u16 and use it as the value of this object
-				else { return Err("Invalid CastingTime string."); }
+				else { return Err(error); }
 			},
 			"days" =>
 			{
@@ -320,11 +322,11 @@ impl SpellFileString for CastingTime
 					match tokens[1].parse::<u16>()
 					{
 						Ok(n) => return Ok(Self::Days(n)),
-						Err(_) => return Err("Invalid CastingTime string.")
+						Err(_) => return Err(error)
 					}
 				}
 				// Try to parse that second token into a u16 and use it as the value of this object
-				else { return Err("Invalid CastingTime string."); }
+				else { return Err(error); }
 			},
 			"weeks" =>
 			{
@@ -335,11 +337,11 @@ impl SpellFileString for CastingTime
 					match tokens[1].parse::<u16>()
 					{
 						Ok(n) => return Ok(Self::Weeks(n)),
-						Err(_) => return Err("Invalid CastingTime string.")
+						Err(_) => return Err(error)
 					}
 				}
 				// Try to parse that second token into a u16 and use it as the value of this object
-				else { return Err("Invalid CastingTime string."); }
+				else { return Err(error); }
 			},
 			"months" =>
 			{
@@ -350,11 +352,11 @@ impl SpellFileString for CastingTime
 					match tokens[1].parse::<u16>()
 					{
 						Ok(n) => return Ok(Self::Months(n)),
-						Err(_) => return Err("Invalid CastingTime string.")
+						Err(_) => return Err(error)
 					}
 				}
 				// Try to parse that second token into a u16 and use it as the value of this object
-				else { return Err("Invalid CastingTime string."); }
+				else { return Err(error); }
 			},
 			"years" =>
 			{
@@ -365,18 +367,18 @@ impl SpellFileString for CastingTime
 					match tokens[1].parse::<u16>()
 					{
 						Ok(n) => return Ok(Self::Years(n)),
-						Err(_) => return Err("Invalid CastingTime string.")
+						Err(_) => return Err(error)
 					}
 				}
 				// Try to parse that second token into a u16 and use it as the value of this object
-				else { return Err("Invalid CastingTime string."); }
+				else { return Err(error); }
 			},
 			"special" =>
 			{
 				return Ok(Self::Special);
 			},
 			// If the first token wasn't recognized as a CastingTime type, return an error
-			_ => { return Err("Invalid CastingTime string."); }
+			_ => { return Err(error); }
 		}
 	}
 }
@@ -388,7 +390,11 @@ impl TryFrom<&str> for CastingTime
 
 	fn try_from(value: &str) -> Result<Self, Self::Error>
 	{
-		CastingTime::from_spell_file_string(value)
+		match Self::from_spell_file_string(value, "NOT A FILE")
+		{
+			Ok(time) => Ok(time),
+			Err(_) => Err("Invalid CastingTime String.")
+		}
 	}
 }
 
@@ -437,8 +443,6 @@ pub enum AOE
 // Allows AOEs to be written to and read from spell files
 impl SpellFileString for AOE
 {
-	type SpellFileStringError = &'static str;
-
 	fn to_spell_file_string(&self) -> String
 	{
 		match self
@@ -452,12 +456,14 @@ impl SpellFileString for AOE
 		}
 	}
 
-	fn from_spell_file_string(s: &str) -> Result<Self, Self::SpellFileStringError>
+	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>
 	{
 		// Get a vec of all the tokens in the string
 		let tokens: Vec<_> = s.split_whitespace().collect();
+		// Error object to be returned for when the string can't be parsed
+		let error = SpellFileError::get_box(false, file_name, format!("aoe: {}", s).as_str());
 		// If there aren't at least 2 tokens in the string, return an error
-		if tokens.len() < 2 { return Err("Invalid AOE string"); }
+		if tokens.len() < 2 { return Err(error); }
 		// Determine what type of AOE this is based on the first token
 		match tokens[0].to_lowercase().as_str()
 		{
@@ -467,7 +473,7 @@ impl SpellFileString for AOE
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
-					Err(_) => return Err("Invalid AOE string.")
+					Err(_) => return Err(error)
 				};
 				Ok(Self::Line(num))
 			},
@@ -477,7 +483,7 @@ impl SpellFileString for AOE
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
-					Err(_) => return Err("Invalid AOE string.")
+					Err(_) => return Err(error)
 				};
 				Ok(Self::Cone(num))
 			},
@@ -487,7 +493,7 @@ impl SpellFileString for AOE
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
-					Err(_) => return Err("Invalid AOE string.")
+					Err(_) => return Err(error)
 				};
 				Ok(Self::Cube(num))
 			},
@@ -497,24 +503,24 @@ impl SpellFileString for AOE
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
-					Err(_) => return Err("Invalid AOE string.")
+					Err(_) => return Err(error)
 				};
 				Ok(Self::Sphere(num))
 			},
 			"cylinder" =>
 			{
 				// If there aren't at least 3 tokens for this aoe type, return an error
-				if tokens.len() < 3 { return Err("Invalid AOE string."); }
+				if tokens.len() < 3 { return Err(error); }
 				// Try to parse the second and third tokens and use them to construct the aoe
 				let num1 = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
-					Err(_) => return Err("Invalid AOE string.")
+					Err(_) => return Err(error)
 				};
 				let num2 = match tokens[2].parse::<u16>()
 				{
 					Ok(n) => n,
-					Err(_) => return Err("Invalid AOE string.")
+					Err(_) => return Err(error)
 				};
 				Ok(Self::Cylinder(num1, num2))
 			},
@@ -524,12 +530,12 @@ impl SpellFileString for AOE
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
-					Err(_) => return Err("Invalid AOE string.")
+					Err(_) => return Err(error)
 				};
 				Ok(Self::Radius(num))
 			},
 			// If the first token wasn't recognized as an AOE type, return an error
-			_ => Err("Invalid AOE string.")
+			_ => Err(error)
 		}
 	}
 }
@@ -541,7 +547,11 @@ impl TryFrom<&str> for AOE
 
 	fn try_from(value: &str) -> Result<Self, Self::Error>
 	{
-		Self::from_spell_file_string(value)
+		match Self::from_spell_file_string(value, "NOT A FILE")
+		{
+			Ok(aoe) => Ok(aoe),
+			Err(_) => Err("Invalid AOE String.")
+		}
 	}
 }
 
@@ -577,8 +587,6 @@ pub enum Range
 // Allows ranges to be written to and read from spell files
 impl SpellFileString for Range
 {
-	type SpellFileStringError = &'static str;
-
 	fn to_spell_file_string(&self) -> String
 	{
 		match self
@@ -599,12 +607,14 @@ impl SpellFileString for Range
 		}
 	}
 
-	fn from_spell_file_string(s: &str) -> Result<Self, Self::SpellFileStringError>
+	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>
 	{
 		// Get a vec of all the tokens in the string
 		let tokens: Vec<_> = s.split_whitespace().collect();
+		// Error object to be returned for when the string can't be parsed
+		let error = SpellFileError::get_box(false, file_name, format!("range: {}", s).as_str());
 		// If there aren't any tokens in the string, return an error
-		if tokens.len() < 1 { return Err("Invalid Range string."); }
+		if tokens.len() < 1 { return Err(error); }
 		// Determine what kind of Range to create based on the first token
 		match tokens[0].to_lowercase().as_str()
 		{
@@ -616,7 +626,7 @@ impl SpellFileString for Range
 				match tokens[1..].join(" ").as_str().try_into()
 				{
 					Ok(aoe) => Ok(Self::Yourself(Some(aoe))),
-					Err(_) => Err("Invalid Range string.")
+					Err(_) => Err(error)
 				}
 			},
 			"touch" =>
@@ -626,23 +636,23 @@ impl SpellFileString for Range
 			"feet" =>
 			{
 				// If there isn't at least a second token, return an error
-				if tokens.len() < 2 { return Err("Invalid Range string."); }
+				if tokens.len() < 2 { return Err(error); }
 				// Try to parse the second token and use that to construct this Range object
 				match tokens[1].parse::<u16>()
 				{
 					Ok(n) => Ok(Self::Feet(n)),
-					Err(_) => Err("Invalid Range string.")
+					Err(_) => Err(error)
 				}
 			},
 			"miles" =>
 			{
 				// If there isn't at least a second token, return an error
-				if tokens.len() < 2 { return Err("Invalid Range string."); }
+				if tokens.len() < 2 { return Err(error); }
 				// Try to parse the second token and use that to construct this Range object
 				match tokens[1].parse::<u16>()
 				{
 					Ok(n) => Ok(Self::Miles(n)),
-					Err(_) => Err("Invalid Range string.")
+					Err(_) => Err(error)
 				}
 			},
 			"special" =>
@@ -650,7 +660,7 @@ impl SpellFileString for Range
 				Ok(Self::Special)
 			},
 			// If the first token wasn't recognized as a type of Range, return an error
-			_ => Err("Invalid Range string.")
+			_ => Err(error)
 		}
 	}
 }
@@ -662,7 +672,11 @@ impl TryFrom<&str> for Range
 
 	fn try_from(value: &str) -> Result<Self, Self::Error>
 	{
-		Self::from_spell_file_string(value)
+		match Self::from_spell_file_string(value, "NOT A FILE")
+		{
+			Ok(range) => Ok(range),
+			Err(_) => Err("Invalid Range String.")
+		}
 	}
 }
 
@@ -714,8 +728,6 @@ pub enum Duration
 // Allows durations to be written to and read from spell files
 impl SpellFileString for Duration
 {
-	type SpellFileStringError = &'static str;
-
 	fn to_spell_file_string(&self) -> String
 	{
 		match self
@@ -791,12 +803,14 @@ impl SpellFileString for Duration
 		}
 	}
 
-	fn from_spell_file_string(s: &str) -> Result<Self, Self::SpellFileStringError>
+	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>
 	{
 		// Gets a vec of all the tokens in the string
 		let tokens: Vec<_> = s.split_whitespace().collect();
+		// Error object to be returned for when the string can't be parsed
+		let error = SpellFileError::get_box(false, file_name, format!("duration: {}", s).as_str());
 		// If there aren't any tokens in this string, return an error
-		if tokens.len() < 1 { return Err("Invalid Duration string."); }
+		if tokens.len() < 1 { return Err(error); }
 		// Determine what type of Duration this is based on the first token
 		match tokens[0].to_lowercase().as_str()
 		{
@@ -807,12 +821,12 @@ impl SpellFileString for Duration
 			"seconds" =>
 			{
 				// If there isn't a second token, return an error
-				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				if tokens.len() < 2 { return Err(error); }
 				// Try to parse the second token into a u16
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
-					Err(_) => return Err("Invalid Duration string.")
+					Err(_) => return Err(error)
 				};
 				// If there's a third token
 				if tokens.len() > 2
@@ -824,7 +838,7 @@ impl SpellFileString for Duration
 						Ok(Self::Seconds(num, true))
 					}
 					// If the third token is anything else, return an error
-					else { Err("Invalid Duration string.") }
+					else { Err(error) }
 				}
 				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Seconds(num, false)) }
@@ -832,12 +846,12 @@ impl SpellFileString for Duration
 			"rounds" =>
 			{
 				// If there isn't a second token, return an error
-				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				if tokens.len() < 2 { return Err(error); }
 				// Try to parse the second token into a u16
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
-					Err(_) => return Err("Invalid Duration string.")
+					Err(_) => return Err(error)
 				};
 				// If there's a third token
 				if tokens.len() > 2
@@ -849,7 +863,7 @@ impl SpellFileString for Duration
 						Ok(Self::Rounds(num, true))
 					}
 					// If the third token is anything else, return an error
-					else { Err("Invalid Duration string.") }
+					else { Err(error) }
 				}
 				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Rounds(num, false)) }
@@ -857,12 +871,12 @@ impl SpellFileString for Duration
 			"minutes" =>
 			{
 				// If there isn't a second token, return an error
-				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				if tokens.len() < 2 { return Err(error); }
 				// Try to parse the second token into a u16
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
-					Err(_) => return Err("Invalid Duration string.")
+					Err(_) => return Err(error)
 				};
 				// If there's a third token
 				if tokens.len() > 2
@@ -874,7 +888,7 @@ impl SpellFileString for Duration
 						Ok(Self::Minutes(num, true))
 					}
 					// If the third token is anything else, return an error
-					else { Err("Invalid Duration string.") }
+					else { Err(error) }
 				}
 				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Minutes(num, false)) }
@@ -882,12 +896,12 @@ impl SpellFileString for Duration
 			"hours" =>
 			{
 				// If there isn't a second token, return an error
-				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				if tokens.len() < 2 { return Err(error); }
 				// Try to parse the second token into a u16
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
-					Err(_) => return Err("Invalid Duration string.")
+					Err(_) => return Err(error)
 				};
 				// If there's a third token
 				if tokens.len() > 2
@@ -899,7 +913,7 @@ impl SpellFileString for Duration
 						Ok(Self::Hours(num, true))
 					}
 					// If the third token is anything else, return an error
-					else { Err("Invalid Duration string.") }
+					else { Err(error) }
 				}
 				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Hours(num, false)) }
@@ -907,12 +921,12 @@ impl SpellFileString for Duration
 			"days" =>
 			{
 				// If there isn't a second token, return an error
-				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				if tokens.len() < 2 { return Err(error); }
 				// Try to parse the second token into a u16
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
-					Err(_) => return Err("Invalid Duration string.")
+					Err(_) => return Err(error)
 				};
 				// If there's a third token
 				if tokens.len() > 2
@@ -924,7 +938,7 @@ impl SpellFileString for Duration
 						Ok(Self::Days(num, true))
 					}
 					// If the third token is anything else, return an error
-					else { Err("Invalid Duration string.") }
+					else { Err(error) }
 				}
 				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Days(num, false)) }
@@ -932,12 +946,12 @@ impl SpellFileString for Duration
 			"weeks" =>
 			{
 				// If there isn't a second token, return an error
-				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				if tokens.len() < 2 { return Err(error); }
 				// Try to parse the second token into a u16
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
-					Err(_) => return Err("Invalid Duration string.")
+					Err(_) => return Err(error)
 				};
 				// If there's a third token
 				if tokens.len() > 2
@@ -949,7 +963,7 @@ impl SpellFileString for Duration
 						Ok(Self::Weeks(num, true))
 					}
 					// If the third token is anything else, return an error
-					else { Err("Invalid Duration string.") }
+					else { Err(error) }
 				}
 				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Weeks(num, false)) }
@@ -957,12 +971,12 @@ impl SpellFileString for Duration
 			"months" =>
 			{
 				// If there isn't a second token, return an error
-				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				if tokens.len() < 2 { return Err(error); }
 				// Try to parse the second token into a u16
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
-					Err(_) => return Err("Invalid Duration string.")
+					Err(_) => return Err(error)
 				};
 				// If there's a third token
 				if tokens.len() > 2
@@ -974,7 +988,7 @@ impl SpellFileString for Duration
 						Ok(Self::Months(num, true))
 					}
 					// If the third token is anything else, return an error
-					else { Err("Invalid Duration string.") }
+					else { Err(error) }
 				}
 				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Months(num, false)) }
@@ -982,12 +996,12 @@ impl SpellFileString for Duration
 			"years" =>
 			{
 				// If there isn't a second token, return an error
-				if tokens.len() < 2 { return Err("Invalid Duration string."); }
+				if tokens.len() < 2 { return Err(error); }
 				// Try to parse the second token into a u16
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
-					Err(_) => return Err("Invalid Duration string.")
+					Err(_) => return Err(error)
 				};
 				// If there's a third token
 				if tokens.len() > 2
@@ -999,7 +1013,7 @@ impl SpellFileString for Duration
 						Ok(Self::Years(num, true))
 					}
 					// If the third token is anything else, return an error
-					else { Err("Invalid Duration string.") }
+					else { Err(error) }
 				}
 				// If there is no third token, construct the Duration with the u16
 				else { Ok(Self::Years(num, false)) }
@@ -1019,7 +1033,7 @@ impl SpellFileString for Duration
 					else
 					{
 						// Return an error
-						Err("Invalid Duration string.")
+						Err(error)
 					}
 				}
 				// If there is not second token, construct the Duration with the concentration bool set to false
@@ -1040,7 +1054,7 @@ impl SpellFileString for Duration
 					else
 					{
 						// Return an error
-						Err("Invalid Duration string.")
+						Err(error)
 					}
 				}
 				// If there is not second token, construct the Duration with the concentration bool set to false
@@ -1065,14 +1079,14 @@ impl SpellFileString for Duration
 					else
 					{
 						// Return an error
-						Err("Invalid Duration string.")
+						Err(error)
 					}
 				}
 				// If there is not second token, construct the Duration with the concentration bool set to false
 				else { Ok(Self::Special(false)) }
 			},
 			// If the first token isn't recognized as a type of Duration, return an error
-			_ => Err("Invalid Duration string.")
+			_ => Err(error)
 		}
 	}
 }
@@ -1084,7 +1098,11 @@ impl TryFrom<&str> for Duration
 
 	fn try_from(value: &str) -> Result<Self, Self::Error>
 	{
-		Self::from_spell_file_string(value)
+		match Self::from_spell_file_string(value, "NOT A FILE")
+		{
+			Ok(duration) => Ok(duration),
+			Err(_) => Err("Invalid Duration String.")
+		}
 	}
 }
 
@@ -1273,12 +1291,12 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a level object
-						let result = Level::from_spell_file_string(tokens[1..].join(" ").as_str());
+						let result = Level::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name);
 						// Assign the level value if parsing succeeded, return error if not
 						level = match result
 						{
 							Ok(l) => Some(l),
-							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
+							Err(e) => return Err(e)
 						};
 					}
 				},
@@ -1289,12 +1307,12 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a MagicSchool object
-						let result = MagicSchool::from_spell_file_string(tokens[1..].join(" ").as_str());
+						let result = MagicSchool::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name);
 						// Assign the school value if parsing succeeded, return error if not
 						school = match result
 						{
 							Ok(s) => Some(s),
-							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
+							Err(e) => return Err(e)
 						};
 					}
 				},
@@ -1321,12 +1339,12 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a CastingTime object
-						let result = CastingTime::from_spell_file_string(tokens[1..].join(" ").as_str());
+						let result = CastingTime::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name);
 						// Assign the casting_time value if parsing succeeded, return error if not
 						casting_time = match result
 						{
 							Ok(t) => Some(t),
-							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
+							Err(e) => return Err(e)
 						}
 					}
 				},
@@ -1337,12 +1355,12 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a Range object
-						let result = Range::from_spell_file_string(tokens[1..].join(" ").as_str());
+						let result = Range::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name);
 						// Assign the range value if parsing succeeded, return error if not
 						range = match result
 						{
 							Ok(r) => Some(r),
-							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
+							Err(e) => return Err(e)
 						}
 					}
 				},
@@ -1400,12 +1418,12 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a Duration object
-						let result = Duration::from_spell_file_string(tokens[1..].join(" ").as_str());
+						let result = Duration::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name);
 						// Assign the duration value if parsing succeeded, return error if not
 						duration = match result
 						{
 							Ok(d) => Some(d),
-							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
+							Err(e) => return Err(e)
 						}
 					}
 				},
