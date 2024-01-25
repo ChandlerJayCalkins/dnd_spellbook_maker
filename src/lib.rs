@@ -82,7 +82,8 @@ font_scale: &Scale) -> Vec<(usize, f32)>
 }
 
 // Writes a table to the pdf doc
-fn write_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, page_number_data: &Option<PageNumberData>,
+fn write_table(doc: &PdfDocumentReference, layer: &PdfLayerReference,
+page_number_data: &Option<(&PageNumberData, &mut bool, &FontType, &IndirectFontRef, &Font, &Scale)>,
 layer_count: &mut i32, background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars,
 title_lines: &Vec<String>, table: &Vec<Vec<Vec<String>>>, text_color: &Color, font_size: f32, page_width: f32,
 page_height: f32, table_x_start: f32, table_x_end: f32, column_starts: &Vec<f32>, column_widths: &Vec<f32>,
@@ -125,8 +126,8 @@ newline_amount: f32) -> PdfLayerReference
 			*x = (table_width / 2.0) - (line_width / 2.0) + table_x_start;
 			// Apply the line to the page
 			apply_textbox_line(doc, &mut layers, &mut layers_index, page_number_data, layer_count, background_img_data,
-				&line, text_color, table_options.title_font_size(), page_width, page_height, y_high, y_low, x, y,
-				current_font, newline_adjuster);
+				font_scalars, &line, text_color, table_options.title_font_size(), page_width, page_height, y_high, y_low,
+				x, y, current_font, newline_adjuster);
 			// Set the newline adjuster to be the newline amount so it isn't 0 after the first line
 			newline_adjuster = newline_amount;
 		}
@@ -179,7 +180,7 @@ newline_amount: f32) -> PdfLayerReference
 			{
 				// Apply empty text to go to a new line and create a new page if needed
 				apply_textbox_line(doc, &mut layers, &mut cell_layers_index, page_number_data, layer_count,
-					background_img_data, "", text_color, font_size, page_width, page_height,
+					background_img_data, font_scalars, "", text_color, font_size, page_width, page_height,
 					y_high + off_row_color_line_y_adjustment, y_low + off_row_color_line_y_adjustment, x, y, current_font,
 					newline_adjuster);
 				// If this is an off row
@@ -306,8 +307,8 @@ newline_amount: f32) -> PdfLayerReference
 				last_x = *x + line_width;
 				// Write the line of text
 				apply_textbox_line(doc, &mut layers, &mut cell_layers_index, page_number_data, layer_count,
-					background_img_data, &line, text_color, font_size, page_width, page_height, y_high, y_low, x, y,
-					current_font, newline_adjuster);
+					background_img_data, font_scalars, &line, text_color, font_size, page_width, page_height, y_high,
+					y_low, x, y, current_font, newline_adjuster);
 				// Start going down a line when creating a new line after the first line gets applied
 				newline_adjuster = newline_amount;
 			}
@@ -345,10 +346,11 @@ newline_amount: f32) -> PdfLayerReference
 }
 
 // Creates a table from a string of tokens with table tags and writes it to the pdf doc
-fn create_table(doc: &PdfDocumentReference, layer: &PdfLayerReference, page_number_data: &Option<PageNumberData>,
+fn create_table(doc: &PdfDocumentReference, layer: &PdfLayerReference,
+page_number_data: &Option<(&PageNumberData, &mut bool, &FontType, &IndirectFontRef, &Font, &Scale)>,
 layer_count: &mut i32, background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars,
-table_tokens: &Vec<&str>, text_color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32,
-x_right: f32, y_high: f32, y_low: f32, x: &mut f32, y: &mut f32, body_font_type: &FontType, header_font_type: &FontType,
+table_tokens: &Vec<&str>, text_color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32, x_right: f32,
+y_high: f32, y_low: f32, x: &mut f32, y: &mut f32, body_font_type: &FontType, header_font_type: &FontType,
 body_font: &IndirectFontRef, header_font: &IndirectFontRef, body_font_size_data: &Font, header_font_size_data: &Font,
 font_scale: &Scale, table_options: &TableOptions, title_font_scale: &Scale, newline_amount: f32) -> PdfLayerReference
 {
@@ -629,7 +631,8 @@ font_scale: &Scale, table_options: &TableOptions, title_font_scale: &Scale, newl
 	if *y - table_height < y_low && table_height <= y_high - y_low
 	{
 		// Create a new page
-		(_, layer_ref) = make_new_page(doc, page_number_data, layer_count, page_width, page_height, background_img_data);
+		(_, layer_ref) = make_new_page(doc, page_number_data, layer_count, page_width, page_height, background_img_data,
+			font_scalars);
 		// Set the x and y text positions to the top-left of the page
 		*x = x_left;
 		*y = y_high;
@@ -642,8 +645,10 @@ font_scale: &Scale, table_options: &TableOptions, title_font_scale: &Scale, newl
 }
 
 // Creates a new page and returns the layer for it
-fn make_new_page(doc: &PdfDocumentReference, page_number_data: &Option<PageNumberData>, layer_count: &mut i32, width: f32,
-height: f32, background_img_data: &Option<(image::DynamicImage, ImageTransform)>) -> (PdfPageIndex, PdfLayerReference)
+fn make_new_page(doc: &PdfDocumentReference,
+page_number_data: &Option<(&PageNumberData, &mut bool, &FontType, &IndirectFontRef, &Font, &Scale)>,
+layer_count: &mut i32, width: f32, height: f32, background_img_data: &Option<(image::DynamicImage, ImageTransform)>,
+font_scalars: &FontScalars) -> (PdfPageIndex, PdfLayerReference)
 {
 	// Create a new page
 	let (page, layer) = doc.add_page(Mm(width), Mm(height), format!("Layer {}", layer_count));
@@ -663,10 +668,11 @@ height: f32, background_img_data: &Option<(image::DynamicImage, ImageTransform)>
 
 // Writes a line of text into a textbox
 fn apply_textbox_line(doc: &PdfDocumentReference, layers: &mut Vec<PdfLayerReference>,
-layers_index: &mut usize, page_number_data: &Option<PageNumberData>, layer_count: &mut i32,
-background_img_data: &Option<(image::DynamicImage, ImageTransform)>, text: &str, color: &Color, font_size: f32,
-page_width: f32, page_height: f32, y_high: f32, y_low: f32, x: &mut f32, y: &mut f32, font: &IndirectFontRef,
-newline_amount: f32)
+layers_index: &mut usize,
+page_number_data: &Option<(&PageNumberData, &mut bool, &FontType, &IndirectFontRef, &Font, &Scale)>,
+layer_count: &mut i32, background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars,
+text: &str, color: &Color, font_size: f32, page_width: f32, page_height: f32, y_high: f32, y_low: f32, x: &mut f32,
+y: &mut f32, font: &IndirectFontRef, newline_amount: f32)
 {
 	// The layer that will get returned
 	let mut layer = layers[*layers_index].clone();
@@ -689,7 +695,8 @@ newline_amount: f32)
 		else
 		{
 			// Create a new page
-			(_, layer) = make_new_page(doc, page_number_data, layer_count, page_width, page_height, background_img_data);
+			(_, layer) = make_new_page(doc, page_number_data, layer_count, page_width, page_height, background_img_data,
+				font_scalars);
 			// Add the layer for that new page to the layers vec
 			layers.push(layer.clone());
 		}
@@ -713,7 +720,8 @@ newline_amount: f32)
 // Writes top-left-aligned text into a fixed size text box
 // Returns the last layer of the last page that the text appeared on
 // Otherwise it returns the layer of the current page
-fn write_textbox(doc: &PdfDocumentReference, layer: &PdfLayerReference, page_number_data: &Option<PageNumberData>,
+fn write_textbox(doc: &PdfDocumentReference, layer: &PdfLayerReference,
+page_number_data: &Option<(&PageNumberData, &mut bool, &FontType, &IndirectFontRef, &Font, &Scale)>,
 layer_count: &mut i32, background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars,
 text: &str, color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32, x_right: f32, y_high: f32,
 y_low: f32, x: &mut f32, y: &mut f32, font_type: &FontType, font: &IndirectFontRef, font_size_data: &Font,
@@ -734,11 +742,12 @@ font_scale: &Scale, tab_amount: f32, newline_amount: f32) -> PdfLayerReference
 // Does the same thing as write_textbox(), except it returns layers of all pages created while writing this textbox
 // Layer of current page is also returned in vec as first element
 fn write_textbox_get_all_pages(doc: &PdfDocumentReference, layers: &mut Vec<PdfLayerReference>,
-layers_index: &mut usize, page_number_data: &Option<PageNumberData>, layer_count: &mut i32,
-background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars, text: &str,
-color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32, x_right: f32, y_high: f32, y_low: f32,
-x: &mut f32, y: &mut f32, font_type: &FontType, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale,
-tab_amount: f32, newline_amount: f32)
+layers_index: &mut usize,
+page_number_data: &Option<(&PageNumberData, &mut bool, &FontType, &IndirectFontRef, &Font, &Scale)>,
+layer_count: &mut i32, background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars,
+text: &str, color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32, x_right: f32, y_high: f32,
+y_low: f32, x: &mut f32, y: &mut f32, font_type: &FontType, font: &IndirectFontRef, font_size_data: &Font,
+font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 {
 	// If either dimensions of the text box overlap each other, do nothing
 	if x_left >= x_right || y_high <= y_low { return; }
@@ -777,8 +786,9 @@ tab_amount: f32, newline_amount: f32)
 			if new_line_end > x_right
 			{
 				// Write the current line to the page
-				apply_textbox_line(doc, layers, layers_index, page_number_data, layer_count, background_img_data, &line,
-					color, font_size, page_width, page_height, y_high, y_low, x, y, font, newline_adjuster);
+				apply_textbox_line(doc, layers, layers_index, page_number_data, layer_count, background_img_data,
+					font_scalars, &line, color, font_size, page_width, page_height, y_high, y_low, x, y, font,
+					newline_adjuster);
 				// Set the newline adjuster to the newline amount so it's not 0 after the first line
 				newline_adjuster = newline_amount;
 				// Set x position to the left side of the text box to undo tabbing on the first line of new paragraphs
@@ -790,8 +800,8 @@ tab_amount: f32, newline_amount: f32)
 			else { line = new_line; }
 		}
 		// Write all remaining text to the page
-		apply_textbox_line(doc, layers, layers_index, page_number_data, layer_count, background_img_data, &line, color,
-			font_size, page_width, page_height, y_high, y_low, x, y, font, newline_adjuster);
+		apply_textbox_line(doc, layers, layers_index, page_number_data, layer_count, background_img_data, font_scalars,
+			&line, color, font_size, page_width, page_height, y_high, y_low, x, y, font, newline_adjuster);
 		// Sets the tab adjuster to not be 0 anymore after the first paragraph
 		tab_adjuster = tab_amount;
 		// Set the newline adjuster to the newline amount so it's not 0 after the first line
@@ -809,11 +819,11 @@ tab_amount: f32, newline_amount: f32)
 // Returns the last layer of the last page that the text appeared on
 // Otherwise it returns the layer of the current page
 fn write_centered_textbox(doc: &PdfDocumentReference, layer: &PdfLayerReference,
-page_number_data: &Option<PageNumberData>, layer_count: &mut i32,
-background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars, text: &str,
-color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32, x_right: f32, y_high: f32, y_low: f32,
-x: &mut f32, y: &mut f32, font_type: &FontType, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale,
-newline_amount: f32) -> PdfLayerReference
+page_number_data: &Option<(&PageNumberData, &mut bool, &FontType, &IndirectFontRef, &Font, &Scale)>,
+layer_count: &mut i32, background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars,
+text: &str, color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32, x_right: f32, y_high: f32,
+y_low: f32, x: &mut f32, y: &mut f32, font_type: &FontType, font: &IndirectFontRef, font_size_data: &Font,
+font_scale: &Scale, newline_amount: f32) -> PdfLayerReference
 {
 	// Create a vec with just the current layer in it
 	let mut layers = vec![(*layer).clone()];
@@ -831,10 +841,12 @@ newline_amount: f32) -> PdfLayerReference
 // Returns the last layer of the last page that the text appeared on
 // Otherwise it returns the layer of the current page
 fn write_centered_textbox_get_all_pages(doc: &PdfDocumentReference, layers: &mut Vec<PdfLayerReference>,
-layers_index: &mut usize, page_number_data: &Option<PageNumberData>, layer_count: &mut i32,
-background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars, text: &str, color: &Color,
-font_size: f32, page_width: f32, page_height: f32, x_left: f32, x_right: f32, y_high: f32, y_low: f32, x: &mut f32,
-y: &mut f32, font_type: &FontType, font: &IndirectFontRef, font_size_data: &Font, font_scale: &Scale, newline_amount: f32)
+layers_index: &mut usize,
+page_number_data: &Option<(&PageNumberData, &mut bool, &FontType, &IndirectFontRef, &Font, &Scale)>,
+layer_count: &mut i32, background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars,
+text: &str, color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32, x_right: f32, y_high: f32,
+y_low: f32, x: &mut f32, y: &mut f32, font_type: &FontType, font: &IndirectFontRef, font_size_data: &Font,
+font_scale: &Scale, newline_amount: f32)
 {
 	// If either dimensions of the text box overlap each other, do nothing
 	if x_left >= x_right || y_high <= y_low { return; }
@@ -889,8 +901,8 @@ y: &mut f32, font_type: &FontType, font: &IndirectFontRef, font_size_data: &Font
 		// Place the x position in the correct place to have this line be horizontally centered
 		*x = (textbox_width / 2.0) - (width / 2.0) + x_left;
 		// Apply each line of text to the page
-		apply_textbox_line(doc, layers, layers_index, page_number_data, layer_count, background_img_data, &l, color,
-			font_size, page_width, page_height, y_high, y_low, x, y, font, newline_adjuster);
+		apply_textbox_line(doc, layers, layers_index, page_number_data, layer_count, background_img_data, font_scalars,
+			&l, color, font_size, page_width, page_height, y_high, y_low, x, y, font, newline_adjuster);
 		// Set the x position to the end of the line
 		*x += width;
 		// Set the newline adjuster so every line after the first actually gets moved down
@@ -941,14 +953,13 @@ font_type: &FontType, font_size_data: &Font, font_scale: &Scale, tab_amount: f32
 // Writes a spell description to a spellbook, including processing changing fonts and adding tables
 // Returns the layer of the page that the description text last appears on
 fn write_spell_description(doc: &PdfDocumentReference, layer: &PdfLayerReference,
-page_number_data: &Option<PageNumberData>, layer_count: &mut i32,
-background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars, text: &str,
-color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32, x_right: f32, y_high: f32, y_low: f32,
-x: &mut f32, y: &mut f32, regular_font: &IndirectFontRef, bold_font: &IndirectFontRef, italic_font: &IndirectFontRef,
-bold_italic_font: &IndirectFontRef, regular_font_size_data: &Font, bold_font_size_data: &Font,
-italic_font_size_data: &Font, bold_italic_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions,
-table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
--> PdfLayerReference
+page_number_data: &Option<(&PageNumberData, &mut bool, &FontType, &IndirectFontRef, &Font, &Scale)>,
+layer_count: &mut i32, background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars,
+text: &str, color: &Color, font_size: f32, page_width: f32, page_height: f32, x_left: f32, x_right: f32, y_high: f32,
+y_low: f32, x: &mut f32, y: &mut f32, regular_font: &IndirectFontRef, bold_font: &IndirectFontRef,
+italic_font: &IndirectFontRef, bold_italic_font: &IndirectFontRef, regular_font_size_data: &Font,
+bold_font_size_data: &Font, italic_font_size_data: &Font, bold_italic_font_size_data: &Font, font_scale: &Scale,
+table_options: &TableOptions, table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32) -> PdfLayerReference
 {
 	// The layer that gets returned
 	let mut new_layer = (*layer).clone();
@@ -1249,7 +1260,8 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 
 // Writes ones of the fields of a spell (casting time, components, etc.) to a spellbook document
 // Returns the last layer of the last page that the text appeared on
-fn write_spell_field(doc: &PdfDocumentReference, layer: &PdfLayerReference, page_number_data: &Option<PageNumberData>,
+fn write_spell_field(doc: &PdfDocumentReference, layer: &PdfLayerReference,
+page_number_data: &Option<(&PageNumberData, &mut bool, &FontType, &IndirectFontRef, &Font, &Scale)>,
 layer_count: &mut i32, background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars,
 field_name: &str, field_text: &str, field_name_color: &Color, field_text_color: &Color, font_size: f32, page_width: f32,
 page_height: f32, x_left: f32, x_right: f32, y_high: f32, y_low: f32, x: &mut f32, y: &mut f32,
@@ -1534,6 +1546,7 @@ impl PageSizeData
 	}
 }
 
+// Contains parameters for determining page number behavior
 pub struct PageNumberData
 {
 	start_on_left: bool,
@@ -1583,7 +1596,7 @@ impl PageNumberData
 
 // Generates a printpdf pdf document of a spellbook with spells from the spell_list parameter
 pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>, font_paths: &FontPaths,
-page_size_data: &PageSizeData, page_number_data: &Option<PageNumberData>, font_size_data: &FontSizeData,
+page_size_data: &PageSizeData, page_number_options: &Option<PageNumberData>, font_size_data: &FontSizeData,
 text_colors: &TextColors, font_scalars: &FontScalars, table_options: &TableOptions,
 background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentReference, Box<dyn std::error::Error>>
 {
@@ -1703,10 +1716,21 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 	}
 
 	// Counter variable for naming each layer incrementally
-	let mut layer_count = match page_number_data
+	let mut layer_count = match page_number_options
 	{
-		Some(data) => data.starting_num(),
+		Some(options) => options.starting_num(),
 		None => 1
+	};
+
+	let mut left = false;
+	let page_number_data = match page_number_options
+	{
+		Some(options) => 
+		{
+			left = options.start_on_left();
+			Some((options, &mut left, &regular_font_type, &regular_font, &regular_font_size_data, &body_font_scale))
+		},
+		None => None
 	};
 
 	// The positions of each side of the textbox of the page determined by the margins in the page size data
@@ -1720,7 +1744,7 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 	let mut temp_y: f32 = 0.0;
 
     // Add text using the custom font to the page
-	let _ = write_centered_textbox(&doc, &cover_layer_ref, page_number_data, &mut layer_count, &img_data, font_scalars,
+	let _ = write_centered_textbox(&doc, &cover_layer_ref, &page_number_data, &mut layer_count, &img_data, font_scalars,
 		title, &title_color, font_size_data.title_font_size(), page_size_data.width, page_size_data.height, x_left,
 		x_right, y_top, y_low, &mut temp_x, &mut temp_y, &regular_font_type, &regular_font, &regular_font_size_data,
 		&title_font_scale, font_size_data.title_newline_amount());
@@ -1731,8 +1755,8 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 	for spell in spell_list
 	{
 		// Create a new page
-		let (page, mut layer_ref) = make_new_page(&doc, page_number_data, &mut layer_count, page_size_data.width,
-			page_size_data.height, &img_data);
+		let (page, mut layer_ref) = make_new_page(&doc, &page_number_data, &mut layer_count, page_size_data.width,
+			page_size_data.height, &img_data, font_scalars);
 		// Create a new bookmark for this page
 		doc.add_bookmark(spell.name.clone(), page);
 		// Keeps track of the current x and y position to place text at
@@ -1742,7 +1766,7 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 		// Add text to the page
 
 		// Add the name of the spell as a header
-		layer_ref = write_textbox(&doc, &layer_ref, page_number_data, &mut layer_count, &img_data, font_scalars,
+		layer_ref = write_textbox(&doc, &layer_ref, &page_number_data, &mut layer_count, &img_data, font_scalars,
 			&spell.name, &header_color, font_size_data.header_font_size(), page_size_data.width, page_size_data.height,
 			x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font_type, &regular_font, &regular_font_size_data,
 			&header_font_scale, font_size_data.tab_amount(), font_size_data.header_newline_amount());
@@ -1753,7 +1777,7 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 
 		// Add the level and the spell's school of magic
 		let text = get_level_school_text(&spell);
-		layer_ref = write_textbox(&doc, &layer_ref, page_number_data, &mut layer_count, &img_data, font_scalars, &text,
+		layer_ref = write_textbox(&doc, &layer_ref, &page_number_data, &mut layer_count, &img_data, font_scalars, &text,
 			&body_color, font_size_data.body_font_size(), page_size_data.width, page_size_data.height, x_left, x_right,
 			y_top, y_low, &mut x, &mut y, &italic_font_type, &italic_font, &italic_font_size_data, &body_font_scale,
 			font_size_data.tab_amount(), font_size_data.body_newline_amount());
@@ -1761,7 +1785,7 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 		x = x_left;
 
 		// Add the casting time of the spell
-		layer_ref = write_spell_field(&doc, &layer_ref, page_number_data, &mut layer_count, &img_data, font_scalars,
+		layer_ref = write_spell_field(&doc, &layer_ref, &page_number_data, &mut layer_count, &img_data, font_scalars,
 			"Casting Time:", &spell.casting_time.to_string(), &body_color, &body_color, font_size_data.body_font_size(),
 			page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &bold_font_type,
 			&regular_font_type, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
@@ -1771,7 +1795,7 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 
 
 		// Add the range of the spell
-		layer_ref = write_spell_field(&doc, &layer_ref, page_number_data, &mut layer_count, &img_data, font_scalars,
+		layer_ref = write_spell_field(&doc, &layer_ref, &page_number_data, &mut layer_count, &img_data, font_scalars,
 			"Range:", &spell.range.to_string(), &body_color, &body_color, font_size_data.body_font_size(),
 			page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &bold_font_type,
 			&regular_font_type, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
@@ -1780,7 +1804,7 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 		x = x_left;
 
 		// Add the components of the spell
-		layer_ref = write_spell_field(&doc, &layer_ref, page_number_data, &mut layer_count, &img_data, font_scalars,
+		layer_ref = write_spell_field(&doc, &layer_ref, &page_number_data, &mut layer_count, &img_data, font_scalars,
 			"Components:", &spell.get_component_string(), &body_color, &body_color, font_size_data.body_font_size(),
 			page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &bold_font_type,
 			&regular_font_type, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data,
@@ -1789,7 +1813,7 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 		x = x_left;
 
 		// Add the duration of the spell
-		layer_ref = write_spell_field(&doc, &layer_ref, page_number_data, &mut layer_count, &img_data, font_scalars,
+		layer_ref = write_spell_field(&doc, &layer_ref, &page_number_data, &mut layer_count, &img_data, font_scalars,
 			"Duration:", &spell.duration.to_string(), &body_color, &body_color, font_size_data.body_font_size(),
 			page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &bold_font_type,
 			&regular_font_type, &bold_font, &regular_font, &bold_font_size_data, &regular_font_size_data, &body_font_scale,
@@ -1798,12 +1822,12 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 		x = x_left;
 
 		// Add the spell's description
-		layer_ref = write_spell_description(&doc, &layer_ref, page_number_data, &mut layer_count, &img_data, font_scalars,
-			&spell.description, &body_color, font_size_data.body_font_size(), page_size_data.width, page_size_data.height,
-			x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
-			&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
-			&body_font_scale, table_options, &table_title_font_scale, font_size_data.tab_amount(),
-			font_size_data.body_newline_amount());
+		layer_ref = write_spell_description(&doc, &layer_ref, &page_number_data, &mut layer_count, &img_data,
+			font_scalars, &spell.description, &body_color, font_size_data.body_font_size(), page_size_data.width,
+			page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font, &bold_font,
+			&italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
+			&bold_italic_font_size_data, &body_font_scale, table_options, &table_title_font_scale,
+			font_size_data.tab_amount(), font_size_data.body_newline_amount());
 
 		// If the spell has an upcast description
 		if let Some(description) = &spell.upcast_description
@@ -1811,7 +1835,7 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 			y -= font_size_data.body_newline_amount();
 			x = x_left + font_size_data.tab_amount();
 			let text = format!("<bi> At Higher Levels. <r> {}", description);
-			_ = write_spell_description(&doc, &layer_ref, page_number_data, &mut layer_count, &img_data, font_scalars,
+			_ = write_spell_description(&doc, &layer_ref, &page_number_data, &mut layer_count, &img_data, font_scalars,
 				&text, &body_color, font_size_data.body_font_size(), page_size_data.width,page_size_data.height, x_left,
 				x_right, y_top, y_low, &mut x, &mut y, &regular_font, &bold_font, &italic_font, &bold_italic_font,
 				&regular_font_size_data, &bold_font_size_data, &italic_font_size_data, &bold_italic_font_size_data,
