@@ -950,6 +950,7 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 	const TABLE_TAG: &str = "<table>";
 	// Keeps track of whether or not the text is currently inside of a bullet point of text
 	let mut bullet_point = false;
+	// The left side of the textbox that gets used for writing textboxes
 	let mut x_left_adjustable = x_left;
 	// Keeps track of whether or not a table is currently being processed
 	let mut in_table = false;
@@ -960,32 +961,51 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 	{
 		// Split the paragraph up into tokens
 		let mut tokens: Vec<_> = paragraph.split_whitespace().collect();
+		// Whether or not a new x_left_adjustable has been calculated for the current bullet point or not
 		let mut bullet_x_left = false;
+		// Number of newline amounts to go down by when clearing buffer
+		let mut newlines = 1.0;
 		// If there is at least one token
 		if tokens.len() > 0
 		{
 			// If the first token is a bullet
-			if tokens[0] == "•"
+			if tokens[0] == "•" && !bullet_point
 			{
+				newlines = 2.0;
 				// Begin bullet point processing
 				bullet_point = true;
 			}
 			// If the first token is a dash
 			else if tokens[0] == "-"
 			{
+				if !bullet_point
+				{
+					newlines = 2.0;
+					// Begin bullet point processing
+					bullet_point = true;
+				}
 				// Set the first token to a bullet
 				tokens[0] = "•";
-				// Begin bullet point processing
-				bullet_point = true;
 			}
+			else if bullet_point
+			{
+				*y -= newline_amount * 2.0;
+				bullet_point = false;
+			}
+		}
+		else
+		{
+			continue;
 		}
 		if bullet_point
 		{
+			println!("buffer: {}", &buffer);
+			println!("newlines: {}", newlines);
 			// Write any remaining text to the spellbook
 			new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars, &buffer, color,
 				font_size, page_width, page_height, x_left_adjustable, x_right, y_high, y_low, x, y, &current_font_type,
 				current_font, current_font_size_data, font_scale, tab_amount, newline_amount);
-			*y -= newline_amount;
+			*y -= newline_amount * newlines;
 			*x = x_left + tab_amount;
 			buffer = String::new();
 		}
@@ -1010,7 +1030,7 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 								{
 									let width = calc_text_width(font_scalars, "• ", &current_font_type,
 										current_font_size_data, font_scale);
-									x_left_adjustable = x_left + width;
+									x_left_adjustable = x_left + tab_amount + width;
 									bullet_x_left = true;
 								},
 								_ => ()
@@ -1043,7 +1063,7 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 								{
 									let width = calc_text_width(font_scalars, "• ", &current_font_type,
 										current_font_size_data, font_scale);
-									x_left_adjustable = x_left + width;
+									x_left_adjustable = x_left + tab_amount + width;
 									bullet_x_left = true;
 								},
 								_ => ()
@@ -1073,7 +1093,7 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 								{
 									let width = calc_text_width(font_scalars, "• ", &current_font_type,
 										current_font_size_data, font_scale);
-									x_left_adjustable = x_left + width;
+									x_left_adjustable = x_left + tab_amount + width;
 									bullet_x_left = true;
 								},
 								_ => ()
@@ -1103,7 +1123,7 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 								{
 									let width = calc_text_width(font_scalars, "• ", &current_font_type,
 										current_font_size_data, font_scale);
-									x_left_adjustable = x_left + width;
+									x_left_adjustable = x_left + tab_amount + width;
 									bullet_x_left = true;
 								},
 								_ => ()
@@ -1134,7 +1154,7 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 								{
 									let width = calc_text_width(font_scalars, "• ", &current_font_type,
 										current_font_size_data, font_scale);
-									x_left_adjustable = x_left + width;
+									x_left_adjustable = x_left + tab_amount + width;
 									bullet_x_left = true;
 								},
 								_ => ()
@@ -1170,7 +1190,7 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 								{
 									let width = calc_text_width(font_scalars, "• ", &current_font_type,
 										current_font_size_data, font_scale);
-									x_left_adjustable = x_left + width;
+									x_left_adjustable = x_left + tab_amount + width;
 									bullet_x_left = true;
 								},
 								_ => ()
@@ -1217,7 +1237,7 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 				{
 					let width = calc_text_width(font_scalars, "• ", &current_font_type,
 						current_font_size_data, font_scale);
-					x_left_adjustable = x_left + width;
+					x_left_adjustable = x_left + tab_amount + width;
 				},
 				_ => ()
 			}
@@ -1226,10 +1246,8 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 				font_size, page_width, page_height, x_left_adjustable, x_right, y_high, y_low, x, y, &current_font_type,
 				current_font, current_font_size_data, font_scale, tab_amount, newline_amount);
 			
-			*y -= newline_amount;
 			*x = x_left + tab_amount;
 			buffer = String::new();
-			bullet_point = false;
 			x_left_adjustable = x_left;
 		}
 		// Add a newline to the buffer so write_textbox() knows where the end of the paragraph is
