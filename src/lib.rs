@@ -737,7 +737,6 @@ text: &str, color: &Color, font_size: f32, page_width: f32, page_height: f32, x_
 y_low: f32, x: &mut f32, y: &mut f32, font_type: &FontType, font: &IndirectFontRef, font_size_data: &Font,
 font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 {
-	println!("x at the start: {}", *x);
 	// If either dimensions of the text box overlap each other, do nothing
 	if x_left >= x_right || y_high <= y_low { return; }
 	// If the x position starts past the right side of the text box
@@ -940,7 +939,7 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 	// Keeps track of the font that is currently being used
 	let mut current_font = regular_font;
 	let mut current_font_size_data = regular_font_size_data;
-	let mut last_font_type = regular_font_type;
+	let mut current_font_type = regular_font_type;
 	// Tags for switching fonts
 	const REGULAR_FONT_TAG: &str = "<r>";
 	const BOLD_FONT_TAG: &str = "<b>";
@@ -949,6 +948,9 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 	const ITALIC_BOLD_FONT_TAG: &str = "<ib>";
 	// Tag for starting and ending tables
 	const TABLE_TAG: &str = "<table>";
+	// Keeps track of whether or not the text is currently inside of a bullet point of text
+	let mut bullet_point = false;
+	let mut x_left_adjustable = x_left;
 	// Keeps track of whether or not a table is currently being processed
 	let mut in_table = false;
 	// Split the text into paragraphs by newlines
@@ -957,7 +959,36 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 	for paragraph in paragraphs
 	{
 		// Split the paragraph up into tokens
-		let tokens = paragraph.split_whitespace();
+		let mut tokens: Vec<_> = paragraph.split_whitespace().collect();
+		let mut bullet_x_left = false;
+		// If there is at least one token
+		if tokens.len() > 0
+		{
+			// If the first token is a bullet
+			if tokens[0] == "•"
+			{
+				// Begin bullet point processing
+				bullet_point = true;
+			}
+			// If the first token is a dash
+			else if tokens[0] == "-"
+			{
+				// Set the first token to a bullet
+				tokens[0] = "•";
+				// Begin bullet point processing
+				bullet_point = true;
+			}
+		}
+		if bullet_point
+		{
+			// Write any remaining text to the spellbook
+			new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars, &buffer, color,
+				font_size, page_width, page_height, x_left_adjustable, x_right, y_high, y_low, x, y, &current_font_type,
+				current_font, current_font_size_data, font_scale, tab_amount, newline_amount);
+			*y -= newline_amount;
+			*x = x_left + tab_amount;
+			buffer = String::new();
+		}
 		// Loop through each token
 		for token in tokens
 		{
@@ -971,18 +1002,32 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 					// If the current font is not already set to this font
 					if current_font != regular_font && !in_table
 					{
+						if bullet_point
+						{
+							match bullet_x_left
+							{
+								false =>
+								{
+									let width = calc_text_width(font_scalars, "• ", &current_font_type,
+										current_font_size_data, font_scale);
+									x_left_adjustable = x_left + width;
+									bullet_x_left = true;
+								},
+								_ => ()
+							}
+						}
 						// Write the buffer of text to the spellbook with the last font
 						new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars,
-							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
-							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount,
+							&buffer, color, font_size, page_width, page_height, x_left_adjustable, x_right, y_high,
+							y_low, x, y, &current_font_type, current_font, current_font_size_data, font_scale, tab_amount,
 							newline_amount);
 						// Do some other things to prepare for writing more text
-						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type,
+						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left_adjustable, &current_font_type,
 							current_font_size_data, font_scale, tab_amount, newline_amount);
 						// Change the font that is currently being used
 						current_font = regular_font;
 						current_font_size_data = regular_font_size_data;
-						last_font_type = regular_font_type;
+						current_font_type = regular_font_type;
 					}
 				},
 				// Bold font
@@ -990,15 +1035,29 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 				{
 					if current_font != bold_font && !in_table
 					{
+						if bullet_point
+						{
+							match bullet_x_left
+							{
+								false =>
+								{
+									let width = calc_text_width(font_scalars, "• ", &current_font_type,
+										current_font_size_data, font_scale);
+									x_left_adjustable = x_left + width;
+									bullet_x_left = true;
+								},
+								_ => ()
+							}
+						}
 						new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars,
-							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
-							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount,
+							&buffer, color, font_size, page_width, page_height, x_left_adjustable, x_right, y_high,
+							y_low, x, y, &current_font_type, current_font, current_font_size_data, font_scale, tab_amount,
 							newline_amount);
-						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type,
+						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left_adjustable, &current_font_type,
 							current_font_size_data, font_scale, tab_amount, newline_amount);
 						current_font = bold_font;
 						current_font_size_data = bold_font_size_data;
-						last_font_type = bold_font_type;
+						current_font_type = bold_font_type;
 					}
 				},
 				// Italic font
@@ -1006,15 +1065,29 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 				{
 					if current_font != italic_font && !in_table
 					{
+						if bullet_point
+						{
+							match bullet_x_left
+							{
+								false =>
+								{
+									let width = calc_text_width(font_scalars, "• ", &current_font_type,
+										current_font_size_data, font_scale);
+									x_left_adjustable = x_left + width;
+									bullet_x_left = true;
+								},
+								_ => ()
+							}
+						}
 						new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars,
-							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
-							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount,
+							&buffer, color, font_size, page_width, page_height, x_left_adjustable, x_right, y_high,
+							y_low, x, y, &current_font_type, current_font, current_font_size_data, font_scale, tab_amount,
 							newline_amount);
-						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type,
+						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left_adjustable, &current_font_type,
 							current_font_size_data, font_scale, tab_amount, newline_amount);
 						current_font = italic_font;
 						current_font_size_data = italic_font_size_data;
-						last_font_type = italic_font_type;
+						current_font_type = italic_font_type;
 					}
 				},
 				// Bold-Italic font
@@ -1022,15 +1095,29 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 				{
 					if current_font != bold_italic_font && !in_table
 					{
+						if bullet_point
+						{
+							match bullet_x_left
+							{
+								false =>
+								{
+									let width = calc_text_width(font_scalars, "• ", &current_font_type,
+										current_font_size_data, font_scale);
+									x_left_adjustable = x_left + width;
+									bullet_x_left = true;
+								},
+								_ => ()
+							}
+						}
 						new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars,
-							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
-							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount,
+							&buffer, color, font_size, page_width, page_height, x_left_adjustable, x_right, y_high,
+							y_low, x, y, &current_font_type, current_font, current_font_size_data, font_scale, tab_amount,
 							newline_amount);
-						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left, &last_font_type,
+						font_change_wrapup(font_scalars, &mut buffer, x, y, x_left_adjustable, &current_font_type,
 							current_font_size_data, font_scale, tab_amount, newline_amount);
 						current_font = bold_italic_font;
 						current_font_size_data = bold_italic_font_size_data;
-						last_font_type = bold_italic_font_type;
+						current_font_type = bold_italic_font_type;
 					}
 				},
 				// If the token is a table tag
@@ -1039,14 +1126,28 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 					// If a table is currently being processed
 					if in_table
 					{
+						if bullet_point
+						{
+							match bullet_x_left
+							{
+								false =>
+								{
+									let width = calc_text_width(font_scalars, "• ", &current_font_type,
+										current_font_size_data, font_scale);
+									x_left_adjustable = x_left + width;
+									bullet_x_left = true;
+								},
+								_ => ()
+							}
+						}
 						// End table processing
 						in_table = false;
 						// Move y position down away from text to the table
 						*y -= table_options.outer_vertical_margin();
 						// Create the table and write it to the document
 						new_layer = create_table(doc, &new_layer, layer_count, background_img_data, font_scalars,
-							&table_tokens, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x,
-							y, &regular_font_type, &bold_font_type, regular_font, bold_font, regular_font_size_data,
+							&table_tokens, color, font_size, page_width, page_height, x_left_adjustable, x_right, y_high,
+							y_low, x, y, &regular_font_type, &bold_font_type, regular_font, bold_font, regular_font_size_data,
 							bold_font_size_data, font_scale, table_options, table_title_font_scale, newline_amount);
 						// Move the y position down away from the table
 						*y -= table_options.outer_vertical_margin();
@@ -1057,16 +1158,30 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 						// Reset the font to regular font
 						current_font = regular_font;
 						current_font_size_data = regular_font_size_data;
-						last_font_type = regular_font_type;
+						current_font_type = regular_font_type;
 					}
 					else
 					{
+						if bullet_point
+						{
+							match bullet_x_left
+							{
+								false =>
+								{
+									let width = calc_text_width(font_scalars, "• ", &current_font_type,
+										current_font_size_data, font_scale);
+									x_left_adjustable = x_left + width;
+									bullet_x_left = true;
+								},
+								_ => ()
+							}
+						}
 						// Begin table processing
 						in_table = true;
 						// Write out the buffer to the document
 						new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars,
-							&buffer, color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x, y,
-							&last_font_type, current_font, current_font_size_data, font_scale, tab_amount,
+							&buffer, color, font_size, page_width, page_height, x_left_adjustable, x_right, y_high,
+							y_low, x, y, &current_font_type, current_font, current_font_size_data, font_scale, tab_amount,
 							newline_amount);
 						// Reset the buffer
 						buffer = String::new();
@@ -1094,12 +1209,40 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 				}
 			}
 		}
+		if bullet_point
+		{
+			match bullet_x_left
+			{
+				false =>
+				{
+					let width = calc_text_width(font_scalars, "• ", &current_font_type,
+						current_font_size_data, font_scale);
+					x_left_adjustable = x_left + width;
+				},
+				_ => ()
+			}
+			// Write any remaining text to the spellbook
+			new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars, &buffer, color,
+				font_size, page_width, page_height, x_left_adjustable, x_right, y_high, y_low, x, y, &current_font_type,
+				current_font, current_font_size_data, font_scale, tab_amount, newline_amount);
+			
+			*y -= newline_amount;
+			*x = x_left + tab_amount;
+			buffer = String::new();
+			bullet_point = false;
+			x_left_adjustable = x_left;
+		}
 		// Add a newline to the buffer so write_textbox() knows where the end of the paragraph is
 		buffer += "\n";
 	}
+	if bullet_point
+	{
+		let width = calc_text_width(font_scalars, "• ", &current_font_type, current_font_size_data, font_scale);
+		x_left_adjustable = x_left + width;
+	}
 	// Write any remaining text to the spellbook
 	new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars, &buffer, color, font_size,
-		page_width, page_height, x_left, x_right, y_high, y_low, x, y, &last_font_type, current_font,
+		page_width, page_height, x_left_adjustable, x_right, y_high, y_low, x, y, &current_font_type, current_font,
 		current_font_size_data, font_scale, tab_amount, newline_amount);
 	// Return the last layer that was created for this text
 	new_layer
