@@ -1824,12 +1824,12 @@ mod tests
 {
 	use super::*;
 
-	// Create a spellbook with every spell from official d&d mateiral in it
+	// Create a spellbook with every spell from the official d&d 5e player's handbook
 	#[test]
-	fn complete_spellbook()
+	fn players_handbook()
 	{
 		// Spellbook's name
-		let spellbook_name = "A Wizard's Very Fancy Spellbook Used for Casting Magical Spells";
+		let spellbook_name = "Every Sepll in the Dungeons & Dragons 5th Edition Player's Handbook";
 		// List of every spell in the player's handbook folder
 		let spell_list = get_all_spells_in_folder("spells/players_handbook").unwrap();
 		// File paths to the fonts needed
@@ -1869,7 +1869,103 @@ mod tests
 		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &font_size_data,
 			&text_colors, &font_scalars, &table_options, &Some((background_path, &background_transform))).unwrap();
 		// Saves the spellbook to a pdf document
-		let _ = save_spellbook(doc, "Complete Spellbook.pdf");
+		let _ = save_spellbook(doc, "Player's Handbook Spells.pdf");
+	}
+
+	// Create a spellbook with every spell from the official d&d 5e player's handbook
+	#[test]
+	fn xanathars_guide_to_everything()
+	{
+		// Spellbook's name
+		let spellbook_name = "Every Sepll in the Dungeons & Dragons 5th Edition Source Material Book \"Xanathar's Guide to Everything\"";
+		// List of every spell in the player's handbook folder
+		let spell_list = get_all_spells_in_folder("spells/xanathars_guide_to_everything").unwrap();
+		// File paths to the fonts needed
+		let font_paths = FontPaths
+		{
+			regular: String::from("fonts/Bookman/Bookman-Regular.otf"),
+			bold: String::from("fonts/Bookman/Bookman-Bold.otf"),
+			italic: String::from("fonts/Bookman/Bookman-Italic.otf"),
+			bold_italic: String::from("fonts/Bookman/Bookman-BoldItalic.otf")
+		};
+		// Parameters for determining the size of the page and the text margins on the page
+		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
+		// Parameters for determining font sizes, the tab amount, and newline amounts
+		let font_size_data = FontSizeData::new(32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0).unwrap();
+		let text_colors = TextColors
+		{
+			title_color: (0, 0, 0),
+			header_color: (115, 26, 26),
+			body_color: (0, 0, 0)
+		};
+		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
+		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
+		// Parameters for table margins / padding and off-row color / scaling
+		let table_options = TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
+		// File path to the background image
+		let background_path = "img/parchment.jpg";
+		// Image transform data for the background image
+		let background_transform = ImageTransform
+		{
+			translate_x: Some(Mm(0.0)),
+			translate_y: Some(Mm(0.0)),
+			scale_x: Some(1.95),
+			scale_y: Some(2.125),
+			..Default::default()
+		};
+		// Creates the spellbook
+		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &font_size_data,
+			&text_colors, &font_scalars, &table_options, &Some((background_path, &background_transform))).unwrap();
+		// Saves the spellbook to a pdf document
+		let _ = save_spellbook(doc, "Xanathar's Guide to Everything Spells.pdf");
+	}
+
+	// Create a spellbook with every spell from the official d&d 5e player's handbook
+	#[test]
+	fn tashas_cauldron_of_everything()
+	{
+		// Spellbook's name
+		let spellbook_name = "Every Sepll in the Dungeons & Dragons 5th Edition Source Material Book \"Tasha's Cauldron of Everything\"";
+		// List of every spell in the player's handbook folder
+		let spell_list = get_all_spells_in_folder("spells/tashas_cauldron_of_everything").unwrap();
+		// File paths to the fonts needed
+		let font_paths = FontPaths
+		{
+			regular: String::from("fonts/Bookman/Bookman-Regular.otf"),
+			bold: String::from("fonts/Bookman/Bookman-Bold.otf"),
+			italic: String::from("fonts/Bookman/Bookman-Italic.otf"),
+			bold_italic: String::from("fonts/Bookman/Bookman-BoldItalic.otf")
+		};
+		// Parameters for determining the size of the page and the text margins on the page
+		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
+		// Parameters for determining font sizes, the tab amount, and newline amounts
+		let font_size_data = FontSizeData::new(32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0).unwrap();
+		let text_colors = TextColors
+		{
+			title_color: (0, 0, 0),
+			header_color: (115, 26, 26),
+			body_color: (0, 0, 0)
+		};
+		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
+		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
+		// Parameters for table margins / padding and off-row color / scaling
+		let table_options = TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
+		// File path to the background image
+		let background_path = "img/parchment.jpg";
+		// Image transform data for the background image
+		let background_transform = ImageTransform
+		{
+			translate_x: Some(Mm(0.0)),
+			translate_y: Some(Mm(0.0)),
+			scale_x: Some(1.95),
+			scale_y: Some(2.125),
+			..Default::default()
+		};
+		// Creates the spellbook
+		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &font_size_data,
+			&text_colors, &font_scalars, &table_options, &Some((background_path, &background_transform))).unwrap();
+		// Saves the spellbook to a pdf document
+		let _ = save_spellbook(doc, "Tasha's Cauldron of Everything Spells.pdf");
 	}
 
 	// Stress testing the text formatting
