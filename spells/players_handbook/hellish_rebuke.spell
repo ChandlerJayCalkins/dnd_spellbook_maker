@@ -1,7 +1,7 @@
 name: Hellish Rebuke
 level: 1
 school: evocation
-casting_time: reaction "you are damaged by a creature within 60 feet of you that you can see"
+casting_time: reaction "which you take in response to being damaged by a creature within 60 feet of you that you can see"
 range: feet 60
 has_v_component
 has_s_component

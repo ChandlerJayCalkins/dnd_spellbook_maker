@@ -414,7 +414,7 @@ impl fmt::Display for CastingTime
 			Self::Seconds(t) => get_amount_string(*t, "second"),
 			Self::Actions(t) => get_amount_string(*t, "action"),
 			Self::BonusAction => String::from("1 bonus action"),
-			Self::Reaction(e) => format!("1 reaction, which you take when {}", *e),
+			Self::Reaction(e) => format!("1 reaction, {}", *e),
 			Self::Minutes(t) => get_amount_string(*t, "minute"),
 			Self::Hours(t) => get_amount_string(*t, "hour"),
 			Self::Days(t) => get_amount_string(*t, "day"),
