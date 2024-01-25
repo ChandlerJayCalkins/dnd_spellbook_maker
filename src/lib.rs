@@ -661,26 +661,38 @@ font_scalars: &FontScalars) -> (PdfPageIndex, PdfLayerReference)
 		let image = Image::from_dynamic_image(&img.clone());
 		image.add_to_layer(layer_ref.clone(), *transform);
 	}
+	// Determine whether or not there should be page numbers
 	match page_number_data
 	{
+		// If there should be page numbers
 		Some((data, left, font_size, font_type, font, font_size_data, font_scale)) =>
 		{
+			// Convert the current page number to a string
 			let text = (*layer_count).to_string();
+			// Determine the x position of the page number based on if it will be on the left or right side of the page
 			let x = match left
 			{
+				// Left side of the page
 				true => data.side_margin(),
+				// Right side of the page
 				false =>
 				{
+					// Calculate the width of the page number text
 					let text_width = calc_text_width(font_scalars, &text, font_type, font_size_data, font_scale);
+					// Set x value to be based on the width of the text
 					width - data.side_margin() - text_width
 				}
 			};
+			// Write the page number to the new page
 			layer_ref.use_text(&text, *font_size, Mm(x), Mm(data.bottom_margin()), font);
+			// If the page number is supposed to flip
 			if data.flip_sides()
 			{
+				// Flip to the other side for the next page
 				**left = !(**left);
 			}
 		},
+		// If there should not be page numbers, do nothing
 		None => ()
 	}
 	// Increment the layer / page count
@@ -1742,18 +1754,20 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 	}
 
 	// Counter variable for naming each layer incrementally
-	let mut layer_count = match page_number_options
-	{
-		Some(options) => options.starting_num(),
-		None => 1
-	};
+	let mut layer_count = 1;
 
-	let mut left = false;
+	// Flag for telling which side of the page the page numbers are on, if there are any page numbers
+	// Left is true, right is false
+	let mut left = true;
+	// Create the page number data parameters
 	let mut page_number_data = match page_number_options
 	{
+		// If there are page number options
 		Some(options) => 
 		{
+			// Determine which side the page numbers should start on
 			left = options.start_on_left();
+			// Put all of the page number parameters into a tuple
 			Some((options, &mut left, font_size_data.body_font_size(), &regular_font_type, &regular_font,
 				&regular_font_size_data, &body_font_scale))
 		},
@@ -1770,18 +1784,24 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 	let mut temp_x: f32 = 0.0;
 	let mut temp_y: f32 = 0.0;
 
+	// Prefix for the names of new layers created while creating the cover page(s)
 	let cover_layer_name_prefix = "Cover Layer";
+
     // Add text using the custom font to the page
 	let _ = write_centered_textbox(&doc, cover_layer_name_prefix, &cover_layer_ref, &mut None, &mut layer_count, &img_data,
 		font_scalars, title, &title_color, font_size_data.title_font_size(), page_size_data.width, page_size_data.height,
 		x_left, x_right, y_top, y_low, &mut temp_x, &mut temp_y, &regular_font_type, &regular_font,
 		&regular_font_size_data, &title_font_scale, font_size_data.title_newline_amount());
 	
+	// Reset the layer count so it begins at either 1 or the desired starting page number
 	layer_count = match page_number_options
 	{
+		// If there are page number options, use the desired starting page number
 		Some(options) => options.starting_num(),
+		// If there are no page number options, just start at 1
 		None => 1
 	};
+	// Prefix for the names of new layers created while creating new spell pages
 	let spell_layer_name_prefix = "Layer";
 
 	// Add next pages
