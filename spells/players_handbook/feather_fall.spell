@@ -1,7 +1,7 @@
 name: Feather Fall
 level: 1
 school: transmutation
-casting_time: reaction you or a creature within 60 feet of you falls
+casting_time: reaction "you or a creature within 60 feet of you falls"
 range: feet 60
 has_v_component
 m_components: "a small feather or piece of down"

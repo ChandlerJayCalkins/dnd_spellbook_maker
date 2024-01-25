@@ -1,7 +1,7 @@
 name: Counterspell
 level: 3
 school: abjuration
-casting_time: reaction you see a creature within 60 feet of you casting a spell
+casting_time: reaction "you see a creature within 60 feet of you casting a spell"
 range: feet 60
 has_s_component
 duration: instant

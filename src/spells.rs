@@ -281,7 +281,13 @@ impl SpellFileString for CastingTime
 			},
 			"reaction" =>
 			{
-				return Ok(Self::Reaction(tokens[1..].join(" ")));
+				// Try to get all of the text inside of quotes that comes after the first token
+				match get_text_field(&tokens[1..].join(" "), file_name, "casting_time: reaction")
+				{
+					// If it succeeded, return a reaction with that text
+					Ok(desc) => return Ok(Self::Reaction(desc)),
+					Err(e) => return Err(e)
+				}
 			},
 			"minutes" =>
 			{
@@ -1183,6 +1189,32 @@ impl fmt::Display for Duration
 			}
 		};
 		write!(f, "{}", text)
+	}
+}
+
+// Gets text within quotes as a field from a spell file
+fn get_text_field(text: &str, file_name: &str, field_prefix: &str) -> Result<String, Box<SpellFileError>>
+{
+	// Error to return in case the text can't be parsed
+	let error = SpellFileError::get_box(false, file_name, format!("{} {}", field_prefix, text).as_str());
+	// If the field value doesn't start with a quote
+	if !text.starts_with('"')
+	{
+		// Return an error
+		return Err(error);
+	}
+
+	// Get the first line of the text field if it does start with a quote
+	let desc = &text[1..];
+	// If the first line ends with a quote
+	if desc.ends_with('"')
+	{
+		// Return the text inside that quote
+		Ok(desc[..desc.len()-1].to_string())
+	}
+	else
+	{
+		Err(error)
 	}
 }
 
