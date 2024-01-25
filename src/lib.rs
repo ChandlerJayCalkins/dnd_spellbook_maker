@@ -969,44 +969,54 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 		if tokens.len() > 0
 		{
 			// If the first token is a bullet
-			if tokens[0] == "•" && !bullet_point
+			if tokens[0] == "•"
 			{
-				newlines = 2.0;
-				// Begin bullet point processing
-				bullet_point = true;
+				// If the last paragraph was not a bullet point
+				if !bullet_point
+				{
+					// Make it so the y position will be shifted down 2 newlines instead of just 1
+					newlines = 2.0;
+					// Begin bullet point processing for this paragraph
+					bullet_point = true;
+				}
 			}
 			// If the first token is a dash
 			else if tokens[0] == "-"
 			{
+				// If the last paragraph was not a bullet point
 				if !bullet_point
 				{
+					// Make it so the y position will be shifted down 2 newlines instead of just 1
 					newlines = 2.0;
-					// Begin bullet point processing
+					// Begin bullet point processing for this paragraph
 					bullet_point = true;
 				}
 				// Set the first token to a bullet
 				tokens[0] = "•";
 			}
+			// If this is not a bullet point paragraph but the last one was
 			else if bullet_point
 			{
+				// Move down 2 newline amounts
 				*y -= newline_amount * 2.0;
+				// Set this paragraph to not be a bullet point
 				bullet_point = false;
 			}
 		}
-		else
-		{
-			continue;
-		}
+		// If there are no tokens in this paragraph, move onto the next one
+		else { continue; }
+		// If this is a bullet point paragraph
 		if bullet_point
 		{
-			println!("buffer: {}", &buffer);
-			println!("newlines: {}", newlines);
 			// Write any remaining text to the spellbook
 			new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars, &buffer, color,
 				font_size, page_width, page_height, x_left_adjustable, x_right, y_high, y_low, x, y, &current_font_type,
 				current_font, current_font_size_data, font_scale, tab_amount, newline_amount);
+			// Move the y position down by newlines amount either 1 or 2 times
 			*y -= newline_amount * newlines;
+			// Move the x position to the starting tabbed in position
 			*x = x_left + tab_amount;
+			// Reset the buffer
 			buffer = String::new();
 		}
 		// Loop through each token
@@ -1146,15 +1156,20 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 					// If a table is currently being processed
 					if in_table
 					{
+						// If this is inside of a bullet point
 						if bullet_point
 						{
+							// Determine if the x_left_adjustable has already been calculated for this bullet point
 							match bullet_x_left
 							{
+								// If is hasn't been calculated yet
 								false =>
 								{
+									// Calculate it
 									let width = calc_text_width(font_scalars, "• ", &current_font_type,
 										current_font_size_data, font_scale);
 									x_left_adjustable = x_left + tab_amount + width;
+									// Mark the x_left_adjustable as being calculated
 									bullet_x_left = true;
 								},
 								_ => ()
@@ -1182,15 +1197,20 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 					}
 					else
 					{
+						// If this is inside of a bullet point
 						if bullet_point
 						{
+							// Determine if the x_left_adjustable has already been calculated for this bullet point
 							match bullet_x_left
 							{
+								// If is hasn't been calculated yet
 								false =>
 								{
+									// Calculate it
 									let width = calc_text_width(font_scalars, "• ", &current_font_type,
 										current_font_size_data, font_scale);
 									x_left_adjustable = x_left + tab_amount + width;
+									// Mark the x_left_adjustable as being calculated
 									bullet_x_left = true;
 								},
 								_ => ()
@@ -1229,38 +1249,40 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 				}
 			}
 		}
+		// If this is inside of a bullet point
 		if bullet_point
 		{
+			// Determine if the x_left_adjustable has already been calculated for this bullet point
 			match bullet_x_left
 			{
+				// If is hasn't been calculated yet
 				false =>
 				{
+					// Calculate it
 					let width = calc_text_width(font_scalars, "• ", &current_font_type,
 						current_font_size_data, font_scale);
 					x_left_adjustable = x_left + tab_amount + width;
 				},
 				_ => ()
 			}
-			// Write any remaining text to the spellbook
+			// Write the bullet point text
 			new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars, &buffer, color,
 				font_size, page_width, page_height, x_left_adjustable, x_right, y_high, y_low, x, y, &current_font_type,
 				current_font, current_font_size_data, font_scale, tab_amount, newline_amount);
 			
+			// Move the x position to the starting tabbed in position
 			*x = x_left + tab_amount;
+			// Reset the buffer
 			buffer = String::new();
+			// Reset the x_left_adjustable to be the normal x_left position
 			x_left_adjustable = x_left;
 		}
 		// Add a newline to the buffer so write_textbox() knows where the end of the paragraph is
 		buffer += "\n";
 	}
-	if bullet_point
-	{
-		let width = calc_text_width(font_scalars, "• ", &current_font_type, current_font_size_data, font_scale);
-		x_left_adjustable = x_left + width;
-	}
 	// Write any remaining text to the spellbook
 	new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars, &buffer, color, font_size,
-		page_width, page_height, x_left_adjustable, x_right, y_high, y_low, x, y, &current_font_type, current_font,
+		page_width, page_height, x_left, x_right, y_high, y_low, x, y, &current_font_type, current_font,
 		current_font_size_data, font_scale, tab_amount, newline_amount);
 	// Return the last layer that was created for this text
 	new_layer
