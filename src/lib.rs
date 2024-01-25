@@ -894,6 +894,25 @@ font_size_data: &Font, font_scale: &Scale, newline_amount: f32)
 	}
 }
 
+// Handles bullet point textbox sizing
+fn bullet_point_check(font_scalars: &FontScalars, bullet_x_left: &mut bool, bullet_str: &str, font_type: &FontType,
+font_size_data: &Font, font_scale: &Scale, x_left_adjustable: &mut f32, x_left: f32, tab_amount: f32)
+{
+	match *bullet_x_left
+	{
+		// If the x_left_adjustable hasn't been calculated for this bullet point yet
+		false =>
+		{
+			// Calculate it
+			let width = calc_text_width(font_scalars, bullet_str, font_type, font_size_data, font_scale);
+			*x_left_adjustable = x_left + tab_amount + width;
+			// Mark x_left_adjustable as calculated
+			*bullet_x_left = true;
+		},
+		_ => ()
+	}
+}
+
 // Does stuff that's required when changing fonts
 fn font_change_wrapup(font_scalars: &FontScalars, text: &mut String, x: &mut f32, y: &mut f32, x_left: f32,
 font_type: &FontType, font_size_data: &Font, font_scale: &Scale, tab_amount: f32, newline_amount: f32)
@@ -946,6 +965,8 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 	const ITALIC_FONT_TAG: &str = "<i>";
 	const BOLD_ITALIC_FONT_TAG: &str = "<bi>";
 	const ITALIC_BOLD_FONT_TAG: &str = "<ib>";
+	// Str for calculating the left edge of bullet point text boxes
+	const BULLET_STR: &str = "• ";
 	// Tag for starting and ending tables
 	const TABLE_TAG: &str = "<table>";
 	// Keeps track of whether or not the text is currently inside of a bullet point of text
@@ -1032,19 +1053,12 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 					// If the current font is not already set to this font
 					if current_font != regular_font && !in_table
 					{
+						// If a bullet point is currently being processed
 						if bullet_point
 						{
-							match bullet_x_left
-							{
-								false =>
-								{
-									let width = calc_text_width(font_scalars, "• ", &current_font_type,
-										current_font_size_data, font_scale);
-									x_left_adjustable = x_left + tab_amount + width;
-									bullet_x_left = true;
-								},
-								_ => ()
-							}
+							// Calculate x_left_adjustable if needed
+							bullet_point_check(font_scalars, &mut bullet_x_left, BULLET_STR, &current_font_type,
+								current_font_size_data, font_scale, &mut x_left_adjustable, x_left, tab_amount);
 						}
 						// Write the buffer of text to the spellbook with the last font
 						new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars,
@@ -1067,17 +1081,8 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 					{
 						if bullet_point
 						{
-							match bullet_x_left
-							{
-								false =>
-								{
-									let width = calc_text_width(font_scalars, "• ", &current_font_type,
-										current_font_size_data, font_scale);
-									x_left_adjustable = x_left + tab_amount + width;
-									bullet_x_left = true;
-								},
-								_ => ()
-							}
+							bullet_point_check(font_scalars, &mut bullet_x_left, BULLET_STR, &current_font_type,
+								current_font_size_data, font_scale, &mut x_left_adjustable, x_left, tab_amount);
 						}
 						new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars,
 							&buffer, color, font_size, page_width, page_height, x_left_adjustable, x_right, y_high,
@@ -1097,17 +1102,8 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 					{
 						if bullet_point
 						{
-							match bullet_x_left
-							{
-								false =>
-								{
-									let width = calc_text_width(font_scalars, "• ", &current_font_type,
-										current_font_size_data, font_scale);
-									x_left_adjustable = x_left + tab_amount + width;
-									bullet_x_left = true;
-								},
-								_ => ()
-							}
+							bullet_point_check(font_scalars, &mut bullet_x_left, BULLET_STR, &current_font_type,
+								current_font_size_data, font_scale, &mut x_left_adjustable, x_left, tab_amount);
 						}
 						new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars,
 							&buffer, color, font_size, page_width, page_height, x_left_adjustable, x_right, y_high,
@@ -1127,17 +1123,8 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 					{
 						if bullet_point
 						{
-							match bullet_x_left
-							{
-								false =>
-								{
-									let width = calc_text_width(font_scalars, "• ", &current_font_type,
-										current_font_size_data, font_scale);
-									x_left_adjustable = x_left + tab_amount + width;
-									bullet_x_left = true;
-								},
-								_ => ()
-							}
+							bullet_point_check(font_scalars, &mut bullet_x_left, BULLET_STR, &current_font_type,
+								current_font_size_data, font_scale, &mut x_left_adjustable, x_left, tab_amount);
 						}
 						new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars,
 							&buffer, color, font_size, page_width, page_height, x_left_adjustable, x_right, y_high,
@@ -1159,21 +1146,9 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 						// If this is inside of a bullet point
 						if bullet_point
 						{
-							// Determine if the x_left_adjustable has already been calculated for this bullet point
-							match bullet_x_left
-							{
-								// If is hasn't been calculated yet
-								false =>
-								{
-									// Calculate it
-									let width = calc_text_width(font_scalars, "• ", &current_font_type,
-										current_font_size_data, font_scale);
-									x_left_adjustable = x_left + tab_amount + width;
-									// Mark the x_left_adjustable as being calculated
-									bullet_x_left = true;
-								},
-								_ => ()
-							}
+							// Calculate x_left_adjustable if needed
+							bullet_point_check(font_scalars, &mut bullet_x_left, BULLET_STR, &current_font_type,
+								current_font_size_data, font_scale, &mut x_left_adjustable, x_left, tab_amount);
 						}
 						// End table processing
 						in_table = false;
@@ -1200,21 +1175,9 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 						// If this is inside of a bullet point
 						if bullet_point
 						{
-							// Determine if the x_left_adjustable has already been calculated for this bullet point
-							match bullet_x_left
-							{
-								// If is hasn't been calculated yet
-								false =>
-								{
-									// Calculate it
-									let width = calc_text_width(font_scalars, "• ", &current_font_type,
-										current_font_size_data, font_scale);
-									x_left_adjustable = x_left + tab_amount + width;
-									// Mark the x_left_adjustable as being calculated
-									bullet_x_left = true;
-								},
-								_ => ()
-							}
+							// Calculate x_left_adjustable if needed
+							bullet_point_check(font_scalars, &mut bullet_x_left, BULLET_STR, &current_font_type,
+								current_font_size_data, font_scale, &mut x_left_adjustable, x_left, tab_amount);
 						}
 						// Begin table processing
 						in_table = true;
@@ -1252,19 +1215,9 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 		// If this is inside of a bullet point
 		if bullet_point
 		{
-			// Determine if the x_left_adjustable has already been calculated for this bullet point
-			match bullet_x_left
-			{
-				// If is hasn't been calculated yet
-				false =>
-				{
-					// Calculate it
-					let width = calc_text_width(font_scalars, "• ", &current_font_type,
-						current_font_size_data, font_scale);
-					x_left_adjustable = x_left + tab_amount + width;
-				},
-				_ => ()
-			}
+			// Calculate x_left_adjustable if needed
+			bullet_point_check(font_scalars, &mut bullet_x_left, BULLET_STR, &current_font_type,
+				current_font_size_data, font_scale, &mut x_left_adjustable, x_left, tab_amount);
 			// Write the bullet point text
 			new_layer = write_textbox(doc, &new_layer, layer_count, background_img_data, font_scalars, &buffer, color,
 				font_size, page_width, page_height, x_left_adjustable, x_right, y_high, y_low, x, y, &current_font_type,
