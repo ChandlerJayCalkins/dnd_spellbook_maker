@@ -2011,13 +2011,13 @@ mod tests
 		let _ = save_spellbook(doc, "Player's Handbook Spells.pdf");
 	}
 
-	// Create a spellbook with every spell from the official d&d 5e player's handbook
+	// Create a spellbook with every spell from the xanathar's guide to everything source book
 	#[test]
 	fn xanathars_guide_to_everything()
 	{
 		// Spellbook's name
 		let spellbook_name = "Every Sepll in the Dungeons & Dragons 5th Edition Source Material Book \"Xanathar's Guide to Everything\"";
-		// List of every spell in the player's handbook folder
+		// List of every spell in this folder
 		let spell_list = get_all_spells_in_folder("spells/xanathars_guide_to_everything").unwrap();
 		// File paths to the fonts needed
 		let font_paths = FontPaths
@@ -2063,13 +2063,13 @@ mod tests
 		let _ = save_spellbook(doc, "Xanathar's Guide to Everything Spells.pdf");
 	}
 
-	// Create a spellbook with every spell from the official d&d 5e player's handbook
+	// Create a spellbook with every spell from the tasha's cauldron of everything source book
 	#[test]
 	fn tashas_cauldron_of_everything()
 	{
 		// Spellbook's name
 		let spellbook_name = "Every Sepll in the Dungeons & Dragons 5th Edition Source Material Book \"Tasha's Cauldron of Everything\"";
-		// List of every spell in the player's handbook folder
+		// List of every spell in this folder
 		let spell_list = get_all_spells_in_folder("spells/tashas_cauldron_of_everything").unwrap();
 		// File paths to the fonts needed
 		let font_paths = FontPaths
@@ -2115,6 +2115,59 @@ mod tests
 		let _ = save_spellbook(doc, "Tasha's Cauldron of Everything Spells.pdf");
 	}
 
+	// Create a spellbook with every spell from the strixhaven: a curriculum of chaos source book
+	#[test]
+	fn strixhaven()
+	{
+		// Spellbook's name
+		let spellbook_name =
+		"Every Sepll in the Dungeons & Dragons 5th Edition Source Material Book \"Strixhaven: A Curriculum of Chaos\"";
+		// List of every spell in this folder
+		let spell_list = get_all_spells_in_folder("spells/strixhaven").unwrap();
+		// File paths to the fonts needed
+		let font_paths = FontPaths
+		{
+			regular: String::from("fonts/Bookman/Bookman-Regular.otf"),
+			bold: String::from("fonts/Bookman/Bookman-Bold.otf"),
+			italic: String::from("fonts/Bookman/Bookman-Italic.otf"),
+			bold_italic: String::from("fonts/Bookman/Bookman-BoldItalic.otf")
+		};
+		// Parameters for determining the size of the page and the text margins on the page
+		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
+		// Parameters for determining page number behavior
+		let page_number_data = PageNumberData::new(true, false, 1, 5.0, 4.0).unwrap();
+		// Parameters for determining font sizes, the tab amount, and newline amounts
+		let font_size_data = FontSizeData::new(32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0).unwrap();
+		// Colors for each type of text
+		let text_colors = TextColors
+		{
+			title_color: (0, 0, 0),
+			header_color: (115, 26, 26),
+			body_color: (0, 0, 0)
+		};
+		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
+		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
+		// Parameters for table margins / padding and off-row color / scaling
+		let table_options = TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
+		// File path to the background image
+		let background_path = "img/parchment.jpg";
+		// Image transform data for the background image
+		let background_transform = ImageTransform
+		{
+			translate_x: Some(Mm(0.0)),
+			translate_y: Some(Mm(0.0)),
+			scale_x: Some(1.95),
+			scale_y: Some(2.125),
+			..Default::default()
+		};
+		// Creates the spellbook
+		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
+			&font_size_data, &text_colors, &font_scalars, &table_options, &Some((background_path, &background_transform)))
+			.unwrap();
+		// Saves the spellbook to a pdf document
+		let _ = save_spellbook(doc, "Strixhaven A Curriculum of Chaos Spells.pdf");
+	}
+
 	// Stress testing the text formatting
 	#[test]
 	fn necronomicon()
@@ -2157,34 +2210,79 @@ mod tests
 	}
 
 	// For creating spellbooks for myself and friends while I work on creating a ui to use this library
-	/*#[test]
+	#[test]
 	fn create_spellbook()
 	{
+		// Spellbook's name
+		let spellbook_name = "A Spellcaster's Spellbook";
+		// Vec of spells that will be added to spellbook
 		let mut spell_list = Vec::new();
+		// Vec of paths to spell files that will be read from
 		let spell_paths = vec!
 		[
-			"spells/players_handbook/prestidigitation.txt",
-			"spells/players_handbook/mending.txt",
-			"spells/players_handbook/mage_hand.txt",
-			"spells/players_handbook/fire_bolt.txt",
-			"spells/strix/silvery_barbs.txt",
-			"spells/players_handbook/color_spray.txt",
-			"spells/players_handbook/magic_missile.txt",
-			"spells/players_handbook/ice_knife.txt",
-			"spells/players_handbook/mage_armor.txt",
-			"spells/players_handbook/unseen_servant.txt",
-			"spells/players_handbook/detect_magic.txt",
-			"spells/players_handbook/alarm.txt",
-			"spells/players_handbook/cloud_of_daggers.txt",
-			"spells/players_handbook/scorching_ray.txt"
+			"spells/players_handbook/prestidigitation.spell",
+			"spells/players_handbook/mending.spell",
+			"spells/players_handbook/mage_hand.spell",
+			"spells/players_handbook/fire_bolt.spell",
+			"spells/strixhaven/silvery_barbs.spell",
+			"spells/players_handbook/color_spray.spell",
+			"spells/players_handbook/magic_missile.spell",
+			"spells/xanathars_guide_to_everything/ice_knife.spell",
+			"spells/players_handbook/mage_armor.spell",
+			"spells/players_handbook/unseen_servant.spell",
+			"spells/players_handbook/detect_magic.spell",
+			"spells/players_handbook/alarm.spell",
+			"spells/players_handbook/cloud_of_daggers.spell",
+			"spells/players_handbook/scorching_ray.spell"
 		];
+		// Attempt to loop through each spell file and convert it into a spell struct
 		for path in spell_paths
 		{
 			println!("{}", path);
+			// Convert spell file into spell struct and add it to spell_list vec
 			spell_list.push(spells::Spell::from_file(path).unwrap());
 		}
-		let spellbook_name = "A Spellcaster's Spellbook";
-		let doc = generate_spellbook(spellbook_name, &spell_list).unwrap();
-		let _ = save_spellbook(doc, "New Spellbook.pdf");
-	}*/
+		// File paths to the fonts needed
+		let font_paths = FontPaths
+		{
+			regular: String::from("fonts/Bookman/Bookman-Regular.otf"),
+			bold: String::from("fonts/Bookman/Bookman-Bold.otf"),
+			italic: String::from("fonts/Bookman/Bookman-Italic.otf"),
+			bold_italic: String::from("fonts/Bookman/Bookman-BoldItalic.otf")
+		};
+		// Parameters for determining the size of the page and the text margins on the page
+		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
+		// Parameters for determining page number behavior
+		let page_number_data = PageNumberData::new(true, false, 1, 5.0, 4.0).unwrap();
+		// Parameters for determining font sizes, the tab amount, and newline amounts
+		let font_size_data = FontSizeData::new(32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0).unwrap();
+		// Colors for each type of text
+		let text_colors = TextColors
+		{
+			title_color: (0, 0, 0),
+			header_color: (115, 26, 26),
+			body_color: (0, 0, 0)
+		};
+		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
+		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
+		// Parameters for table margins / padding and off-row color / scaling
+		let table_options = TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
+		// File path to the background image
+		let background_path = "img/parchment.jpg";
+		// Image transform data for the background image
+		let background_transform = ImageTransform
+		{
+			translate_x: Some(Mm(0.0)),
+			translate_y: Some(Mm(0.0)),
+			scale_x: Some(1.95),
+			scale_y: Some(2.125),
+			..Default::default()
+		};
+		// Creates the spellbook
+		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
+			&font_size_data, &text_colors, &font_scalars, &table_options, &Some((background_path, &background_transform)))
+			.unwrap();
+		// Saves the spellbook to a pdf document
+		let _ = save_spellbook(doc, "Spellbook.pdf");
+	}
 }

@@ -1,7 +1,7 @@
 name: Silvery Barbs
 level: 1
 school: enchantment
-casting_time: reaction a creature you can see within 60 feet of yourself succeeds on an attack roll, an ability check, or a saving throw
+casting_time: reaction "which you take when a creature you can see within 60 feet of yourself succeeds on an attack roll, an ability check, or a saving throw"
 range: feet 60
 has_v_component
 duration: instant
