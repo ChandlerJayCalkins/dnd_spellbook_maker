@@ -1,0 +1,11 @@
+name: Invisibility
+level: 2
+school: illusion
+casting_time: actions 1
+range: touch
+has_v_component
+has_s_component
+m_components: "an eyelash encased in gum arabic"
+duration: hours 1 concentration
+description: "A creature you touch becomes invisible until the spell ends. Anything the target is wearing or carrying is invisible as long as it is on the target's person. The spell ends for a target that attacks or casts a spell."
+upcast_description: "When you cast this spell using a spell slot of 3rd level or higher, you can target one additional creature for each slot level above 2nd."
