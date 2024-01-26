@@ -1,0 +1,16 @@
+name: Power Word Scrunch
+level: 9
+school: transmutation
+casting_time: actions 1
+range: feet 60
+has_v_component
+duration: instant
+description: "Choose 1 target creature or object within range. That target gets scrunched.
+- Scrunching has these effects <table> <title> Scrunching Effects <title>
+Target | Effect
+<row> Creature | Flesh Ball
+<row> Object | Ball of that object's material
+<row> Creature not made of flesh | Ball of that creature's material
+<table>
+- Scrunch balls (balls produced from scrunching) can be thrown and do 1d6 bludgeoning damage on hit.
+Scrunch ball funny lol."
