@@ -193,16 +193,17 @@ impl fmt::Display for MagicSchool
 }
 
 // The amount of time it takes to cast a spell
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CastingTime
 {
 	Seconds(u16),
 	// u16 is number of actions a spell takes to cast
 	Actions(u16),
 	BonusAction,
-	// &str is the circumstance in which the reaction can be triggered
-	// Ex: "you or a creature within 60 feet of you falls" or "you see a creature within 60 feet of you casting a spell"
-	// Note: whatever you put for this, it will come after the string "1 reaction, which you take when" on the spell page
+	// String is the circumstance in which the reaction can be triggered
+	// Ex: "which you take when you or a creature within 60 feet of you falls" or
+	// "which you take when you see a creature within 60 feet of you casting a spell"
+	// Note: whatever you put for this, it will come after the string "1 reaction, " on the spell page
 	Reaction(String),
 	Minutes(u16),
 	Hours(u16),
@@ -223,7 +224,7 @@ impl SpellFileString for CastingTime
 			Self::Seconds(t) => format!("actions {}", *t),
 			Self::Actions(t) => format!("actions {}", *t),
 			Self::BonusAction => String::from("bonusaction"),
-			Self::Reaction(e) => format!("reaction {}", e),
+			Self::Reaction(e) => format!("reaction \"{}\"", e),
 			Self::Minutes(t) => format!("minutes {}", *t),
 			Self::Hours(t) => format!("hours {}", *t),
 			Self::Days(t) => format!("days {}", *t),
@@ -429,7 +430,7 @@ impl fmt::Display for CastingTime
 
 // Area of Effect
 // The shape of the area in which targets of a spell need to be in to be affected by the spell
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AOE
 {
 	// u16 defines length of line in feet (width should be in spell description)
@@ -580,7 +581,7 @@ impl fmt::Display for AOE
 }
 
 // The farthest distance a target can be from the caster of a spell
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Range
 {
 	Yourself(Option<AOE>),
@@ -713,7 +714,7 @@ impl fmt::Display for Range
 // How long a spell's effect lasts
 // u16 values are the number of units the spell can last
 // Bool values are whether or not the spell requires concentration
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Duration
 {
 	Instant,
@@ -1244,7 +1245,7 @@ fn str_to_bool(s: &str) -> Result<bool, ()>
 }
 
 // Data containing all of the information about a spell
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Spell
 {
 	pub name: String,
@@ -1648,7 +1649,7 @@ impl Spell
 		// Add the spell's duration
 		spell_data = format!("{}duration: {}\n", spell_data, self.duration.to_spell_file_string());
 		// Add the spell's description
-		spell_data = format!("{} description: \"{}\"\n", spell_data, Self::treat_text_field(&(self.description)));
+		spell_data = format!("{}description: \"{}\"\n", spell_data, Self::treat_text_field(&(self.description)));
 		// If this is supposed to be a compressed file
 		if compress
 		{
@@ -1802,6 +1803,12 @@ impl Spell
 				// Just add the line to the text the way it is
 				format!("\n{}", line)
 			}.as_str();
+		}
+		// If there are any characters in the text
+		if treated_text.len() > 0
+		{
+			// Remove the first character to get rid of the first newline character
+			treated_text = treated_text[1..].to_string();
 		}
 		// Return the treated text
 		treated_text

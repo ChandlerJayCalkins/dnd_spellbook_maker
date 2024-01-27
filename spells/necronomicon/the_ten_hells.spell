@@ -3,7 +3,7 @@ level: 9
 school: necromancy
 is_ritual
 casting_time: actions 1
-range: feet 90
+range: self sphere 90
 has_v_component
 m_components: "the nail or claw of a creature from an evil plane"
 duration: instant
