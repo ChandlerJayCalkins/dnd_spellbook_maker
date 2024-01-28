@@ -588,6 +588,7 @@ pub enum Range
 	Touch,
 	Feet(u16),
 	Miles(u16),
+	Sight,
 	Special
 }
 
@@ -610,6 +611,7 @@ impl SpellFileString for Range
 			Self::Touch => String::from("touch"),
 			Self::Feet(n) => format!("feet {}", *n),
 			Self::Miles(n) => format!("miles {}", *n),
+			Self::Sight => String::from("sight"),
 			Self::Special => String::from("special")
 		}
 	}
@@ -662,6 +664,10 @@ impl SpellFileString for Range
 					Err(_) => Err(error)
 				}
 			},
+			"sight" =>
+			{
+				Ok(Self::Sight)
+			}
 			"special" =>
 			{
 				Ok(Self::Special)
@@ -705,6 +711,7 @@ impl fmt::Display for Range
 			Self::Touch => String::from("Touch"),
 			Self::Feet(r) => if *r == 1 { String::from("1 foot") } else { format!("{} feet", r) },
 			Self::Miles(r) => get_amount_string(*r, "mile"),
+			Self::Sight => String::from("Sight"),
 			Self::Special => String::from("Special")
 		};
 		write!(f, "{}", text)
