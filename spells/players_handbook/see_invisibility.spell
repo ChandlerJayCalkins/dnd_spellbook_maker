@@ -1,0 +1,10 @@
+name: See Invisibility
+level: 2
+school: divination
+casting_time: actions 1
+range: self
+has_v_component
+has_s_component
+m_components: "a pinch of tac and a small sprinkling of powdered silver"
+duration: hours 1
+description: "For the duration, you see invisible creatures and objects as if they were visible, and you can see into the Ethereal Plane. Ethereal creatures and objects appear ghostly and translucent."
