@@ -1,0 +1,10 @@
+name: Spider Climb
+level: 2
+school: transmutation
+casting_time: actions 1
+range: touch
+has_v_component
+has_s_component
+m_components: "a drop of bitumen and a spider"
+duration: hours 1 concentration
+description: "Until the spell ends, one willing creature you touch gains the ability to move up, down, and across vertical surfaces and upside down along ceilings, while leaving its hands free. The target also gains a climbing speed equal to its walking speed."

@@ -1,0 +1,10 @@
+name: Stoneskin
+level: 4
+school: abjuration
+casting_time: actions 1
+range: touch
+has_v_component
+has_s_component
+m_components: "diamond dust worth 100 gp, which the spell consumes"
+duration: hours 1 concentration
+description: "his spell turns the flesh of a willing creature you touch as hard as stone. Until the spell ends, the target has resistance to nonmagical bludgeoning, piercing, and slashing damage."
