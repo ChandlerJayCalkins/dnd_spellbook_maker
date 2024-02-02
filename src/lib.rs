@@ -2350,7 +2350,7 @@ Creatures that succeed the saving throw take 20d4 scrunching damage."),
 	}
 
 	// For creating spellbooks for myself and friends while I work on creating a ui to use this library
-	#[test]
+	/*#[test]
 	fn create_spellbook()
 	{
 		// Spellbook's name
@@ -2424,5 +2424,5 @@ Creatures that succeed the saving throw take 20d4 scrunching damage."),
 			&Some((background_path, &background_transform))).unwrap();
 		// Saves the spellbook to a pdf document
 		let _ = save_spellbook(doc, "Spellbook.pdf");
-	}
+	}*/
 }
