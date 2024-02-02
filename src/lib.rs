@@ -1342,6 +1342,7 @@ fn get_level_school_text(spell: &spells::Spell) -> String
 }
 
 // Holds file paths to all of the fonts types needed for the generate_spellbook()
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FontPaths
 {
 	pub regular: String,
@@ -1351,6 +1352,7 @@ pub struct FontPaths
 }
 
 // Holds data for what font sizes to use and how far down newlines should go (in mm)
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct FontSizeData
 {
 	title_font_size: f32,
@@ -1402,6 +1404,7 @@ impl FontSizeData
 }
 
 // Holds scalar values to convert rusttype font units to printpdf millimeters (Mm)
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct FontScalars
 {
 	regular: f32,
@@ -1439,6 +1442,7 @@ impl FontScalars
 }
 
 // Holds data for formatting tables
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct TableOptions
 {
 	title_font_size: f32,
@@ -1501,6 +1505,7 @@ impl TableOptions
 }
 
 // Holds the RGB colors for every piece of text in the spellbook
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct TextColors
 {
 	pub title_color: (u8, u8, u8),
@@ -1509,6 +1514,7 @@ pub struct TextColors
 }
 
 // Contains the data for determining the size of the page and the margins between eacg side of the page and the text
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct PageSizeData
 {
 	// Width and height determine size of the page (in printpdf millimeters)
@@ -1585,6 +1591,7 @@ impl PageSizeData
 }
 
 // Contains parameters for determining page number behavior
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct PageNumberData
 {
 	start_on_left: bool,
@@ -1960,14 +1967,18 @@ mod tests
 	use super::*;
 	use std::path::Path;
 
-	// Create a spellbook with every spell from the official d&d 5e player's handbook
+	// Creates 2 spellbooks that combined contain every spell from the official d&d 5e player's handbook
 	#[test]
 	fn players_handbook()
 	{
-		// Spellbook's name
-		let spellbook_name = "Every Sepll in the Dungeons & Dragons 5th Edition Player's Handbook";
+		// Spellbook names
+		let spellbook_name_1 = "Every Sepll in the Dungeons & Dragons 5th Edition Player's Handbook: Part 1";
+		let spellbook_name_2 = "Every Sepll in the Dungeons & Dragons 5th Edition Player's Handbook: Part 2";
 		// List of every spell in the player's handbook folder
 		let spell_list = get_all_spells_in_folder("spells/players_handbook").unwrap();
+		// Split that vec into 2 vecs
+		let spell_list_1 = spell_list[..spell_list.len()/2].to_vec();
+		let spell_list_2 = spell_list[spell_list.len()/2..].to_vec();
 		// File paths to the fonts needed
 		let font_paths = FontPaths
 		{
@@ -2004,12 +2015,16 @@ mod tests
 			scale_y: Some(2.125),
 			..Default::default()
 		};
-		// Creates the spellbook
-		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
+		// Creates the spellbooks
+		let doc_1 = generate_spellbook(spellbook_name_1, &spell_list_1, &font_paths, &page_size_data, &Some(page_number_data),
 			&font_size_data, &text_colors, &font_scalars, &table_options,
 			&Some((background_path, &background_transform))).unwrap();
-		// Saves the spellbook to a pdf document
-		let _ = save_spellbook(doc, "Player's Handbook Spells.pdf");
+		let doc_2 = generate_spellbook(spellbook_name_2, &spell_list_2, &font_paths, &page_size_data, &Some(page_number_data),
+			&font_size_data, &text_colors, &font_scalars, &table_options,
+			&Some((background_path, &background_transform))).unwrap();
+		// Saves the spellbooks as pdf documents
+		let _ = save_spellbook(doc_1, "Player's Handbook Spells 1.pdf").unwrap();
+		let _ = save_spellbook(doc_2, "Player's Handbook Spells 2.pdf").unwrap();
 	}
 
 	// Create a spellbook with every spell from the xanathar's guide to everything source book
