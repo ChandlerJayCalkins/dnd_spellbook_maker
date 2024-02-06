@@ -809,6 +809,15 @@ font_scale: &Scale, tab_amount: f32, newline_amount: f32)
 		if tokens.len() < 1 { continue; }
 		// Set the current line to the first token in the paragraph
 		let mut line = tokens[0].to_string();
+		// Calculate the ending position of this first token
+		let line_end = *x + calc_text_width(font_scalars, &line, font_type, font_size_data, font_scale);
+		// If this token would go outside of the textbox
+		if line_end > x_right
+		{
+			// Reset to a new line
+			*x = x_left + tab_adjuster;
+			*y -= newline_amount;
+		}
 		// Loop through each token after the first
 		for token in &tokens[1..]
 		{
