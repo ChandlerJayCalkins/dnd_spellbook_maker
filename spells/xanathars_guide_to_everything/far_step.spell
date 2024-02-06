@@ -1,0 +1,8 @@
+name: Far Step
+level: 5
+school: conjuration
+casting_time: bonusaction
+range: self
+has_v_component
+duration: minutes 1 concentration
+description: "You teleport up to 60 feet to an unoccupied space you can see. On each of your turns before the spell ends, you can use a bonus action to teleport in this way again."
