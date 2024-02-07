@@ -1,0 +1,10 @@
+name: Life Transference
+level: 3
+school: necromancy
+casting_time: actions 1
+range: feet 30
+has_v_component
+has_s_component
+duration: instant
+description: "You sacrifice some of your health to mend another creature's injuries. You take 4d8 necrotic damage, and one creature of your choice that you can see within range regains a number of hit points equal to twice the necrotic damage you take."
+upcast_description: "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d8 for each slot level above 3rd."
