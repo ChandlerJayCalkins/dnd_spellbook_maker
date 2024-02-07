@@ -957,7 +957,7 @@ font_scale: &Scale, newline_amount: f32)
 
 // Handles bullet point textbox sizing
 fn bullet_point_check(font_scalars: &FontScalars, bullet_x_left: &mut bool, bullet_str: &str, font_type: &FontType,
-font_size_data: &Font, font_scale: &Scale, x_left_adjustable: &mut f32, x_left: f32, tab_amount: f32)
+font_size_data: &Font, font_scale: &Scale, x_left_adjustable: &mut f32, x_left: f32)
 {
 	match *bullet_x_left
 	{
@@ -966,7 +966,7 @@ font_size_data: &Font, font_scale: &Scale, x_left_adjustable: &mut f32, x_left: 
 		{
 			// Calculate it
 			let width = calc_text_width(font_scalars, bullet_str, font_type, font_size_data, font_scale);
-			*x_left_adjustable = x_left + tab_amount + width;
+			*x_left_adjustable = x_left + width;
 			// Mark x_left_adjustable as calculated
 			*bullet_x_left = true;
 		},
@@ -1097,8 +1097,8 @@ table_options: &TableOptions, table_title_font_scale: &Scale, tab_amount: f32, n
 				tab_amount, newline_amount);
 			// Move the y position down by newlines amount either 1 or 2 times
 			*y -= newline_amount * newlines;
-			// Move the x position to the starting tabbed in position
-			*x = x_left + tab_amount;
+			// Move the x position to the left side of the textbox
+			*x = x_left;
 			// Reset the buffer
 			buffer = String::new();
 		}
@@ -1120,7 +1120,7 @@ table_options: &TableOptions, table_title_font_scale: &Scale, tab_amount: f32, n
 						{
 							// Calculate x_left_adjustable if needed
 							bullet_point_check(font_scalars, &mut bullet_x_left, BULLET_STR, &current_font_type,
-								current_font_size_data, font_scale, &mut x_left_adjustable, x_left, tab_amount);
+								current_font_size_data, font_scale, &mut x_left_adjustable, x_left);
 						}
 						// Write the buffer of text to the spellbook with the last font
 						new_layer = write_textbox(doc, layer_name_prefix, &new_layer, page_number_data, layer_count,
@@ -1144,7 +1144,7 @@ table_options: &TableOptions, table_title_font_scale: &Scale, tab_amount: f32, n
 						if bullet_point
 						{
 							bullet_point_check(font_scalars, &mut bullet_x_left, BULLET_STR, &current_font_type,
-								current_font_size_data, font_scale, &mut x_left_adjustable, x_left, tab_amount);
+								current_font_size_data, font_scale, &mut x_left_adjustable, x_left);
 						}
 						new_layer = write_textbox(doc, layer_name_prefix, &new_layer, page_number_data, layer_count,
 							background_img_data, font_scalars, &buffer, color, font_size, page_width, page_height,
@@ -1165,7 +1165,7 @@ table_options: &TableOptions, table_title_font_scale: &Scale, tab_amount: f32, n
 						if bullet_point
 						{
 							bullet_point_check(font_scalars, &mut bullet_x_left, BULLET_STR, &current_font_type,
-								current_font_size_data, font_scale, &mut x_left_adjustable, x_left, tab_amount);
+								current_font_size_data, font_scale, &mut x_left_adjustable, x_left);
 						}
 						new_layer = write_textbox(doc, layer_name_prefix, &new_layer, page_number_data, layer_count,
 							background_img_data, font_scalars, &buffer, color, font_size, page_width, page_height,
@@ -1186,7 +1186,7 @@ table_options: &TableOptions, table_title_font_scale: &Scale, tab_amount: f32, n
 						if bullet_point
 						{
 							bullet_point_check(font_scalars, &mut bullet_x_left, BULLET_STR, &current_font_type,
-								current_font_size_data, font_scale, &mut x_left_adjustable, x_left, tab_amount);
+								current_font_size_data, font_scale, &mut x_left_adjustable, x_left);
 						}
 						new_layer = write_textbox(doc, layer_name_prefix, &new_layer, page_number_data, layer_count,
 							background_img_data, font_scalars, &buffer, color, font_size, page_width, page_height,
@@ -1210,7 +1210,7 @@ table_options: &TableOptions, table_title_font_scale: &Scale, tab_amount: f32, n
 						{
 							// Calculate x_left_adjustable if needed
 							bullet_point_check(font_scalars, &mut bullet_x_left, BULLET_STR, &current_font_type,
-								current_font_size_data, font_scale, &mut x_left_adjustable, x_left, tab_amount);
+								current_font_size_data, font_scale, &mut x_left_adjustable, x_left);
 						}
 						// End table processing
 						in_table = false;
@@ -1240,7 +1240,7 @@ table_options: &TableOptions, table_title_font_scale: &Scale, tab_amount: f32, n
 						{
 							// Calculate x_left_adjustable if needed
 							bullet_point_check(font_scalars, &mut bullet_x_left, BULLET_STR, &current_font_type,
-								current_font_size_data, font_scale, &mut x_left_adjustable, x_left, tab_amount);
+								current_font_size_data, font_scale, &mut x_left_adjustable, x_left);
 						}
 						// Begin table processing
 						in_table = true;
@@ -1280,7 +1280,7 @@ table_options: &TableOptions, table_title_font_scale: &Scale, tab_amount: f32, n
 		{
 			// Calculate x_left_adjustable if needed
 			bullet_point_check(font_scalars, &mut bullet_x_left, BULLET_STR, &current_font_type,
-				current_font_size_data, font_scale, &mut x_left_adjustable, x_left, tab_amount);
+				current_font_size_data, font_scale, &mut x_left_adjustable, x_left);
 			// Write the bullet point text
 			new_layer = write_textbox(doc, layer_name_prefix, &new_layer, page_number_data, layer_count,
 				background_img_data, font_scalars, &buffer, color, font_size, page_width, page_height, x_left_adjustable,
