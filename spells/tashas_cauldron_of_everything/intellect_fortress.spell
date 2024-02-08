@@ -1,0 +1,9 @@
+name: Intellect Fortress
+level: 3
+school: abjuration
+casting_time: actions 1
+range: feet 30
+has_v_component
+duration: hours 1 concentration
+description: "For the duration, you or one willing creature you can see within range has resistance to psychic damage, as well as advantage on Intelligence, Wisdom, and Charisma saving throws."
+upcast_description: "When you cast this spell using a spell slot of 4th level or higher, you can target one additional creature for each slot level above 3rd. The creatures must be within 30 feet of each other when you target them."
