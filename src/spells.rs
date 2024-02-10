@@ -16,6 +16,30 @@ trait SpellFileString: Sized
 	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>;
 }
 
+// For holding spell fields with either a controlled value or a custom value represented by a string
+// Controlled values must implement Display so the spell struct can display them without converting them manually
+// Controlled values are meant to be fields with limited values to invalid data cannot be displayed
+// Custom values allows for anything to be the value at the display level
+#[derive(Clone, Debug)]
+pub enum SpellField<T: fmt::Display>
+{
+	Controlled(T),
+	Custom(String)
+}
+
+// Converts SpellFields into strings
+impl<T: fmt::Display> fmt::Display for SpellField<T>
+{
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
+	{
+		match self
+		{
+			Self::Controlled(controlled_value) => write!(f, "{}", controlled_value),
+			Self::Custom(custom_value) => write!(f, "{}", custom_value)
+		}
+	}
+}
+
 // The level of a spell
 // 0 is a cantrip, max level is 9
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
