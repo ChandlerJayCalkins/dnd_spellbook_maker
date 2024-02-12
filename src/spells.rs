@@ -20,15 +20,15 @@ trait SpellFileString: Sized
 // Controlled values must implement Display so the spell struct can display them without converting them manually
 // Controlled values are meant to be fields with limited values to invalid data cannot be displayed
 // Custom values allows for anything to be the value at the display level
-#[derive(Clone, Debug)]
-pub enum SpellField<T: fmt::Display>
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SpellField<T: fmt::Display + SpellFileString>
 {
 	Controlled(T),
 	Custom(String)
 }
 
 // Converts SpellFields into strings
-impl<T: fmt::Display> fmt::Display for SpellField<T>
+impl<T: fmt::Display + SpellFileString> fmt::Display for SpellField<T>
 {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
 	{
@@ -36,6 +36,34 @@ impl<T: fmt::Display> fmt::Display for SpellField<T>
 		{
 			Self::Controlled(controlled_value) => write!(f, "{}", controlled_value),
 			Self::Custom(custom_value) => write!(f, "{}", custom_value)
+		}
+	}
+}
+
+impl<T: fmt::Display + SpellFileString> SpellFileString for SpellField<T>
+{
+	fn to_spell_file_string(&self) -> String
+	{
+		match self
+		{
+			Self::Controlled(controlled_value) => controlled_value.to_spell_file_string(),
+			Self::Custom(custom_value) => (*custom_value).clone()
+		}
+	}
+
+	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>
+	{
+		if s.starts_with('"') && s.ends_with('"')
+		{
+			Ok(Self::Custom(String::from(&s[1..s.len()-1])))
+		}
+		else
+		{
+			match T::from_spell_file_string(s, file_name)
+			{
+				Ok(v) => Ok(Self::Controlled(v)),
+				Err(e) => Err(e)
+			}
 		}
 	}
 }
@@ -1291,15 +1319,15 @@ pub struct Spell
 	pub school: MagicSchool,
 	// Whether or not the spell can be casted as a ritual
 	pub is_ritual: bool,
-	pub casting_time: CastingTime,
-	pub range: Range,
+	pub casting_time: SpellField<CastingTime>,
+	pub range: SpellField<Range>,
 	// Whether or not the spell requires a verbal component to be cast
 	pub has_v_component: bool,
 	// Whether or not the spell requires a somantic component to be cast
 	pub has_s_component: bool,
 	// Optional text that lists all of the material components a spell might need to be cast
 	pub m_components: Option<String>,
-	pub duration: Duration,
+	pub duration: SpellField<Duration>,
 	// Text that describes the effects of the spell
 	pub description: String,
 	// Optional text that describes the benefits a spell gains from being upcast
@@ -1324,12 +1352,12 @@ impl Spell
 		let mut level: Option<Level> = None;
 		let mut school: Option<MagicSchool> = None;
 		let mut is_ritual: Option<bool> = None;
-		let mut casting_time: Option<CastingTime> = None;
-		let mut range: Option<Range> = None;
+		let mut casting_time: Option<SpellField<CastingTime>> = None;
+		let mut range: Option<SpellField<Range>> = None;
 		let mut has_v_component: Option<bool> = None;
 		let mut has_s_component: Option<bool> = None;
 		let mut m_components: Option<String> = None;
-		let mut duration: Option<Duration> = None;
+		let mut duration: Option<SpellField<Duration>> = None;
 		let mut description: Option<String> = None;
 		let mut upcast_description: Option<String> = None;
 
@@ -1414,7 +1442,7 @@ impl Spell
 						// Assign the casting_time value if parsing succeeded, return error if not
 						casting_time = match result
 						{
-							Ok(t) => Some(t),
+							Ok(t) => Some(SpellField::Controlled(t)),
 							Err(e) => return Err(e)
 						}
 					}
@@ -1430,7 +1458,7 @@ impl Spell
 						// Assign the range value if parsing succeeded, return error if not
 						range = match result
 						{
-							Ok(r) => Some(r),
+							Ok(r) => Some(SpellField::Controlled(r)),
 							Err(e) => return Err(e)
 						}
 					}
@@ -1493,7 +1521,7 @@ impl Spell
 						// Assign the duration value if parsing succeeded, return error if not
 						duration = match result
 						{
-							Ok(d) => Some(d),
+							Ok(d) => Some(SpellField::Controlled(d)),
 							Err(e) => return Err(e)
 						}
 					}
