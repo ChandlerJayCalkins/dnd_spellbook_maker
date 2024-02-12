@@ -17,13 +17,14 @@ trait SpellFileString: Sized
 }
 
 // For holding spell fields with either a controlled value or a custom value represented by a string
-// Controlled values must implement Display so the spell struct can display them without converting them manually
-// Controlled values are meant to be fields with limited values to invalid data cannot be displayed
-// Custom values allows for anything to be the value at the display level
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SpellField<T: fmt::Display + SpellFileString>
 {
+	// Controlled values must implement Display so the spell struct can display them without converting them manually
+	// Controlled values are meant to be fields with limited values to invalid data cannot be displayed
 	Controlled(T),
+	// Custom values allows for anything to be the value at the display level
+	// Custom values are denoted in spell file strings by being surrounded by quotes
 	Custom(String)
 }
 
@@ -40,25 +41,33 @@ impl<T: fmt::Display + SpellFileString> fmt::Display for SpellField<T>
 	}
 }
 
+// Allows spell fields to be written to and read from spell files
 impl<T: fmt::Display + SpellFileString> SpellFileString for SpellField<T>
 {
 	fn to_spell_file_string(&self) -> String
 	{
 		match self
 		{
+			// If this is a controlled value, use this value's implementation of SpellFileString
 			Self::Controlled(controlled_value) => controlled_value.to_spell_file_string(),
+			// If this is a custom value, just return this string
 			Self::Custom(custom_value) => (*custom_value).clone()
 		}
 	}
 
 	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>
 	{
+		// Custom values are denoted with quotes around it
+		// If there are quotes around this value
 		if s.starts_with('"') && s.ends_with('"')
 		{
+			// Construct a Custom SpellField from the text inside the quotes
 			Ok(Self::Custom(String::from(&s[1..s.len()-1])))
 		}
+		// If the string does not both start and end with quotes, assume it's a controlled value
 		else
 		{
+			// Attempt to parse the string with the controlled value's type's SpellFileString implementation
 			match T::from_spell_file_string(s, file_name)
 			{
 				Ok(v) => Ok(Self::Controlled(v)),
