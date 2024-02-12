@@ -1446,12 +1446,12 @@ impl Spell
 					// If a value was given for this field
 					if tokens.len() > 1
 					{
-						// Try to convert the value for this field into a CastingTime object
-						let result = CastingTime::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name);
+						// Try to convert the value for this field into a SpellField<CastingTime> object
+						let result = SpellField::<CastingTime>::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name);
 						// Assign the casting_time value if parsing succeeded, return error if not
 						casting_time = match result
 						{
-							Ok(t) => Some(SpellField::Controlled(t)),
+							Ok(t) => Some(t),
 							Err(e) => return Err(e)
 						}
 					}
@@ -1463,11 +1463,11 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a Range object
-						let result = Range::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name);
+						let result = SpellField::<Range>::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name);
 						// Assign the range value if parsing succeeded, return error if not
 						range = match result
 						{
-							Ok(r) => Some(SpellField::Controlled(r)),
+							Ok(r) => Some(r),
 							Err(e) => return Err(e)
 						}
 					}
@@ -1526,11 +1526,11 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a Duration object
-						let result = Duration::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name);
+						let result = SpellField::<Duration>::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name);
 						// Assign the duration value if parsing succeeded, return error if not
 						duration = match result
 						{
-							Ok(d) => Some(SpellField::Controlled(d)),
+							Ok(d) => Some(d),
 							Err(e) => return Err(e)
 						}
 					}
