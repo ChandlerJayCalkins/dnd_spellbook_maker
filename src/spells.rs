@@ -506,6 +506,8 @@ pub enum AOE
 	Cube(u16, String),
 	// u16 defines radius of sphere
 	Sphere(u16, String),
+	// u16 defines radius of hemisphere
+	Hemisphere(u16, String),
 	// u16 / String pairs define radius and height of cylinder (respectively)
 	Cylinder(u16, String, u16, String),
 }
@@ -521,6 +523,7 @@ impl SpellFileString for AOE
 			Self::Cone(l, u) => format!("cone {} {}", *l, *u),
 			Self::Cube(l, u) => format!("cube {} {}", *l, *u),
 			Self::Sphere(r, u) => format!("sphere {} {}", *r, *u),
+			Self::Hemisphere(r, u) => format!("hemisphere {} {}", *r, *u),
 			Self::Cylinder(r, ru, h, hu) => format!("cylinder {} {} {} {}", *r, *ru, *h, *hu)
 		}
 	}
@@ -573,6 +576,15 @@ impl SpellFileString for AOE
 					Err(_) => return Err(error)
 				};
 				Ok(Self::Sphere(num, String::from(tokens[2])))
+			},
+			"hemisphere" =>
+			{
+				let num = match tokens[1].parse::<u16>()
+				{
+					Ok(n) => n,
+					Err(_) => return Err(error)
+				};
+				Ok(Self::Hemisphere(num, String::from(tokens[2])))
 			},
 			"cylinder" =>
 			{
@@ -628,6 +640,7 @@ impl fmt::Display for AOE
 			Self::Cone(l, u) => format!("{}-{} cone", l, u),
 			Self::Cube(l, u) => format!("{}-{} cube", l, u),
 			Self::Sphere(r, u) => format!("{}-{} radius", r, u),
+			Self::Hemisphere(r, u) => format!("{}-{} radius hemisphere", r, u),
 			Self::Cylinder(r, ru, h, hu) => format!("{}-{} radius, {}-{} height cylinder", r, ru, h, hu)
 		};
 		write!(f, "{}", text)
