@@ -489,13 +489,112 @@ impl fmt::Display for CastingTime
 	}
 }
 
+// Various distance units that are allowed
+// Value inside the distance is the distance itself while the enum variant determines the unit of distance
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Distance
+{
+	Feet(u16),
+	Miles(u16)
+}
+
+impl Distance
+{
+	// Returns a string of the distance in the format of "d-u" where
+	// d is the distance value and u is the unit of measurement
+	// Used in displaying distances for AOEs
+	pub fn get_aoe_string(&self) -> String
+	{
+		match self
+		{
+			Self::Feet(d) => format!("{}-foot", d),
+			Self::Miles(d) => format!("{}-mile", d)
+		}
+	}
+}
+
+impl SpellFileString for Distance
+{
+	fn to_spell_file_string(&self) -> String
+	{
+		match self
+		{
+			Self::Feet(d) => format!("feet {}", d),
+			Self::Miles(d) => format!("miles {}", d)
+		}
+	}
+
+	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>
+	{
+		// Get a vec of all the tokens in the string
+		let tokens: Vec<_> = s.split_whitespace().collect();
+		// Error object to be returned for when the string can't be parsed
+		let error = SpellFileError::get_box(false, file_name, format!("aoe: {}", s).as_str());
+		// If there aren't at least 2 tokens in the string (1 for unit, 1 for value), return an error
+		if tokens.len() < 2 { return Err(error); }
+		// Determine what the unit of measurement for this distance is based on the first token
+		match tokens[0].to_lowercase().as_str()
+		{
+			"feet" =>
+			{
+				// Try to parse the second token as a u16 for the value of the distance
+				let num = match tokens[1].parse::<u16>()
+				{
+					Ok(n) => n,
+					Err(_) => return Err(error)
+				};
+				Ok(Self::Feet(num))
+			},
+			"miles" =>
+			{
+				let num = match tokens[1].parse::<u16>()
+				{
+					Ok(n) => n,
+					Err(_) => return Err(error)
+				};
+				Ok(Self::Miles(num))
+			},
+			_ => Err(error)
+		}
+	}
+}
+
+// Allows Distances to be created from strings
+impl TryFrom<&str> for Distance
+{
+	type Error = &'static str;
+
+	fn try_from(value: &str) -> Result<Self, Self::Error>
+	{
+		match Self::from_spell_file_string(value, "NOT A FILE")
+		{
+			Ok(d) => Ok(d),
+			Err(_) => Err("Invalid Distance String.")
+		}
+	}
+}
+
+// Converts Distances into strings
+impl fmt::Display for Distance
+{
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
+	{
+		let text = match self
+		{
+			Self::Feet(d) => format!("{} feet", d),
+			Self::Miles(d) => format!("{} miles", d)
+		};
+		write!(f, "{}", text)
+	}
+}
+
 // Area of Effect
 // The shape of the area in which targets of a spell need to be in to be affected by the spell
 // u16s are the dimensions of the shape, Strings are the units of the dimensions
 // Unit strings should just be the singular word of the unit (foot, meter, inch, mile, kilometer, square, etc.)
 // Strings will be usually be displayed in the form of "d-u s",
 // Where d is the dimension amount, u is the unit name, and s is the shape name
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AOE
 {
 	// u16 defines length of line (width should be in spell description)
