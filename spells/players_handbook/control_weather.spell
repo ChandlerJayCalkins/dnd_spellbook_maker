@@ -2,7 +2,7 @@ name: Control Weather
 level: 8
 school: transmutation
 casting_time: minutes 10
-range: self radius 5
+range: self sphere 5 mile
 has_v_component
 has_s_component
 m_components: "burning incense and bits of earth and wood mixed in water"

@@ -2,7 +2,7 @@ name: Arms of Hadar
 level: 1
 school: conjuration
 casting_time: actions 1
-range: self sphere 10
+range: self sphere 10 foot
 has_v_component
 has_s_component
 duration: instant

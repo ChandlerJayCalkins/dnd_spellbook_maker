@@ -2,7 +2,7 @@ name: Gust of Wind
 level: 2
 school: evocation
 casting_time: actions 1
-range: self line 60
+range: self line 60 foot
 has_v_component
 has_s_component
 m_components: "a legume seed"

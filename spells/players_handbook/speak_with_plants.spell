@@ -2,7 +2,7 @@ name: Speak with Plants
 level: 3
 school: transmutation
 casting_time: actions 1
-range: self sphere 30
+range: self sphere 30 foot
 has_v_component
 has_s_component
 duration: minutes 10

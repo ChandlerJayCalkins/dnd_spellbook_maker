@@ -2,7 +2,7 @@ name: Cone of Cold
 level: 5
 school: evocation
 casting_time: actions 1
-range: self cone 60
+range: self cone 60 foot
 has_v_component
 has_s_component
 m_components: "a small crystal or glass cone"

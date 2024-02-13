@@ -491,21 +491,23 @@ impl fmt::Display for CastingTime
 
 // Area of Effect
 // The shape of the area in which targets of a spell need to be in to be affected by the spell
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+// u16s are the dimensions of the shape, Strings are the units of the dimensions
+// Unit strings should just be the singular word of the unit (foot, meter, inch, mile, kilometer, square, etc.)
+// Strings will be usually be displayed in the form of "d-u s",
+// Where d is the dimension amount, u is the unit name, and s is the shape name
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AOE
 {
-	// u16 defines length of line in feet (width should be in spell description)
-	Line(u16),
-	// u16 defines length / height and diameter of cone in feet
-	Cone(u16),
-	// u16 defines the length of the edges of the cube in feet
-	Cube(u16),
-	// u16 defines radius of sphere in feet
-	Sphere(u16),
-	// u16 tuple defines radius and height of cylinder in feet (respectively)
-	Cylinder(u16, u16),
-	// u16 defines radius of effect in miles
-	Radius(u16)
+	// u16 defines length of line (width should be in spell description)
+	Line(u16, String),
+	// u16 defines length / height and diameter of cone
+	Cone(u16, String),
+	// u16 defines the length of the edges of the cube
+	Cube(u16, String),
+	// u16 defines radius of sphere
+	Sphere(u16, String),
+	// u16 / String pairs define radius and height of cylinder (respectively)
+	Cylinder(u16, String, u16, String),
 }
 
 // Allows AOEs to be written to and read from spell files
@@ -515,12 +517,11 @@ impl SpellFileString for AOE
 	{
 		match self
 		{
-			Self::Line(l) => format!("line {}", *l),
-			Self::Cone(l) => format!("cone {}", *l),
-			Self::Cube(l) => format!("cube {}", *l),
-			Self::Sphere(r) => format!("sphere {}", *r),
-			Self::Cylinder(r, h) => format!("cylinder {} {}", *r, *h),
-			Self::Radius(r) => format!("radius {}", *r)
+			Self::Line(l, u) => format!("line {} {}", *l, *u),
+			Self::Cone(l, u) => format!("cone {} {}", *l, *u),
+			Self::Cube(l, u) => format!("cube {} {}", *l, *u),
+			Self::Sphere(r, u) => format!("sphere {} {}", *r, *u),
+			Self::Cylinder(r, ru, h, hu) => format!("cylinder {} {} {} {}", *r, *ru, *h, *hu)
 		}
 	}
 
@@ -530,77 +531,70 @@ impl SpellFileString for AOE
 		let tokens: Vec<_> = s.split_whitespace().collect();
 		// Error object to be returned for when the string can't be parsed
 		let error = SpellFileError::get_box(false, file_name, format!("aoe: {}", s).as_str());
-		// If there aren't at least 2 tokens in the string, return an error
-		if tokens.len() < 2 { return Err(error); }
+		// If there aren't at least 3 tokens in the string (1 for shape name, 1 for dimension, 1 for unit), return an error
+		if tokens.len() < 3 { return Err(error); }
 		// Determine what type of AOE this is based on the first token
 		match tokens[0].to_lowercase().as_str()
 		{
 			"line" =>
 			{
-				// Try to parse the second token and use it to construct the aoe
+				// Try to parse the second token as a u16 for the dimension of the shape and use it to construct the aoe
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
 					Err(_) => return Err(error)
 				};
-				Ok(Self::Line(num))
+				// Use the third token as the unit of the dimension
+				Ok(Self::Line(num, String::from(tokens[2])))
 			},
 			"cone" =>
 			{
-				// Try to parse the second token and use it to construct the aoe
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
 					Err(_) => return Err(error)
 				};
-				Ok(Self::Cone(num))
+				Ok(Self::Cone(num, String::from(tokens[2])))
 			},
 			"cube" =>
 			{
-				// Try to parse the second token and use it to construct the aoe
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
 					Err(_) => return Err(error)
 				};
-				Ok(Self::Cube(num))
+				Ok(Self::Cube(num, String::from(tokens[2])))
 			},
 			"sphere" =>
 			{
-				// Try to parse the second token and use it to construct the aoe
 				let num = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
 					Err(_) => return Err(error)
 				};
-				Ok(Self::Sphere(num))
+				Ok(Self::Sphere(num, String::from(tokens[2])))
 			},
 			"cylinder" =>
 			{
-				// If there aren't at least 3 tokens for this aoe type, return an error
+				// If there aren't at least 5 tokens for this aoe type, return an error
+				// 1. Shape name
+				// 2. Radius
+				// 3. Radius unit
+				// 4. Height
+				// 5. Height unit,
 				if tokens.len() < 3 { return Err(error); }
-				// Try to parse the second and third tokens and use them to construct the aoe
+				// Try to parse the second and fourth tokens as u16s and use them to construct the aoe
 				let num1 = match tokens[1].parse::<u16>()
 				{
 					Ok(n) => n,
 					Err(_) => return Err(error)
 				};
-				let num2 = match tokens[2].parse::<u16>()
+				let num2 = match tokens[3].parse::<u16>()
 				{
 					Ok(n) => n,
 					Err(_) => return Err(error)
 				};
-				Ok(Self::Cylinder(num1, num2))
-			},
-			"radius" =>
-			{
-				// Try to parse the second token and use it to construct the aoe
-				let num = match tokens[1].parse::<u16>()
-				{
-					Ok(n) => n,
-					Err(_) => return Err(error)
-				};
-				Ok(Self::Radius(num))
+				Ok(Self::Cylinder(num1, String::from(tokens[2]), num2, String::from(tokens[4])))
 			},
 			// If the first token wasn't recognized as an AOE type, return an error
 			_ => Err(error)
@@ -630,19 +624,18 @@ impl fmt::Display for AOE
 	{
 		let text = match self
 		{
-			Self::Line(l) => format!("{}-foot line", l),
-			Self::Cone(l) => format!("{}-foot cone", l),
-			Self::Cube(l) => format!("{}-foot cube", l),
-			Self::Sphere(r) => format!("{}-foot radius", r),
-			Self::Cylinder(r, h) => format!("{}-foot radius, {}-foot tall cylinder", r, h),
-			Self::Radius(r) => format!("{}-mile radius", r)
+			Self::Line(l, u) => format!("{}-{} line", l, u),
+			Self::Cone(l, u) => format!("{}-{} cone", l, u),
+			Self::Cube(l, u) => format!("{}-{} cube", l, u),
+			Self::Sphere(r, u) => format!("{}-{} radius", r, u),
+			Self::Cylinder(r, ru, h, hu) => format!("{}-{} radius, {}-{} height cylinder", r, ru, h, hu)
 		};
 		write!(f, "{}", text)
 	}
 }
 
 // The farthest distance a target can be from the caster of a spell
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Range
 {
 	Yourself(Option<AOE>),

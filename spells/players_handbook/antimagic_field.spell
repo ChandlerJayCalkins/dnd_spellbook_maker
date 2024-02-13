@@ -2,7 +2,7 @@ name: Antimagic Field
 level: 8
 school: abjuration
 casting_time: actions 1
-range: self sphere 10
+range: self sphere 10 foot
 has_v_component
 has_s_component
 m_components: "a pinch of powdered iron or iron filings"

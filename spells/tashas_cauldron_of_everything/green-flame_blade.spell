@@ -2,7 +2,7 @@ name: Green-Flame Blade
 level: 0
 school: evocation
 casting_time: actions 1
-range: self sphere 5
+range: self sphere 5 foot
 has_s_component
 m_components: "a melee weapon worth at least 1 sp"
 duration: instant

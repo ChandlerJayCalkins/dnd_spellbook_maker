@@ -2,7 +2,7 @@ name: Sword Burst
 level: 0
 school: conjuration
 casting_time: actions 1
-range: self sphere 5
+range: self sphere 5 foot
 has_v_component
 duration: instant
 description: "You create a momentary circle of spectral blades that sweep around you. All other creatures within 5 feet of you must succeed on a Dexterity saving throw or take 1d6 force damage.
