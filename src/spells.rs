@@ -489,8 +489,7 @@ impl fmt::Display for CastingTime
 	}
 }
 
-// Various distance units that are allowed
-// Value inside the distance is the distance itself while the enum variant determines the unit of distance
+// Struct for holding a distance value and having the enum variant determine its unit of measurement
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Distance
 {
@@ -526,10 +525,11 @@ impl SpellFileString for Distance
 
 	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>
 	{
+		println!("s: {}", s);
 		// Get a vec of all the tokens in the string
 		let tokens: Vec<_> = s.split_whitespace().collect();
 		// Error object to be returned for when the string can't be parsed
-		let error = SpellFileError::get_box(false, file_name, format!("aoe: {}", s).as_str());
+		let error = SpellFileError::get_box(false, file_name, format!("distance: {}", s).as_str());
 		// If there aren't at least 2 tokens in the string (1 for unit, 1 for value), return an error
 		if tokens.len() < 2 { return Err(error); }
 		// Determine what the unit of measurement for this distance is based on the first token
@@ -598,17 +598,17 @@ impl fmt::Display for Distance
 pub enum AOE
 {
 	// u16 defines length of line (width should be in spell description)
-	Line(u16, String),
+	Line(Distance),
 	// u16 defines length / height and diameter of cone
-	Cone(u16, String),
+	Cone(Distance),
 	// u16 defines the length of the edges of the cube
-	Cube(u16, String),
+	Cube(Distance),
 	// u16 defines radius of sphere
-	Sphere(u16, String),
+	Sphere(Distance),
 	// u16 defines radius of hemisphere
-	Hemisphere(u16, String),
+	Hemisphere(Distance),
 	// u16 / String pairs define radius and height of cylinder (respectively)
-	Cylinder(u16, String, u16, String),
+	Cylinder(Distance, Distance),
 }
 
 // Allows AOEs to be written to and read from spell files
@@ -618,12 +618,12 @@ impl SpellFileString for AOE
 	{
 		match self
 		{
-			Self::Line(l, u) => format!("line {} {}", *l, *u),
-			Self::Cone(l, u) => format!("cone {} {}", *l, *u),
-			Self::Cube(l, u) => format!("cube {} {}", *l, *u),
-			Self::Sphere(r, u) => format!("sphere {} {}", *r, *u),
-			Self::Hemisphere(r, u) => format!("hemisphere {} {}", *r, *u),
-			Self::Cylinder(r, ru, h, hu) => format!("cylinder {} {} {} {}", *r, *ru, *h, *hu)
+			Self::Line(l) => format!("line {}", (*l).to_spell_file_string()),
+			Self::Cone(l) => format!("cone {}", (*l).to_spell_file_string()),
+			Self::Cube(l) => format!("cube {}", (*l).to_spell_file_string()),
+			Self::Sphere(r) => format!("sphere {}", (*r).to_spell_file_string()),
+			Self::Hemisphere(r) => format!("hemisphere {}", (*r).to_spell_file_string()),
+			Self::Cylinder(r, h) => format!("cylinder {} {}", (*r).to_spell_file_string(), (*h).to_spell_file_string()),
 		}
 	}
 
@@ -641,49 +641,48 @@ impl SpellFileString for AOE
 			"line" =>
 			{
 				// Try to parse the second token as a u16 for the dimension of the shape and use it to construct the aoe
-				let num = match tokens[1].parse::<u16>()
+				let dist = match Distance::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name)
 				{
-					Ok(n) => n,
+					Ok(d) => d,
 					Err(_) => return Err(error)
 				};
-				// Use the third token as the unit of the dimension
-				Ok(Self::Line(num, String::from(tokens[2])))
+				Ok(Self::Line(dist))
 			},
 			"cone" =>
 			{
-				let num = match tokens[1].parse::<u16>()
+				let dist = match Distance::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name)
 				{
-					Ok(n) => n,
+					Ok(d) => d,
 					Err(_) => return Err(error)
 				};
-				Ok(Self::Cone(num, String::from(tokens[2])))
+				Ok(Self::Cone(dist))
 			},
 			"cube" =>
 			{
-				let num = match tokens[1].parse::<u16>()
+				let dist = match Distance::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name)
 				{
-					Ok(n) => n,
+					Ok(d) => d,
 					Err(_) => return Err(error)
 				};
-				Ok(Self::Cube(num, String::from(tokens[2])))
+				Ok(Self::Cube(dist))
 			},
 			"sphere" =>
 			{
-				let num = match tokens[1].parse::<u16>()
+				let dist = match Distance::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name)
 				{
-					Ok(n) => n,
+					Ok(d) => d,
 					Err(_) => return Err(error)
 				};
-				Ok(Self::Sphere(num, String::from(tokens[2])))
+				Ok(Self::Sphere(dist))
 			},
 			"hemisphere" =>
 			{
-				let num = match tokens[1].parse::<u16>()
+				let dist = match Distance::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name)
 				{
-					Ok(n) => n,
+					Ok(d) => d,
 					Err(_) => return Err(error)
 				};
-				Ok(Self::Hemisphere(num, String::from(tokens[2])))
+				Ok(Self::Hemisphere(dist))
 			},
 			"cylinder" =>
 			{
@@ -695,17 +694,17 @@ impl SpellFileString for AOE
 				// 5. Height unit,
 				if tokens.len() < 3 { return Err(error); }
 				// Try to parse the second and fourth tokens as u16s and use them to construct the aoe
-				let num1 = match tokens[1].parse::<u16>()
+				let dist1 = match Distance::from_spell_file_string(tokens[1..3].join(" ").as_str(), file_name)
 				{
-					Ok(n) => n,
+					Ok(d) => d,
 					Err(_) => return Err(error)
 				};
-				let num2 = match tokens[3].parse::<u16>()
+				let dist2 = match Distance::from_spell_file_string(tokens[3..].join(" ").as_str(), file_name)
 				{
-					Ok(n) => n,
+					Ok(d) => d,
 					Err(_) => return Err(error)
 				};
-				Ok(Self::Cylinder(num1, String::from(tokens[2]), num2, String::from(tokens[4])))
+				Ok(Self::Cylinder(dist1, dist2))
 			},
 			// If the first token wasn't recognized as an AOE type, return an error
 			_ => Err(error)
@@ -735,12 +734,12 @@ impl fmt::Display for AOE
 	{
 		let text = match self
 		{
-			Self::Line(l, u) => format!("{}-{} line", l, u),
-			Self::Cone(l, u) => format!("{}-{} cone", l, u),
-			Self::Cube(l, u) => format!("{}-{} cube", l, u),
-			Self::Sphere(r, u) => format!("{}-{} radius", r, u),
-			Self::Hemisphere(r, u) => format!("{}-{} radius hemisphere", r, u),
-			Self::Cylinder(r, ru, h, hu) => format!("{}-{} radius, {}-{} height cylinder", r, ru, h, hu)
+			Self::Line(l) => format!("{} line", l.get_aoe_string()),
+			Self::Cone(l) => format!("{} cone", l.get_aoe_string()),
+			Self::Cube(l) => format!("{} cube", l.get_aoe_string()),
+			Self::Sphere(r) => format!("{} radius", r.get_aoe_string()),
+			Self::Hemisphere(r) => format!("{} radius hemisphere", r.get_aoe_string()),
+			Self::Cylinder(r, h) => format!("{} radius, {} height cylinder", r.get_aoe_string(), h.get_aoe_string())
 		};
 		write!(f, "{}", text)
 	}
