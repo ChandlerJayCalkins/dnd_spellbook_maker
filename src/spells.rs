@@ -13,7 +13,7 @@ trait SpellFileString: Sized
 	// Turns an object into a string that can be written into a spell file
 	fn to_spell_file_string(&self) -> String;
 	// Tries to turn a string from a spell file into an object
-	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>;
+	fn from_spell_file_string(s: &str, file_name: &str, field: &str) -> Result<Self, Box<SpellFileError>>;
 }
 
 // For holding spell fields with either a controlled value or a custom value represented by a string
@@ -55,7 +55,7 @@ impl<T: fmt::Display + SpellFileString> SpellFileString for SpellField<T>
 		}
 	}
 
-	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>
+	fn from_spell_file_string(s: &str, file_name: &str, field: &str) -> Result<Self, Box<SpellFileError>>
 	{
 		// Custom values are denoted with quotes around it
 		// If there are quotes around this value
@@ -68,7 +68,7 @@ impl<T: fmt::Display + SpellFileString> SpellFileString for SpellField<T>
 		else
 		{
 			// Attempt to parse the string with the controlled value's type's SpellFileString implementation
-			match T::from_spell_file_string(s, file_name)
+			match T::from_spell_file_string(s, file_name, field)
 			{
 				Ok(v) => Ok(Self::Controlled(v)),
 				Err(e) => Err(e)
@@ -102,7 +102,7 @@ impl SpellFileString for Level
 		u8::from(*self).to_string()
 	}
 
-	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>
+	fn from_spell_file_string(s: &str, file_name: &str, field: &str) -> Result<Self, Box<SpellFileError>>
 	{
 		let parse_result = s.parse::<u8>();
 		match parse_result
@@ -110,9 +110,9 @@ impl SpellFileString for Level
 			Ok(n) => match Level::try_from(n)
 			{
 				Ok(level) => Ok(level),
-				Err(_) => Err(SpellFileError::get_box(false, file_name, format!("level: {}", s).as_str()))
+				Err(_) => Err(SpellFileError::get_box(false, file_name, format!("{} {}", field, s).as_str()))
 			},
-			Err(_) => Err(SpellFileError::get_box(false, file_name, format!("level: {}", s).as_str()))
+			Err(_) => Err(SpellFileError::get_box(false, file_name, format!("{} {}", field, s).as_str()))
 		}
 	}
 }
@@ -201,12 +201,12 @@ impl SpellFileString for MagicSchool
 		self.to_string().to_lowercase()
 	}
 
-	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>
+	fn from_spell_file_string(s: &str, file_name: &str, field: &str) -> Result<Self, Box<SpellFileError>>
 	{
 		match MagicSchool::try_from(s)
 		{
 			Ok(school) => Ok(school),
-			Err(_) => Err(SpellFileError::get_box(false, file_name, format!("school: {}", s).as_str()))
+			Err(_) => Err(SpellFileError::get_box(false, file_name, format!("{} {}", field, s).as_str()))
 		}
 	}
 }
@@ -296,12 +296,12 @@ impl SpellFileString for CastingTime
 		}
 	}
 
-	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>
+	fn from_spell_file_string(s: &str, file_name: &str, field: &str) -> Result<Self, Box<SpellFileError>>
 	{
 		// Gets a vec of all the tokens in the string
 		let tokens: Vec<_> = s.split_whitespace().collect();
 		// Error object to be returned for when the string can't be parsed
-		let error = SpellFileError::get_box(false, file_name, format!("casting_time: {}", s).as_str());
+		let error = SpellFileError::get_box(false, file_name, format!("{} {}", field, s).as_str());
 		// If there aren't any tokens in the string, return an error
 		if tokens.len() < 1 { return Err(error); }
 		// Determine what type of casting time it is based on the first token
@@ -458,7 +458,7 @@ impl TryFrom<&str> for CastingTime
 
 	fn try_from(value: &str) -> Result<Self, Self::Error>
 	{
-		match Self::from_spell_file_string(value, "NOT A FILE")
+		match Self::from_spell_file_string(value, "NOT A FILE", "NO FIELD")
 		{
 			Ok(time) => Ok(time),
 			Err(_) => Err("Invalid CastingTime String.")
@@ -523,13 +523,13 @@ impl SpellFileString for Distance
 		}
 	}
 
-	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>
+	fn from_spell_file_string(s: &str, file_name: &str, field: &str) -> Result<Self, Box<SpellFileError>>
 	{
 		println!("s: {}", s);
 		// Get a vec of all the tokens in the string
 		let tokens: Vec<_> = s.split_whitespace().collect();
 		// Error object to be returned for when the string can't be parsed
-		let error = SpellFileError::get_box(false, file_name, format!("distance: {}", s).as_str());
+		let error = SpellFileError::get_box(false, file_name, format!("{} {}", field, s).as_str());
 		// If there aren't at least 2 tokens in the string (1 for unit, 1 for value), return an error
 		if tokens.len() < 2 { return Err(error); }
 		// Determine what the unit of measurement for this distance is based on the first token
@@ -566,7 +566,7 @@ impl TryFrom<&str> for Distance
 
 	fn try_from(value: &str) -> Result<Self, Self::Error>
 	{
-		match Self::from_spell_file_string(value, "NOT A FILE")
+		match Self::from_spell_file_string(value, "NOT A FILE", "NO FIELD")
 		{
 			Ok(d) => Ok(d),
 			Err(_) => Err("Invalid Distance String.")
@@ -590,24 +590,20 @@ impl fmt::Display for Distance
 
 // Area of Effect
 // The shape of the area in which targets of a spell need to be in to be affected by the spell
-// u16s are the dimensions of the shape, Strings are the units of the dimensions
-// Unit strings should just be the singular word of the unit (foot, meter, inch, mile, kilometer, square, etc.)
-// Strings will be usually be displayed in the form of "d-u s",
-// Where d is the dimension amount, u is the unit name, and s is the shape name
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AOE
 {
-	// u16 defines length of line (width should be in spell description)
+	// Distance defines length of line (width should be in spell description)
 	Line(Distance),
-	// u16 defines length / height and diameter of cone
+	// Distance defines length / height and diameter of cone
 	Cone(Distance),
-	// u16 defines the length of the edges of the cube
+	// Distance defines the length of the edges of the cube
 	Cube(Distance),
-	// u16 defines radius of sphere
+	// Distance defines radius of sphere
 	Sphere(Distance),
-	// u16 defines radius of hemisphere
+	// Distance defines radius of hemisphere
 	Hemisphere(Distance),
-	// u16 / String pairs define radius and height of cylinder (respectively)
+	// Distances define radius and height of cylinder (respectively)
 	Cylinder(Distance, Distance),
 }
 
@@ -627,21 +623,21 @@ impl SpellFileString for AOE
 		}
 	}
 
-	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>
+	fn from_spell_file_string(s: &str, file_name: &str, field: &str) -> Result<Self, Box<SpellFileError>>
 	{
 		// Get a vec of all the tokens in the string
 		let tokens: Vec<_> = s.split_whitespace().collect();
 		// Error object to be returned for when the string can't be parsed
-		let error = SpellFileError::get_box(false, file_name, format!("aoe: {}", s).as_str());
-		// If there aren't at least 3 tokens in the string (1 for shape name, 1 for dimension, 1 for unit), return an error
+		let error = SpellFileError::get_box(false, file_name, format!("{} {}", field, s).as_str());
+		// If there aren't at least 3 tokens in the string (1 for shape, 1 for dimension, 1 for unit), return an error
 		if tokens.len() < 3 { return Err(error); }
 		// Determine what type of AOE this is based on the first token
 		match tokens[0].to_lowercase().as_str()
 		{
 			"line" =>
 			{
-				// Try to parse the second token as a u16 for the dimension of the shape and use it to construct the aoe
-				let dist = match Distance::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name)
+				// Try to parse the following tokens as a Distance and use it to construct the aoe
+				let dist = match Distance::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name, field)
 				{
 					Ok(d) => d,
 					Err(_) => return Err(error)
@@ -650,7 +646,7 @@ impl SpellFileString for AOE
 			},
 			"cone" =>
 			{
-				let dist = match Distance::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name)
+				let dist = match Distance::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name, field)
 				{
 					Ok(d) => d,
 					Err(_) => return Err(error)
@@ -659,7 +655,7 @@ impl SpellFileString for AOE
 			},
 			"cube" =>
 			{
-				let dist = match Distance::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name)
+				let dist = match Distance::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name, field)
 				{
 					Ok(d) => d,
 					Err(_) => return Err(error)
@@ -668,7 +664,7 @@ impl SpellFileString for AOE
 			},
 			"sphere" =>
 			{
-				let dist = match Distance::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name)
+				let dist = match Distance::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name, field)
 				{
 					Ok(d) => d,
 					Err(_) => return Err(error)
@@ -677,7 +673,7 @@ impl SpellFileString for AOE
 			},
 			"hemisphere" =>
 			{
-				let dist = match Distance::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name)
+				let dist = match Distance::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name, field)
 				{
 					Ok(d) => d,
 					Err(_) => return Err(error)
@@ -688,18 +684,19 @@ impl SpellFileString for AOE
 			{
 				// If there aren't at least 5 tokens for this aoe type, return an error
 				// 1. Shape name
-				// 2. Radius
-				// 3. Radius unit
-				// 4. Height
-				// 5. Height unit,
-				if tokens.len() < 3 { return Err(error); }
-				// Try to parse the second and fourth tokens as u16s and use them to construct the aoe
-				let dist1 = match Distance::from_spell_file_string(tokens[1..3].join(" ").as_str(), file_name)
+				// 2. Radius unit
+				// 3. Radius
+				// 4. Height unit
+				// 5. Height
+				if tokens.len() < 5 { return Err(error); }
+				// Try to parse the second and third tokens as a Distance for the radius
+				let dist1 = match Distance::from_spell_file_string(tokens[1..3].join(" ").as_str(), file_name, field)
 				{
 					Ok(d) => d,
 					Err(_) => return Err(error)
 				};
-				let dist2 = match Distance::from_spell_file_string(tokens[3..].join(" ").as_str(), file_name)
+				// Try to parse the fourth and fifth tokens as a Distance for the height
+				let dist2 = match Distance::from_spell_file_string(tokens[3..].join(" ").as_str(), file_name, field)
 				{
 					Ok(d) => d,
 					Err(_) => return Err(error)
@@ -719,7 +716,7 @@ impl TryFrom<&str> for AOE
 
 	fn try_from(value: &str) -> Result<Self, Self::Error>
 	{
-		match Self::from_spell_file_string(value, "NOT A FILE")
+		match Self::from_spell_file_string(value, "NOT A FILE", "NO FIELD")
 		{
 			Ok(aoe) => Ok(aoe),
 			Err(_) => Err("Invalid AOE String.")
@@ -783,12 +780,12 @@ impl SpellFileString for Range
 		}
 	}
 
-	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>
+	fn from_spell_file_string(s: &str, file_name: &str, field: &str) -> Result<Self, Box<SpellFileError>>
 	{
 		// Get a vec of all the tokens in the string
 		let tokens: Vec<_> = s.split_whitespace().collect();
 		// Error object to be returned for when the string can't be parsed
-		let error = SpellFileError::get_box(false, file_name, format!("range: {}", s).as_str());
+		let error = SpellFileError::get_box(false, file_name, format!("{} {}", field, s).as_str());
 		// If there aren't any tokens in the string, return an error
 		if tokens.len() < 1 { return Err(error); }
 		// Determine what kind of Range to create based on the first token
@@ -856,7 +853,7 @@ impl TryFrom<&str> for Range
 
 	fn try_from(value: &str) -> Result<Self, Self::Error>
 	{
-		match Self::from_spell_file_string(value, "NOT A FILE")
+		match Self::from_spell_file_string(value, "NOT A FILE", "NO FIELD")
 		{
 			Ok(range) => Ok(range),
 			Err(_) => Err("Invalid Range String.")
@@ -989,12 +986,12 @@ impl SpellFileString for Duration
 		}
 	}
 
-	fn from_spell_file_string(s: &str, file_name: &str) -> Result<Self, Box<SpellFileError>>
+	fn from_spell_file_string(s: &str, file_name: &str, field: &str) -> Result<Self, Box<SpellFileError>>
 	{
 		// Gets a vec of all the tokens in the string
 		let tokens: Vec<_> = s.split_whitespace().collect();
 		// Error object to be returned for when the string can't be parsed
-		let error = SpellFileError::get_box(false, file_name, format!("duration: {}", s).as_str());
+		let error = SpellFileError::get_box(false, file_name, format!("{} {}", field, s).as_str());
 		// If there aren't any tokens in this string, return an error
 		if tokens.len() < 1 { return Err(error); }
 		// Determine what type of Duration this is based on the first token
@@ -1284,7 +1281,7 @@ impl TryFrom<&str> for Duration
 
 	fn try_from(value: &str) -> Result<Self, Self::Error>
 	{
-		match Self::from_spell_file_string(value, "NOT A FILE")
+		match Self::from_spell_file_string(value, "NOT A FILE", "NO FIELD")
 		{
 			Ok(duration) => Ok(duration),
 			Err(_) => Err("Invalid Duration String.")
@@ -1503,7 +1500,7 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a level object
-						let result = Level::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name);
+						let result = Level::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name, tokens[0]);
 						// Assign the level value if parsing succeeded, return error if not
 						level = match result
 						{
@@ -1519,7 +1516,8 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a MagicSchool object
-						let result = MagicSchool::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name);
+						let result = MagicSchool::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name,
+							tokens[0]);
 						// Assign the school value if parsing succeeded, return error if not
 						school = match result
 						{
@@ -1551,7 +1549,8 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a SpellField<CastingTime> object
-						let result = SpellField::<CastingTime>::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name);
+						let result = SpellField::<CastingTime>::from_spell_file_string(tokens[1..].join(" ").as_str(),
+							file_name, tokens[0]);
 						// Assign the casting_time value if parsing succeeded, return error if not
 						casting_time = match result
 						{
@@ -1567,7 +1566,8 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a Range object
-						let result = SpellField::<Range>::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name);
+						let result = SpellField::<Range>::from_spell_file_string(tokens[1..].join(" ").as_str(),
+							file_name, tokens[0]);
 						// Assign the range value if parsing succeeded, return error if not
 						range = match result
 						{
@@ -1630,7 +1630,8 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a Duration object
-						let result = SpellField::<Duration>::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name);
+						let result = SpellField::<Duration>::from_spell_file_string(tokens[1..].join(" ").as_str(),
+							file_name, tokens[0]);
 						// Assign the duration value if parsing succeeded, return error if not
 						duration = match result
 						{
