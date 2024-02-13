@@ -1112,8 +1112,10 @@ table_options: &TableOptions, table_title_font_scale: &Scale, tab_amount: f32, n
 				// Regular font
 				REGULAR_FONT_TAG =>
 				{
-					// If the current font is not already set to this font
-					if current_font != regular_font && !in_table
+					// If a table is currently being processed, push this token to the table_tokens vec
+					if in_table { table_tokens.push(token); }
+					// If the current font is not already set to this font and 
+					else if current_font != regular_font
 					{
 						// If a bullet point is currently being processed
 						if bullet_point
@@ -1139,7 +1141,8 @@ table_options: &TableOptions, table_title_font_scale: &Scale, tab_amount: f32, n
 				// Bold font
 				BOLD_FONT_TAG =>
 				{
-					if current_font != bold_font && !in_table
+					if in_table { table_tokens.push(token); }
+					else if current_font != bold_font
 					{
 						if bullet_point
 						{
@@ -1160,7 +1163,8 @@ table_options: &TableOptions, table_title_font_scale: &Scale, tab_amount: f32, n
 				// Italic font
 				ITALIC_FONT_TAG =>
 				{
-					if current_font != italic_font && !in_table
+					if in_table { table_tokens.push(token); }
+					else if current_font != italic_font
 					{
 						if bullet_point
 						{
@@ -1181,7 +1185,8 @@ table_options: &TableOptions, table_title_font_scale: &Scale, tab_amount: f32, n
 				// Bold-Italic font
 				BOLD_ITALIC_FONT_TAG | ITALIC_BOLD_FONT_TAG =>
 				{
-					if current_font != bold_italic_font && !in_table
+					if in_table { table_tokens.push(token); }
+					else if current_font != bold_italic_font
 					{
 						if bullet_point
 						{
