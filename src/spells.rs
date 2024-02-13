@@ -747,8 +747,7 @@ pub enum Range
 {
 	Yourself(Option<AOE>),
 	Touch,
-	Feet(u16),
-	Miles(u16),
+	Dist(Distance),
 	Sight,
 	Unlimited,
 	Special
@@ -771,8 +770,7 @@ impl SpellFileString for Range
 				}
 			},
 			Self::Touch => String::from("touch"),
-			Self::Feet(n) => format!("feet {}", *n),
-			Self::Miles(n) => format!("miles {}", *n),
+			Self::Dist(d) => d.to_spell_file_string(),
 			Self::Sight => String::from("sight"),
 			Self::Unlimited => String::from("unlimited"),
 			Self::Special => String::from("special")
@@ -795,7 +793,7 @@ impl SpellFileString for Range
 				// If there isn't at least a second token, assume this Range takes type None
 				if tokens.len() < 2 { return Ok(Self::Yourself(None)); }
 				// Try to constuct an AOE from the following tokens and use that to construct this Range object
-				match tokens[1..].join(" ").as_str().try_into()
+				match AOE::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name, field)
 				{
 					Ok(aoe) => Ok(Self::Yourself(Some(aoe))),
 					Err(_) => Err(error)
@@ -804,28 +802,6 @@ impl SpellFileString for Range
 			"touch" =>
 			{
 				Ok(Self::Touch)
-			},
-			"feet" =>
-			{
-				// If there isn't at least a second token, return an error
-				if tokens.len() < 2 { return Err(error); }
-				// Try to parse the second token and use that to construct this Range object
-				match tokens[1].parse::<u16>()
-				{
-					Ok(n) => Ok(Self::Feet(n)),
-					Err(_) => Err(error)
-				}
-			},
-			"miles" =>
-			{
-				// If there isn't at least a second token, return an error
-				if tokens.len() < 2 { return Err(error); }
-				// Try to parse the second token and use that to construct this Range object
-				match tokens[1].parse::<u16>()
-				{
-					Ok(n) => Ok(Self::Miles(n)),
-					Err(_) => Err(error)
-				}
 			},
 			"sight" =>
 			{
@@ -839,8 +815,18 @@ impl SpellFileString for Range
 			{
 				Ok(Self::Special)
 			},
-			// If the first token wasn't recognized as a type of Range, return an error
-			_ => Err(error)
+			// If the first token is anything else, assume it's a Dist
+			_ =>
+			{
+				// If there isn't at least a second token, return an error since this type needs a Distance
+				if tokens.len() < 2 { return Err(error); }
+				// Attempt to parse the following tokens as a Distance
+				match Distance::from_spell_file_string(s, file_name, field)
+				{
+					Ok(dist) => Ok(Self::Dist(dist)),
+					Err(_) => Err(error)
+				}
+			}
 		}
 	}
 }
@@ -876,8 +862,7 @@ impl fmt::Display for Range
 				}
 			}
 			Self::Touch => String::from("Touch"),
-			Self::Feet(r) => if *r == 1 { String::from("1 foot") } else { format!("{} feet", r) },
-			Self::Miles(r) => get_amount_string(*r, "mile"),
+			Self::Dist(d) => d.to_string(),
 			Self::Sight => String::from("Sight"),
 			Self::Unlimited => String::from("Unlimited"),
 			Self::Special => String::from("Special")

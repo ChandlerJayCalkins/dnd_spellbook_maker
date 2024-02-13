@@ -2252,7 +2252,7 @@ A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A 
 			school: spells::MagicSchool::Transmutation,
 			is_ritual: false,
 			casting_time: spells::SpellField::Controlled(spells::CastingTime::Actions(1)),
-			range: spells::SpellField::Controlled(spells::Range::Feet(60)),
+			range: spells::SpellField::Controlled(spells::Range::Dist(spells::Distance::Feet(60))),
 			has_v_component: true,
 			has_s_component: false,
 			m_components: None,
