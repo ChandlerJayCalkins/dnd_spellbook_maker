@@ -4,7 +4,7 @@ school: transmutation
 casting_time: actions 1
 range: feet 30
 has_s_component
-duration: instant
+duration: "Instantaneous or 1 hour (see below)"
 description: "You choose a portion of dirt or stone that you can see within range and that fits within a 5-foot cube. You manipulate it in one of the following ways:
 - If you target an area of loose earth, you can instantaneously excavate it, move it along the ground, and deposit it up to 5 feet away. This movement doesn't have enough force to cause damage.
 - You cause shapes, colors, or both to appear on the dirt or stone, spelling out words, creating images, or shaping patterns. The changes last for 1 hour.

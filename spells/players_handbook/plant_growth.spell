@@ -1,7 +1,7 @@
 name: Plant Growth
 level: 3
 school: transmutation
-casting_time: actions 1
+casting_time: "1 action or 8 hours"
 range: feet 150
 has_v_component
 has_s_component
