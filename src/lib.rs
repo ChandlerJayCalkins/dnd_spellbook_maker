@@ -1312,9 +1312,11 @@ page_number_data: &mut Option<(&PageNumberData, &mut bool, f32, &FontType, &Indi
 layer_count: &mut i32, background_img_data: &Option<(image::DynamicImage, ImageTransform)>, font_scalars: &FontScalars,
 field_name: &str, field_text: &str, field_name_color: &Color, field_text_color: &Color, font_size: f32, page_width: f32,
 page_height: f32, x_left: f32, x_right: f32, y_high: f32, y_low: f32, x: &mut f32, y: &mut f32,
-field_name_font_type: &FontType, field_text_font_type: &FontType, field_name_font: &IndirectFontRef,
-field_text_font: &IndirectFontRef, field_name_font_size_data: &Font, field_text_font_size_data: &Font, font_scale: &Scale,
-tab_amount: f32, newline_amount: f32) -> PdfLayerReference
+field_name_font_type: &FontType, field_name_font: &IndirectFontRef, field_name_font_size_data: &Font,
+regular_font: &IndirectFontRef, bold_font: &IndirectFontRef, italic_font: &IndirectFontRef,
+bold_italic_font: &IndirectFontRef, regular_font_size_data: &Font, bold_font_size_data: &Font,
+italic_font_size_data: &Font, bold_italic_font_size_data: &Font, font_scale: &Scale, table_options: &TableOptions,
+table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32) -> PdfLayerReference
 {
 	// Write the field name ("Casting Time:", "Components:", etc.) to the document
 	let mut new_layer = write_textbox(doc, layer_name_prefix, layer, page_number_data, layer_count, background_img_data,
@@ -1324,9 +1326,11 @@ tab_amount: f32, newline_amount: f32) -> PdfLayerReference
 	let sideshift = calc_text_width(font_scalars, " ", field_name_font_type, field_name_font_size_data, font_scale);
 	*x += sideshift;
 	// Write the text for that field to the document
-	new_layer = write_textbox(doc, layer_name_prefix, &new_layer, page_number_data, layer_count, background_img_data,
-		font_scalars, field_text, field_text_color, font_size, page_width, page_height, x_left, x_right, y_high, y_low, x,
-		y, field_text_font_type, field_text_font, field_text_font_size_data, font_scale, tab_amount, newline_amount);
+	new_layer = write_spell_description(doc, layer_name_prefix, &new_layer, page_number_data, layer_count,
+		background_img_data, font_scalars, field_text, field_text_color, font_size, page_width, page_height, x_left,
+		x_right, y_high, y_low, x, y, regular_font, bold_font, italic_font, bold_italic_font, regular_font_size_data,
+		bold_font_size_data, italic_font_size_data, bold_italic_font_size_data, font_scale, table_options,
+		table_title_font_scale, tab_amount, newline_amount);
 	// Return the last layer that was created for this text
 	new_layer
 }
@@ -1861,8 +1865,10 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 		layer_ref = write_spell_field(&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
 			&img_data, font_scalars, "Casting Time:", &spell.casting_time.to_string(), &body_color, &body_color,
 			font_size_data.body_font_size(), page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low,
-			&mut x, &mut y, &bold_font_type, &regular_font_type, &bold_font, &regular_font, &bold_font_size_data,
-			&regular_font_size_data, &body_font_scale, font_size_data.tab_amount(), font_size_data.body_newline_amount());
+			&mut x, &mut y, &bold_font_type, &bold_font, &bold_font_size_data, &regular_font, &bold_font, &italic_font,
+			&bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
+			&bold_italic_font_size_data, &body_font_scale, table_options, &table_title_font_scale,
+			font_size_data.tab_amount(), font_size_data.body_newline_amount());
 		y -= font_size_data.body_newline_amount();
 		x = x_left;
 
@@ -1871,8 +1877,10 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 		layer_ref = write_spell_field(&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
 			&img_data, font_scalars, "Range:", &spell.range.to_string(), &body_color, &body_color,
 			font_size_data.body_font_size(), page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low,
-			&mut x, &mut y, &bold_font_type, &regular_font_type, &bold_font, &regular_font, &bold_font_size_data,
-			&regular_font_size_data, &body_font_scale, font_size_data.tab_amount(), font_size_data.body_newline_amount());
+			&mut x, &mut y, &bold_font_type, &bold_font, &bold_font_size_data, &regular_font, &bold_font, &italic_font,
+			&bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
+			&bold_italic_font_size_data, &body_font_scale, table_options, &table_title_font_scale,
+			font_size_data.tab_amount(), font_size_data.body_newline_amount());
 		y -= font_size_data.body_newline_amount();
 		x = x_left;
 
@@ -1880,8 +1888,10 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 		layer_ref = write_spell_field(&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
 			&img_data, font_scalars, "Components:", &spell.get_component_string(), &body_color, &body_color,
 			font_size_data.body_font_size(), page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low,
-			&mut x, &mut y, &bold_font_type, &regular_font_type, &bold_font, &regular_font, &bold_font_size_data,
-			&regular_font_size_data, &body_font_scale, font_size_data.tab_amount(), font_size_data.body_newline_amount());
+			&mut x, &mut y, &bold_font_type, &bold_font, &bold_font_size_data, &regular_font, &bold_font, &italic_font,
+			&bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
+			&bold_italic_font_size_data, &body_font_scale, table_options, &table_title_font_scale,
+			font_size_data.tab_amount(), font_size_data.body_newline_amount());
 		y -= font_size_data.body_newline_amount();
 		x = x_left;
 
@@ -1889,8 +1899,10 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 		layer_ref = write_spell_field(&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
 			&img_data, font_scalars, "Duration:", &spell.duration.to_string(), &body_color, &body_color,
 			font_size_data.body_font_size(), page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low,
-			&mut x, &mut y, &bold_font_type, &regular_font_type, &bold_font, &regular_font, &bold_font_size_data,
-			&regular_font_size_data, &body_font_scale, font_size_data.tab_amount(), font_size_data.body_newline_amount());
+			&mut x, &mut y, &bold_font_type, &bold_font, &bold_font_size_data, &regular_font, &bold_font, &italic_font,
+			&bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
+			&bold_italic_font_size_data, &body_font_scale, table_options, &table_title_font_scale,
+			font_size_data.tab_amount(), font_size_data.body_newline_amount());
 		y -= font_size_data.header_newline_amount();
 		x = x_left;
 
