@@ -2,7 +2,7 @@ name: Conjure Barrage
 level: 3
 school: conjuration
 casting_time: actions 1
-range: self cone 60 foot
+range: self cone feet 60
 has_v_component
 has_s_component
 m_components: "one piece of ammunition or a thrown weapon"

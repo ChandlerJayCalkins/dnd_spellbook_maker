@@ -2,7 +2,7 @@ name: Booming Blade
 level: 0
 school: evocation
 casting_time: actions 1
-range: self sphere 5 foot
+range: self sphere feet 5
 has_s_component
 m_components: "a melee weapon worth at least 1 sp"
 duration: rounds 1

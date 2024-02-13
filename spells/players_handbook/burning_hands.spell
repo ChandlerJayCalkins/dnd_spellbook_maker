@@ -2,7 +2,7 @@ name: Burning Hands
 level: 1
 school: evocation
 casting_time: actions 1
-range: self cone 15 foot
+range: self cone feet 15
 has_v_component
 has_s_component
 duration: instant

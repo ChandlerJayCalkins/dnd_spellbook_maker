@@ -3,7 +3,7 @@ level: 3
 school: evocation
 is_ritual
 casting_time: minutes 1
-range: self hemisphere 10 foot
+range: self hemisphere feet 10
 has_v_component
 has_s_component
 m_components: "a small crystal bead"

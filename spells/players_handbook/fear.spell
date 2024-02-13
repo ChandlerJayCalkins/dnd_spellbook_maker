@@ -2,7 +2,7 @@ name: Fear
 level: 3
 school: illusion
 casting_time: actions 1
-range: self cone 30 foot
+range: self cone feet 30
 has_v_component
 has_s_component
 m_components: "a white feather or the heart of a hen"

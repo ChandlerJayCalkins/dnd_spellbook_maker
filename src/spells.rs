@@ -525,7 +525,6 @@ impl SpellFileString for Distance
 
 	fn from_spell_file_string(s: &str, file_name: &str, field: &str) -> Result<Self, Box<SpellFileError>>
 	{
-		println!("s: {}", s);
 		// Get a vec of all the tokens in the string
 		let tokens: Vec<_> = s.split_whitespace().collect();
 		// Error object to be returned for when the string can't be parsed

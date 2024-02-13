@@ -2,7 +2,7 @@ name: Tasha's Caustic Brew
 level: 1
 school: evocation
 casting_time: actions 1
-range: self line 30 foot
+range: self line feet 30
 has_v_component
 has_s_component
 m_components: "a bit of rotten food"

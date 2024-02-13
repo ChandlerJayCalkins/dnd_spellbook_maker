@@ -2,7 +2,7 @@ name: Lightning Bolt
 level: 3
 school: evocation
 casting_time: actions 1
-range: self line 100 foot
+range: self line feet 100
 has_v_component
 has_s_component
 m_components: "a bit of fur and a rod of amber, crystal, or glass"

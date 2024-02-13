@@ -2,7 +2,7 @@ name: Aura of Purity
 level: 4
 school: abjuration
 casting_time: actions 1
-range: self sphere 30 foot
+range: self sphere feet 30
 has_v_component
 duration: minutes 10 concentration
 description: "Purifying energy radiates from you in an aura with a 30-foot radius. Until the spell ends, the aura moves with you, centered on you. Each non-hostile creature in the aura (including you) can’t become diseased, has resistance to poison damage, and has advantage on saving throws against effects that cause any of the following conditions: blinded, charmed, deafened, frightened, paralyzed, poisoned, and stunned."

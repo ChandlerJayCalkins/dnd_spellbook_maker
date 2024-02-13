@@ -2,7 +2,7 @@ name: Thunderwave
 level: 1
 school: evocation
 casting_time: actions 1
-range: self cube 15 foot
+range: self cube feet 15
 has_v_component
 has_s_component
 duration: instant
