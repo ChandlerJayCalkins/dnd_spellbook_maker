@@ -50,8 +50,8 @@ impl<T: fmt::Display + SpellFileString> SpellFileString for SpellField<T>
 		{
 			// If this is a controlled value, use this value's implementation of SpellFileString
 			Self::Controlled(controlled_value) => controlled_value.to_spell_file_string(),
-			// If this is a custom value, just return this string
-			Self::Custom(custom_value) => (*custom_value).clone()
+			// If this is a custom value, just return this string surrounded by quotes
+			Self::Custom(custom_value) => format!("\"{}\"", (*custom_value).clone())
 		}
 	}
 
@@ -240,14 +240,14 @@ impl fmt::Display for MagicSchool
 	{
 		let text = match self
 		{
-			Self::Abjuration => String::from("Abjuration"),
-			Self::Conjuration => String::from("Conjuration"),
-			Self::Divination => String::from("Divination"),
-			Self::Enchantment => String::from("Enchantment"),
-			Self::Evocation => String::from("Evocation"),
-			Self::Illusion => String::from("Illusion"),
-			Self::Necromancy => String::from("Necromancy"),
-			Self::Transmutation => String::from("Transmutation")
+			Self::Abjuration => String::from("abjuration"),
+			Self::Conjuration => String::from("conjuration"),
+			Self::Divination => String::from("divination"),
+			Self::Enchantment => String::from("enchantment"),
+			Self::Evocation => String::from("evocation"),
+			Self::Illusion => String::from("illusion"),
+			Self::Necromancy => String::from("necromancy"),
+			Self::Transmutation => String::from("transmutation")
 		};
 		write!(f, "{}", text)
 	}
@@ -1409,8 +1409,8 @@ fn str_to_bool(s: &str) -> Result<bool, ()>
 pub struct Spell
 {
 	pub name: String,
-	pub level: Level,
-	pub school: MagicSchool,
+	pub level: SpellField<Level>,
+	pub school: SpellField<MagicSchool>,
 	// Whether or not the spell can be casted as a ritual
 	pub is_ritual: bool,
 	pub casting_time: SpellField<CastingTime>,
@@ -1443,8 +1443,8 @@ impl Spell
 		// Options because if required fields are None after the file is done being processed, throw an error
 		// If a non-required field is None after the file is done being processed, set it to a default value
 		let mut name: Option<String> = None;
-		let mut level: Option<Level> = None;
-		let mut school: Option<MagicSchool> = None;
+		let mut level: Option<SpellField<Level>> = None;
+		let mut school: Option<SpellField<MagicSchool>> = None;
 		let mut is_ritual: Option<bool> = None;
 		let mut casting_time: Option<SpellField<CastingTime>> = None;
 		let mut range: Option<SpellField<Range>> = None;
@@ -1484,7 +1484,8 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a level object
-						let result = Level::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name, tokens[0]);
+						let result = SpellField::<Level>::from_spell_file_string(tokens[1..].join(" ").as_str(),
+							file_name, tokens[0]);
 						// Assign the level value if parsing succeeded, return error if not
 						level = match result
 						{
@@ -1500,7 +1501,7 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a MagicSchool object
-						let result = MagicSchool::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name,
+						let result = SpellField::<MagicSchool>::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name,
 							tokens[0]);
 						// Assign the school value if parsing succeeded, return error if not
 						school = match result
@@ -2018,6 +2019,25 @@ impl Spell
 		if component_string.is_empty() { component_string = "None".to_string(); }
 		// Return the string
 		component_string
+	}
+
+	// Gets the school and level info from a spell and turns it into text that says something like "nth-Level School-Type"
+	pub fn get_level_school_text(&self) -> String
+	{
+		// Gets a string of the level and the school from the spell
+		let mut text = match self.level
+		{
+			SpellField::Controlled(Level::Cantrip) => format!("{} {}", self.school, self.level),
+			_ => format!("{} {}", self.level, self.school.to_string())
+		};
+		// If the spell is a ritual
+		if self.is_ritual
+		{
+			// Add that information to the end of the string
+			text += " (ritual)";
+		}
+		// Return the string
+		text
 	}
 }
 

@@ -2,6 +2,13 @@
 name = "dnd_spellbook_maker"
 version = "0.1.0"
 edition = "2021"
+description = "Library for making pdf documents of spells that a 5th edition D&D character has."
+readme = "README.md"
+documentation = "https://docs.rs/dnd_spellbook_maker"
+repository = "https://github.com/ChandlerJayCalkins/dnd_spellbook_maker"
+license = "MIT"
+keywords = ["dnd", "spells", "spells", "spellbook"]
+exclude = ["spells/necronomicon"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

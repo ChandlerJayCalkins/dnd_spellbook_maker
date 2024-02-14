@@ -1,6 +1,10 @@
+//! Library for making pdf documents of spells that a 5th edition D&D character has.
+//!
+//! Repository at <https://github.com/ChandlerJayCalkins/dnd_spellbook_maker>.
+
 use std::fs;
 extern crate image;
-pub use printpdf::{Mm, PdfDocumentReference, ImageTransform};
+pub use printpdf::{Mm, PdfDocumentReference, ImageTransform, ImageRotation};
 use printpdf::{PdfDocument, PdfLayerReference, IndirectFontRef, Color, Rgb, Point, Line, PdfPageIndex, Image};
 use rusttype::{Font, Scale, point};
 pub mod spells;
@@ -1341,25 +1345,6 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32) -> PdfLaye
 	new_layer
 }
 
-// Gets the school and level info from a spell and turns it into text that says something like "nth-Level School-Type"
-fn get_level_school_text(spell: &spells::Spell) -> String
-{
-	// Gets a string of the level and the school from the spell
-	let mut text = match spell.level
-	{
-		spells::Level::Cantrip => format!("{} {}", spell.school, spell.level),
-		_ => format!("{} {}", spell.level, spell.school.to_string().to_lowercase())
-	};
-	// If the spell is a ritual
-	if spell.is_ritual
-	{
-		// Add that information to the end of the string
-		text += " (ritual)";
-	}
-	// Return the string
-	text
-}
-
 // Holds file paths to all of the fonts types needed for the generate_spellbook()
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FontPaths
@@ -1658,7 +1643,27 @@ impl PageNumberData
 	pub fn bottom_margin(&self) -> f32 { self.bottom_margin }
 }
 
-// Generates a printpdf pdf document of a spellbook with spells from the spell_list parameter
+/// Creates a spellbook from a list of spells.
+///
+/// # Parameters
+/// - `title` The name of the spellbook. It will determine what text appears on the cover page and what the pdf document will be named in the meta data.
+/// - `spell_list` The list of spells that the spellbook will contain. The spells do not have to be in any particular order.
+/// - `font_paths` Struct containing the file paths to the regular, bold, italic, and bold-italic fonts that the spellbook will use for the text.
+/// - `page_size_data` Struct containing the data that determines the size of the page and the text margins (space between edge of page and text).
+/// - `page_number_options` Option containing a struct of the page number behavior (starting number, positioning, flip sides or not, etc.). A value of `None` will make the spellbook have no page numbers.
+/// - `font_size_data` Struct containing the font size for various types of text and spacing behavior like newline amounts and tabbing amounts.
+/// - `text_colors` Struct containing the rgb values for each type of text in the spellbook.
+/// - `font_scalars` Numbers that determine how the size of each font is calculated. Numbers being slightly off may lead to text spilling off the page or going to new lines too early.
+/// You may need to tinker with these values for the fonts you are using until the text in your spellbooks look good to get it right.
+/// - `table_options` Struct containing options that determine the appearance of tables.
+/// - `background_img_data` Option containing the data needed to put a background image on every page in the spellbook.
+/// The `&str` is the file path to the background image and the `&ImageTransform` is a struct containing options that determine the sizing and rotation of the image.
+///
+/// # Output
+/// Returns a Result enum.
+/// - `Ok` Returns a struct containing the data of the spellbook that can be saved to a file.
+/// This struct is a printpdf::PdfDocumentReference from the printpdf crate (<https://docs.rs/printpdf/latest/printpdf/struct.PdfDocumentReference.html>).
+/// - `Err` Returns any errors that occurred.
 pub fn generate_spellbook
 (
 	title: &str, spell_list: &Vec<spells::Spell>, font_paths: &FontPaths,
@@ -1870,13 +1875,12 @@ pub fn generate_spellbook
 		x = x_left;
 
 		// Add the level and the spell's school of magic
-		let text = get_level_school_text(&spell);
 		layer_ref = write_textbox
 		(
 			&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
-			&img_data, font_scalars, &text, &body_color, font_size_data.body_font_size(), page_size_data.width,
-			page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &italic_font_type, &italic_font,
-			&italic_font_size_data, &body_font_scale, font_size_data.tab_amount(),
+			&img_data, font_scalars, &spell.get_level_school_text(), &body_color, font_size_data.body_font_size(),
+			page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &italic_font_type,
+			&italic_font, &italic_font_size_data, &body_font_scale, font_size_data.tab_amount(),
 			font_size_data.body_newline_amount()
 		);
 		y -= font_size_data.header_newline_amount();
@@ -1972,7 +1976,16 @@ pub fn generate_spellbook
     Ok(doc)
 }
 
-// Saves a printpdf pdf document of a spellbook to a file
+/// Saves spellbooks to a file as a pdf document.
+///
+/// #### Parameters
+/// - `doc` A spellbook that gets returned from `generate_spellbook()`.
+/// - `file_name` The name to give to the file that the spellbook will be saved to.
+/// 
+/// #### Output
+/// Returns a Result enum.
+/// - `Ok` Returns nothing.
+/// - `Err` Returns any errors that occurred.
 pub fn save_spellbook(doc: PdfDocumentReference, file_name: &str) -> Result<(), Box<dyn std::error::Error>>
 {
 	let file = fs::File::create(file_name)?;
@@ -1994,7 +2007,17 @@ impl std::fmt::Display for SpellFileNameReadError
 // Makes the struct officially an error
 impl std::error::Error for SpellFileNameReadError {}
 
-// Takes a path to a directory with only spell files inside and returns a vec of every spell in that folder
+/// Returns a vec of spells from every spell file in a folder.
+///
+/// It assumes that all files in the folder are spell files.
+/// 
+/// #### Parameters
+/// - `folder_path` The file path to the folder to extract every spell from.
+/// 
+/// #### Output
+/// Returns a Result enum.
+/// - `Ok` Returns a vec of spell objects that can be inputted into `generate_spellbook()`.
+/// - `Err` Returns any errors that occurred.
 pub fn get_all_spells_in_folder(folder_path: &str) -> Result<Vec<spells::Spell>, Box<dyn std::error::Error>>
 {
 	// Gets a list of every file in the folder
@@ -2275,8 +2298,8 @@ mod tests
 		let hell_spell = spells::Spell
 		{
 			name: String::from("HELL SPELL AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A"),
-			level: spells::Level::Level9,
-			school: spells::MagicSchool::Necromancy,
+			level: spells::SpellField::Custom(String::from("100TH-LEVEL")),
+			school: spells::SpellField::Custom(String::from("SUPER NECROMANCY")),
 			is_ritual: true,
 			casting_time: spells::SpellField::Controlled(spells::CastingTime::Reaction(String::from("THAT YOU TAKE WHEN YOU FEEL LIKE CASTING SPELLS AND DOING MAGIC AND AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A"))),
 			range: spells::SpellField::Controlled(spells::Range::Yourself(Some(spells::AOE::Cylinder(spells::Distance::Miles(63489), spells::Distance::Miles(49729))))),
@@ -2313,8 +2336,8 @@ A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A 
 		let power_word_scrunch = spells::Spell
 		{
 			name: String::from("Power Word Scrunch"),
-			level: spells::Level::Level9,
-			school: spells::MagicSchool::Transmutation,
+			level: spells::SpellField::Controlled(spells::Level::Level9),
+			school: spells::SpellField::Controlled(spells::MagicSchool::Transmutation),
 			is_ritual: false,
 			casting_time: spells::SpellField::Controlled(spells::CastingTime::Actions(1)),
 			range: spells::SpellField::Controlled(spells::Range::Dist(spells::Distance::Feet(60))),
@@ -2336,8 +2359,8 @@ Scrunch ball funny lol."),
 		let the_ten_hells = spells::Spell
 		{
 			name: String::from("The Ten Hells"),
-			level: spells::Level::Level9,
-			school: spells::MagicSchool::Necromancy,
+			level: spells::SpellField::Controlled(spells::Level::Level9),
+			school: spells::SpellField::Controlled(spells::MagicSchool::Necromancy),
 			is_ritual: true,
 			casting_time: spells::SpellField::Controlled(spells::CastingTime::Actions(1)),
 			range: spells::SpellField::Controlled(spells::Range::Yourself(Some(spells::AOE::Sphere(spells::Distance::Feet(90))))),
