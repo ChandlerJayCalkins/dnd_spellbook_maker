@@ -144,60 +144,116 @@ Details on the structure of spell files is below if you wish to create your own.
 
 # Spell Files
 Spell files are plaintext files with fields separated mostly by newlines. Each field in a spell file corresponds to one of the fields in the `Spell` struct. The fields are as follows:
-- `name:` The name of the spell. Can be any string on a single line (doesn't need to be surrounded by quotes).
-- `level:` The level of the spell. Ranges from the integers 0 to 9.
-- `school:` The magic school of the spell. Can be one of the following values:
-	- `abjuration`
-	- `conjuration`
-	- `divination`
-	- `enchantment`
-	- `evocation`
-	- `illusion`
-	- `necromancy`
-	- `transmutation`
-- `is_ritual:` Whether or not the spell is a ritual. Must be either `true` or `false`.
-- `casting_time:` The amount of time it takes to cast this spell. Can one of the following values:
-	- `seconds` Must be followed by a nonnegative integer.
-	- `actions` Must be followed by a nonnegative integer.
-	- `bonusaction`
-	- `reaction` Must be followed by text inside of quotes that does not go to a new line.
-	- `minutes` Must be followed by a nonnegative integer.
-	- `hours` Must be followed by a nonnegative integer.
-	- `days` Must be followed by a nonnegative integer.
-	- `weeks` Must be followed by a nonnegative integer.
-	- `months` Must be followed by a nonnegative integer.
-	- `years` Must be followed by a nonnegative integer.
-	- `special`
-- `range:` The distance / area that this spell can target things within. Can be one of the following values:
-	- `self` This value can optionally be followed by an AOE (area of effect) value. Valid AOE values:
-		- `line` Must be followed by a distance value (details on distances below).
-		- `cone` Must be followed by a distance value.
-		- `cube` Must be followed by a distance value.
-		- `sphere` Must be followed by a distance value.
-		- `hemisphere` Must be followed by a distance value.
-		- `cylinder` Must be followed by two distance values.
-	- `touch`
-	- A distance value (details on distances below).
-	- `sight`
-	- `unlimited`
-	- `special`
-- `has_v_component:` Whether or not the spell has a verbal component. Must be either `true` or `false`.
-- `has_s_component:` Whether or not the spell has a somantic component. Must be either `true` or `false`.
-- `m_components:` The material components for the spell. If the spell has material components, its value should be text inside of quotes that does not go to a new line. 
+- `name:`
+- `level:`
+- `school:`
+- `is_ritual:`
+- `casting_time:`
+- `range:`
+- `has_v_component:`
+- `has_s_component:`
+- `m_components:`
+- `duration:`
+- `description:`
+- `upcast_description:`
+
+## Fields
+
+### Name
+`name:`
+
+The name of the spell. Can be any string on a single line (doesn't need to be surrounded by quotes).
+
+### Level
+`level:`
+
+The level of the spell. Ranges from the integers 0 to 9.
+
+### School
+`school:`
+
+The magic school of the spell. Can be one of the following values:
+- `abjuration`
+- `conjuration`
+- `divination`
+- `enchantment`
+- `evocation`
+- `illusion`
+- `necromancy`
+- `transmutation`
+
+### Ritual
+`is_ritual:`
+
+Whether or not the spell is a ritual. Must be either `true` or `false`.
+
+### Casting Time
+`casting_time:`
+
+The amount of time it takes to cast this spell. Can one of the following values:
+- `seconds` Must be followed by a nonnegative integer.
+- `actions` Must be followed by a nonnegative integer.
+- `bonusaction`
+- `reaction` Must be followed by text inside of quotes that does not go to a new line.
+- `minutes` Must be followed by a nonnegative integer.
+- `hours` Must be followed by a nonnegative integer.
+- `days` Must be followed by a nonnegative integer.
+- `weeks` Must be followed by a nonnegative integer.
+- `months` Must be followed by a nonnegative integer.
+- `years` Must be followed by a nonnegative integer.
+- `special`
+
+### Range
+`range:`
+
+The distance / area that this spell can target things within. Can be one of the following values:
+- `self` This value can optionally be followed by an AOE (area of effect) value. Valid AOE values:
+	- `line` Must be followed by a distance value (details on distances below).
+	- `cone` Must be followed by a distance value.
+	- `cube` Must be followed by a distance value.
+	- `sphere` Must be followed by a distance value.
+	- `hemisphere` Must be followed by a distance value.
+	- `cylinder` Must be followed by two distance values.
+- `touch`
+- A distance value (details on distances below).
+- `sight`
+- `unlimited`
+- `special`
+
+### V / S Components
+`has_v_component:` / `has_s_component:`
+
+Whether or not the spell has a verbal / somantic component. Must be either `true` or `false`.
+
+### M Components
+`m_components:`
+
+The material components for the spell. If the spell has material components, its value should be text inside of quotes that does not go to a new line. 
 If the spell does not have any material components, its value should be `none`.
-- `duration:` The length of time that the spell lasts. Can be one of the following values:
-	- `instant`
-	- `seconds` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
-	- `rounds` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
-	- `minutes` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
-	- `hours` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
-	- `days` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
-	- `weeks` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
-	- `months` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
-	- `years` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
-	- `dispelledortriggered` Can be followed by the value `concentration` if the spell requires concentration.
-	- `untildispelled` Can be followed by the value `concentration` if the spell requires concentration.
-	- `permanent`
-	- `special` Can be followed by the value `concentration` if the spell requires concentration.
-- `description:` The text that describes what the spell does. This field's value must be text inside of quotes that can span multiple lines. This field is special, more info on it below.
-- `upcast_description:` The text that describes what the spell does when you cast it at a higher level. Follows the same rules as the `description:` field.
+
+### Duration
+`duration:`
+The length of time that the spell lasts. Can be one of the following values:
+- `instant`
+- `seconds` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
+- `rounds` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
+- `minutes` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
+- `hours` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
+- `days` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
+- `weeks` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
+- `months` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
+- `years` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
+- `dispelledortriggered` Can be followed by the value `concentration` if the spell requires concentration.
+- `untildispelled` Can be followed by the value `concentration` if the spell requires concentration.
+- `permanent`
+- `special` Can be followed by the value `concentration` if the spell requires concentration.
+
+### Description
+`description:`
+
+The text that describes what the spell does. This field's value must be text inside of quotes that can span multiple lines.
+
+### Upcast Description
+`upcast_description:`
+
+The text that describes what the spell does when you cast it at a higher level. Follows the same rules as the `description:` field.
