@@ -102,8 +102,9 @@ fn main()
 	// Creates the spellbook
 	let doc = dnd-spellbook-maker-lib::generate_spellbook
 	(
-		spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data), &font_size_data,
-		&text_colors, &font_scalars, &table_options, &Some((background_path, &background_transform))
+		spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
+		&font_size_data, &text_colors, &font_scalars, &table_options,
+		&Some((background_path, &background_transform))
 	).unwrap();
 	// Saves the spellbook to a pdf document
 	let _ = dnd-spellbook-maker-lib::save_spellbook(doc, "Spellbook.pdf");
