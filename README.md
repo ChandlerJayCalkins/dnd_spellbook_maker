@@ -17,7 +17,7 @@ dnd_spellbook_maker = { git = "https://github.com/ChandlerJayCalkins/dnd_spellbo
 
 ### Example Program
 
-This program makes a spellbook. It assumes the directory it is in has "spells", "fonts", and "img" folders populated with certain files, including subdirectories with spell files in the "spell" folder.
+This program makes a spellbook. It assumes the directory it is in has the same "spells", "fonts", and "img" folders from this repository with all their contents.
 
 ```Rust
 use dnd_spellbook_maker;
