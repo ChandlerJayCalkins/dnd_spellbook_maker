@@ -84,7 +84,10 @@ fn main()
 		body_color: (0, 0, 0)
 	};
 	// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
-	let font_scalars = dnd_spellbook_maker::FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
+	let font_scalars = dnd_spellbook_maker::FontScalars::new
+	(
+		0.475, 0.51, 0.48, 0.515
+	).unwrap();
 	// Parameters for table margins / padding and off-row color / scaling
 	let table_options = dnd_spellbook_maker::TableOptions::new
 	(
@@ -104,9 +107,9 @@ fn main()
 	// Creates the spellbook
 	let doc = dnd_spellbook_maker::generate_spellbook
 	(
-		spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
-		&font_size_data, &text_colors, &font_scalars, &table_options,
-		&Some((background_path, &background_transform))
+		spellbook_name, &spell_list, &font_paths, &page_size_data,
+		&Some(page_number_data), &font_size_data, &text_colors, &font_scalars,
+		&table_options, &Some((background_path, &background_transform))
 	).unwrap();
 	// Saves the spellbook to a pdf document
 	let _ = dnd_spellbook_maker::save_spellbook(doc, "Spellbook.pdf");
