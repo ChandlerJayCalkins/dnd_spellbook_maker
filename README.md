@@ -148,22 +148,51 @@ pub fn generate_spellbook
 ) -> Result<PdfDocumentReference, Box<dyn std::error::Error>>
 ```
 
-This function is used to create the spellbook itself.
+This function is for creating spellbooks.
 
 #### Parameters
 - `title: &str` The name of the spellbook. It will determine what text appears on the cover page and what the pdf document will be named in the meta data.
-- `spell_list: &Vec<spells::Spell>` The list of spells that the spellbook will contain.
+- `spell_list: &Vec<spells::Spell>` The list of spells that the spellbook will contain. The spells do not have to be in any particular order.
 - `font_paths: &FontPaths` Struct containing the file paths to the regular, bold, italic, and bold-italic fonts that the spellbook will use for the text.
 - `page_size_data: &PageSizeData` Struct containing the data that determines the size of the page and the text margins (space between edge of page and text).
-- `page_number_options: &Option<PageNumberData>` Option containing a struct of the page number behavior (starting number, positioning, flip sides or not, etc.). A value of "None" will make the spellbook have no page numbers.
+- `page_number_options: &Option<PageNumberData>` Option containing a struct of the page number behavior (starting number, positioning, flip sides or not, etc.). A value of `None` will make the spellbook have no page numbers.
 - `font_size_data: &FontSizeData` Struct containing the font size for various types of text and spacing behavior like newline amounts and tabbing amounts.
 - `text_colors: &TextColors` Struct containing the rgb values for each type of text in the spellbook.
 - `font_scalars: &FontScalars` Numbers that determine how the size of each font is calculated. Numbers being slightly off may lead to text spilling off the page or going to new lines too early.
 You may need to tinker with these values for the fonts you are using until the text in your spellbooks look good to get it right.
 - `table_options: &TableOptions` Struct containing options that determine the appearance of tables.
 - `background_img_data: &Option<(&str, &ImageTransform)>` Option containing the data needed to put a background image on every page in the spellbook.
-The "&str" is the file path to the background image and the "&ImageTransform" is a struct containing options that determine the sizing and rotation of the image.
+The `&str` is the file path to the background image and the `&ImageTransform` is a struct containing options that determine the sizing and rotation of the image.
 
 #### Output
 Returns any errors that occur. Otherwise, it returns a struct containing the data of the spellbook that can be saved to a file if there were no errors.
 The struct it returns on a success is a printpdf::PdfDocumentReference from the printpdf crate (https://docs.rs/printpdf/latest/printpdf/struct.PdfDocumentReference.html).
+
+### save_spellbook()
+```rust
+pub fn save_spellbook(doc: PdfDocumentReference, file_name: &str)
+-> Result<(), Box<dyn std::error::Error>>
+```
+
+This function is for saving spellbooks to a file as a pdf document.
+
+#### Parameters
+- `doc: PdfDocumentReference` The spellbook that gets returned from `generate_spellbook()`
+- `file_name: &str` The name to give to the file that the spellbook will be saved to.
+
+#### Output
+Returns any errors that occur. Otherwise, it returns nothing if there were no errors.
+
+### get_all_spells_in_folder()
+```rust
+pub fn get_all_spells_in_folder(folder_path: &str)
+-> Result<Vec<spells::Spell>, Box<dyn std::error::Error>>
+```
+
+This function is for obtaining and entire folder of spells easily.
+
+#### Parameters
+- `folder_path: &str` The file path to the folder to extract every spell from.
+
+#### Output
+Returns any errors that occur. Otherwise, it returns a vec of spell objects that can be inputted into `generate_spellbook()`.
