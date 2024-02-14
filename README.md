@@ -115,4 +115,16 @@ fn main()
 This library requires fonts files in order to work so it can add text to the document. Adding a background image to each of the pages is optional, but needs to be manually supplied if that is desired.
 
 ## Fonts
+Four font files are required to be given to the generate_spellbook() function in one of the struct parameters. The required fonts files must be either **.otf** or **.ttf** files.
+The four font files that are needed for a font are:
 
+- Regular font
+- Bold font
+- Italic font
+- Bolt Italic font
+
+## Background Image
+A background image can be added to every page of a spellbook, but it is not required. The image is added to each page of the spellbook via the printpdf crate which has bugs with adding images to pdf page layers.
+If you encounter a bug where your image is not added to the page properly, or at all, try converting the image to a different type (**.jpg** to **.png** or vice versa, etc.).
+
+# Creating a Spellbook
