@@ -128,3 +128,17 @@ A background image can be added to every page of a spellbook, but it is not requ
 If you encounter a bug where your image is not added to the page properly, or at all, try converting the image to a different type (**.jpg** to **.png** or vice versa, etc.).
 
 # Creating a Spellbook
+There are three main functions used to create spellbooks and several objects that are used as the parameters for those functions.
+
+## Functions
+
+### generate_spellbook()
+
+```rust
+pub fn generate_spellbook
+(
+	title: &str, spell_list: &Vec<spells::Spell>, font_paths: &FontPaths, page_size_data: &PageSizeData,
+	page_number_options: &Option<PageNumberData>, font_size_data: &FontSizeData, text_colors: &TextColors,
+	font_scalars: &FontScalars, table_options: &TableOptions, background_img_data: &Option<(&str, &ImageTransform)>
+) -> Result<PdfDocumentReference, Box<dyn std::error::Error>>
+```
