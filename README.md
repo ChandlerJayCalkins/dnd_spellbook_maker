@@ -60,11 +60,20 @@ fn main()
 		bold_italic: String::from("fonts/Bookman/Bookman-BoldItalic.otf")
 	};
 	// Parameters for determining the size of the page and the text margins on the page
-	let page_size_data = dnd-spellbook-maker-lib::PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
+	let page_size_data = dnd-spellbook-maker-lib::PageSizeData::new
+	(
+		210.0, 297.0, 10.0, 10.0, 10.0, 10.0
+	).unwrap();
 	// Parameters for determining page number behavior
-	let page_number_data = dnd-spellbook-maker-lib::PageNumberData::new(true, false, 1, 5.0, 4.0).unwrap();
+	let page_number_data = dnd-spellbook-maker-lib::PageNumberData::new
+	(
+		true, false, 1, 5.0, 4.0
+	).unwrap();
 	// Parameters for determining font sizes, the tab amount, and newline amounts
-	let font_size_data = dnd-spellbook-maker-lib::FontSizeData::new(32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0).unwrap();
+	let font_size_data = dnd-spellbook-maker-lib::FontSizeData::new
+	(
+		32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0
+	).unwrap();
 	// Colors for each type of text
 	let text_colors = dnd-spellbook-maker-lib::TextColors
 	{
@@ -75,7 +84,10 @@ fn main()
 	// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
 	let font_scalars = dnd-spellbook-maker-lib::FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
 	// Parameters for table margins / padding and off-row color / scaling
-	let table_options = dnd-spellbook-maker-lib::TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
+	let table_options = dnd-spellbook-maker-lib::TableOptions::new
+	(
+		16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)
+	).unwrap();
 	// File path to the background image
 	let background_path = "img/parchment.jpg";
 	// Image transform data for the background image
@@ -88,8 +100,11 @@ fn main()
 		..Default::default()
 	};
 	// Creates the spellbook
-	let doc = dnd-spellbook-maker-lib::generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
-		&font_size_data, &text_colors, &font_scalars, &table_options, &Some((background_path, &background_transform))).unwrap();
+	let doc = dnd-spellbook-maker-lib::generate_spellbook
+	(
+		spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data), &font_size_data,
+		&text_colors, &font_scalars, &table_options, &Some((background_path, &background_transform))
+	).unwrap();
 	// Saves the spellbook to a pdf document
 	let _ = dnd-spellbook-maker-lib::save_spellbook(doc, "Spellbook.pdf");
 }
