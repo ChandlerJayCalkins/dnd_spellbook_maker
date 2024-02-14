@@ -136,7 +136,7 @@ If you encounter a bug where your image is not added to the page properly, or at
 
 # Spells
 To create a spellbook using the `generate_spellbook()` function, it needs a vec of `Spell` objects. Spell objects should generally be created from spell files.
-Details on the structure of spell files is below if you wish to create your own. This library comes with a spell file for every spell in the following source material books:
+Details on the structure of spell files are below if you wish to create your own. This library comes with a spell file for every spell in the following source material books:
 - The Player's Handbook
 - Xanathar's Guide to Everything
 - Tasha's Cauldron of Everything
