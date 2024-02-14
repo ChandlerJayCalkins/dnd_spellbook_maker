@@ -436,7 +436,7 @@ A | B | C
 ## Custom Fields
 
 The fields `level:`, `school:`, `casting_time:`, `range:`, and `duration:` all have controlled values with only a few select valid types of values.
-This control measure can be overridden for all of these fields, allowing users to inject whatever text they want into those fields.
+This control measure can be overridden for all of these fields, allowing users to inject whatever text they want into those fields on that spell's page(s) in the spellbook.
 This can be done by making the value of each of these fields be text on one line inside of quotation marks, the same as nonempty `m_components:` values.
 
 Examples:
