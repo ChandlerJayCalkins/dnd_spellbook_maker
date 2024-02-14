@@ -189,7 +189,7 @@ pub fn get_all_spells_in_folder(folder_path: &str)
 -> Result<Vec<spells::Spell>, Box<dyn std::error::Error>>
 ```
 
-This function is for obtaining and entire folder of spells easily.
+This function is for obtaining and entire folder of spells easily. It will assume every file in the folder is a spell.
 
 #### Parameters
 - `folder_path: &str` The file path to the folder to extract every spell from.
