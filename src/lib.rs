@@ -1658,10 +1658,13 @@ impl PageNumberData
 }
 
 // Generates a printpdf pdf document of a spellbook with spells from the spell_list parameter
-pub fn generate_spellbook(title: &str, spell_list: &Vec<spells::Spell>, font_paths: &FontPaths,
-page_size_data: &PageSizeData, page_number_options: &Option<PageNumberData>, font_size_data: &FontSizeData,
-text_colors: &TextColors, font_scalars: &FontScalars, table_options: &TableOptions,
-background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentReference, Box<dyn std::error::Error>>
+pub fn generate_spellbook
+(
+	title: &str, spell_list: &Vec<spells::Spell>, font_paths: &FontPaths,
+	page_size_data: &PageSizeData, page_number_options: &Option<PageNumberData>, font_size_data: &FontSizeData,
+	text_colors: &TextColors, font_scalars: &FontScalars, table_options: &TableOptions,
+	background_img_data: &Option<(&str, &ImageTransform)>
+) -> Result<PdfDocumentReference, Box<dyn std::error::Error>>
 {
 	// Construct the text colors
 	let title_color = Color::Rgb(Rgb::new
@@ -1813,10 +1816,13 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 	let cover_layer_name_prefix = "Cover Layer";
 
     // Add text using the custom font to the page
-	let _ = write_centered_textbox(&doc, cover_layer_name_prefix, &cover_layer_ref, &mut None, &mut layer_count, &img_data,
+	let _ = write_centered_textbox
+	(
+		&doc, cover_layer_name_prefix, &cover_layer_ref, &mut None, &mut layer_count, &img_data,
 		font_scalars, title, &title_color, font_size_data.title_font_size(), page_size_data.width, page_size_data.height,
 		x_left, x_right, y_top, y_low, &mut temp_x, &mut temp_y, &regular_font_type, &regular_font,
-		&regular_font_size_data, &title_font_scale, font_size_data.title_newline_amount());
+		&regular_font_size_data, &title_font_scale, font_size_data.title_newline_amount()
+	);
 	
 	// Reset the layer count so it begins at either 1 or the desired starting page number
 	layer_count = match page_number_options
@@ -1835,8 +1841,11 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 	for spell in spell_list
 	{
 		// Create a new page
-		let (page, mut layer_ref) = make_new_page(&doc, spell_layer_name_prefix, &mut page_number_data, &mut layer_count,
-			page_size_data.width, page_size_data.height, &img_data, font_scalars);
+		let (page, mut layer_ref) = make_new_page
+		(
+			&doc, spell_layer_name_prefix, &mut page_number_data, &mut layer_count,
+			page_size_data.width, page_size_data.height, &img_data, font_scalars
+		);
 		// Create a new bookmark for this page
 		doc.add_bookmark(spell.name.clone(), page);
 		// Keeps track of the current x and y position to place text at
@@ -1846,11 +1855,14 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 		// Add text to the page
 
 		// Add the name of the spell as a header
-		layer_ref = write_textbox(&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
+		layer_ref = write_textbox
+		(
+			&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
 			&img_data, font_scalars, &spell.name, &header_color, font_size_data.header_font_size(), page_size_data.width,
 			page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font_type, &regular_font,
 			&regular_font_size_data, &header_font_scale, font_size_data.tab_amount(),
-			font_size_data.header_newline_amount());
+			font_size_data.header_newline_amount()
+		);
 		// Move the y position down a bit to put some extra space between lines of text
 		y -= font_size_data.header_newline_amount();
 		// Reset the x position back to the starting position
@@ -1858,66 +1870,84 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 
 		// Add the level and the spell's school of magic
 		let text = get_level_school_text(&spell);
-		layer_ref = write_textbox(&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
+		layer_ref = write_textbox
+		(
+			&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
 			&img_data, font_scalars, &text, &body_color, font_size_data.body_font_size(), page_size_data.width,
 			page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &italic_font_type, &italic_font,
 			&italic_font_size_data, &body_font_scale, font_size_data.tab_amount(),
-			font_size_data.body_newline_amount());
+			font_size_data.body_newline_amount()
+		);
 		y -= font_size_data.header_newline_amount();
 		x = x_left;
 
 		// Add the casting time of the spell
-		layer_ref = write_spell_field(&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
+		layer_ref = write_spell_field
+		(
+			&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
 			&img_data, font_scalars, "Casting Time:", &spell.casting_time.to_string(), &body_color, &body_color,
 			font_size_data.body_font_size(), page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low,
 			&mut x, &mut y, &bold_font_type, &bold_font, &bold_font_size_data, &regular_font, &bold_font, &italic_font,
 			&bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
 			&bold_italic_font_size_data, &body_font_scale, table_options, &table_title_font_scale,
-			font_size_data.tab_amount(), font_size_data.body_newline_amount());
+			font_size_data.tab_amount(), font_size_data.body_newline_amount()
+		);
 		y -= font_size_data.body_newline_amount();
 		x = x_left;
 
 
 		// Add the range of the spell
-		layer_ref = write_spell_field(&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
+		layer_ref = write_spell_field
+		(
+			&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
 			&img_data, font_scalars, "Range:", &spell.range.to_string(), &body_color, &body_color,
 			font_size_data.body_font_size(), page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low,
 			&mut x, &mut y, &bold_font_type, &bold_font, &bold_font_size_data, &regular_font, &bold_font, &italic_font,
 			&bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
 			&bold_italic_font_size_data, &body_font_scale, table_options, &table_title_font_scale,
-			font_size_data.tab_amount(), font_size_data.body_newline_amount());
+			font_size_data.tab_amount(), font_size_data.body_newline_amount()
+		);
 		y -= font_size_data.body_newline_amount();
 		x = x_left;
 
 		// Add the components of the spell
-		layer_ref = write_spell_field(&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
+		layer_ref = write_spell_field
+		(
+			&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
 			&img_data, font_scalars, "Components:", &spell.get_component_string(), &body_color, &body_color,
 			font_size_data.body_font_size(), page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low,
 			&mut x, &mut y, &bold_font_type, &bold_font, &bold_font_size_data, &regular_font, &bold_font, &italic_font,
 			&bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
 			&bold_italic_font_size_data, &body_font_scale, table_options, &table_title_font_scale,
-			font_size_data.tab_amount(), font_size_data.body_newline_amount());
+			font_size_data.tab_amount(), font_size_data.body_newline_amount()
+		);
 		y -= font_size_data.body_newline_amount();
 		x = x_left;
 
 		// Add the duration of the spell
-		layer_ref = write_spell_field(&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
+		layer_ref = write_spell_field
+		(
+			&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
 			&img_data, font_scalars, "Duration:", &spell.duration.to_string(), &body_color, &body_color,
 			font_size_data.body_font_size(), page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low,
 			&mut x, &mut y, &bold_font_type, &bold_font, &bold_font_size_data, &regular_font, &bold_font, &italic_font,
 			&bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
 			&bold_italic_font_size_data, &body_font_scale, table_options, &table_title_font_scale,
-			font_size_data.tab_amount(), font_size_data.body_newline_amount());
+			font_size_data.tab_amount(), font_size_data.body_newline_amount()
+		);
 		y -= font_size_data.header_newline_amount();
 		x = x_left;
 
 		// Add the spell's description
-		layer_ref = write_spell_description(&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data,
+		layer_ref = write_spell_description
+		(
+			&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data,
 			&mut layer_count, &img_data, font_scalars, &spell.description, &body_color, font_size_data.body_font_size(),
 			page_size_data.width, page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font,
 			&bold_font, &italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data,
 			&italic_font_size_data, &bold_italic_font_size_data, &body_font_scale, table_options, &table_title_font_scale,
-			font_size_data.tab_amount(), font_size_data.body_newline_amount());
+			font_size_data.tab_amount(), font_size_data.body_newline_amount()
+		);
 
 		// If the spell has an upcast description
 		if let Some(description) = &spell.upcast_description
@@ -1925,12 +1955,15 @@ background_img_data: &Option<(&str, &ImageTransform)>) -> Result<PdfDocumentRefe
 			y -= font_size_data.body_newline_amount();
 			x = x_left + font_size_data.tab_amount();
 			let text = format!("<bi> At Higher Levels. <r> {}", description);
-			_ = write_spell_description(&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
+			_ = write_spell_description
+			(
+				&doc, spell_layer_name_prefix, &layer_ref, &mut page_number_data, &mut layer_count,
 				&img_data, font_scalars, &text, &body_color, font_size_data.body_font_size(), page_size_data.width,
 				page_size_data.height, x_left, x_right, y_top, y_low, &mut x, &mut y, &regular_font, &bold_font,
 				&italic_font, &bold_italic_font, &regular_font_size_data, &bold_font_size_data, &italic_font_size_data,
 				&bold_italic_font_size_data, &body_font_scale, table_options, &table_title_font_scale,
-				font_size_data.tab_amount(), font_size_data.body_newline_amount());
+				font_size_data.tab_amount(), font_size_data.body_newline_amount()
+			);
 		}
 	}
 
@@ -2042,12 +2075,17 @@ mod tests
 			..Default::default()
 		};
 		// Creates the spellbooks
-		let doc_1 = generate_spellbook(spellbook_name_1, &spell_list_1, &font_paths, &page_size_data, &Some(page_number_data),
+		let doc_1 = generate_spellbook
+		(
+			spellbook_name_1, &spell_list_1, &font_paths, &page_size_data, &Some(page_number_data),
 			&font_size_data, &text_colors, &font_scalars, &table_options,
-			&Some((background_path, &background_transform))).unwrap();
-		let doc_2 = generate_spellbook(spellbook_name_2, &spell_list_2, &font_paths, &page_size_data, &Some(page_number_data),
+			&Some((background_path, &background_transform))
+		).unwrap();
+		let doc_2 = generate_spellbook
+		(spellbook_name_2, &spell_list_2, &font_paths, &page_size_data, &Some(page_number_data),
 			&font_size_data, &text_colors, &font_scalars, &table_options,
-			&Some((background_path, &background_transform))).unwrap();
+			&Some((background_path, &background_transform))
+		).unwrap();
 		// Saves the spellbooks as pdf documents
 		let _ = save_spellbook(doc_1, "Player's Handbook Spells 1.pdf").unwrap();
 		let _ = save_spellbook(doc_2, "Player's Handbook Spells 2.pdf").unwrap();
@@ -2098,9 +2136,12 @@ mod tests
 			..Default::default()
 		};
 		// Creates the spellbook
-		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
+		let doc = generate_spellbook
+		(
+			spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
 			&font_size_data, &text_colors, &font_scalars, &table_options,
-			&Some((background_path, &background_transform))).unwrap();
+			&Some((background_path, &background_transform))
+		).unwrap();
 		// Saves the spellbook to a pdf document
 		let _ = save_spellbook(doc, "Xanathar's Guide to Everything Spells.pdf");
 	}
@@ -2150,9 +2191,12 @@ mod tests
 			..Default::default()
 		};
 		// Creates the spellbook
-		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
+		let doc = generate_spellbook
+		(
+			spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
 			&font_size_data, &text_colors, &font_scalars, &table_options,
-			&Some((background_path, &background_transform))).unwrap();
+			&Some((background_path, &background_transform))
+		).unwrap();
 		// Saves the spellbook to a pdf document
 		let _ = save_spellbook(doc, "Tasha's Cauldron of Everything Spells.pdf");
 	}
@@ -2203,9 +2247,12 @@ mod tests
 			..Default::default()
 		};
 		// Creates the spellbook
-		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
+		let doc = generate_spellbook
+		(
+			spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
 			&font_size_data, &text_colors, &font_scalars, &table_options,
-			&Some((background_path, &background_transform))).unwrap();
+			&Some((background_path, &background_transform))
+		).unwrap();
 		// Saves the spellbook to a pdf document
 		let _ = save_spellbook(doc, "Strixhaven A Curriculum of Chaos Spells.pdf");
 	}
@@ -2369,8 +2416,11 @@ Creatures that succeed the saving throw take 20d4 scrunching damage."),
 		// Parameters for table margins / padding and off-row color / scaling
 		let table_options = TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
 		// Creates the spellbook
-		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
-			&font_size_data, &text_colors, &font_scalars, &table_options, &None).unwrap();
+		let doc = generate_spellbook
+		(
+			spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
+			&font_size_data, &text_colors, &font_scalars, &table_options, &None
+		).unwrap();
 		// Saves the spellbook to a pdf document
 		let _ = save_spellbook(doc, "NECRONOMICON.pdf");
 	}
@@ -2445,9 +2495,12 @@ Creatures that succeed the saving throw take 20d4 scrunching damage."),
 			..Default::default()
 		};
 		// Creates the spellbook
-		let doc = generate_spellbook(spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
+		let doc = generate_spellbook
+		(
+			spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
 			&font_size_data, &text_colors, &font_scalars, &table_options,
-			&Some((background_path, &background_transform))).unwrap();
+			&Some((background_path, &background_transform))
+		).unwrap();
 		// Saves the spellbook to a pdf document
 		let _ = save_spellbook(doc, "Spellbook.pdf");
 	}*/
