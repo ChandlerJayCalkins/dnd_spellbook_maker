@@ -1,4 +1,4 @@
-# dnd-spellbook-maker-lib
+# dnd_spellbook_maker
 Library for making pdf documents of spells that a D&D character has.
 
 ## Quickstart
@@ -12,10 +12,12 @@ dnd_spellbook_maker = "0.1.0"
 or
 
 ```toml
-dnd_spellbook_maker = { git = "https://github.com/ChandlerJayCalkins/dnd-spellbook-maker-lib" }
+dnd_spellbook_maker = { git = "https://github.com/ChandlerJayCalkins/dnd_spellbook_maker" }
 ```
 
 ### Example Program
+
+This program makes a spellbook. It assumes the directory it is in has "spells", "fonts", and "img" folders populated with certain files, including subdirectories with spell files in the "spell" folder.
 
 ```Rust
 use dnd_spellbook_maker;
