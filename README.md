@@ -225,7 +225,7 @@ The amount of time it takes to cast this spell. Can one of the following values:
 - `seconds` Must be followed by a nonnegative integer.
 - `actions` Must be followed by a nonnegative integer.
 - `bonusaction`
-- `reaction` Must be followed by text inside of quotes that does not go to a new line.
+- `reaction` Must be followed by text on one line inside of quotation marks.
 - `minutes` Must be followed by a nonnegative integer.
 - `hours` Must be followed by a nonnegative integer.
 - `days` Must be followed by a nonnegative integer.
@@ -298,7 +298,7 @@ Examples:
 ### M Components
 `m_components:`
 
-The material components for the spell. If the spell has material components, its value should be text inside of quotes that does not go to a new line. 
+The material components for the spell. If the spell has material components, its value should be text on one line inside of quotation marks. 
 If the spell does not have any material components, its value should be `none` or you can not include the field in the spell file for the same effect.
 
 Examples:
@@ -432,3 +432,17 @@ A | B | C
 ```
 
 `upcast_description: none` or just not having the field in the file.
+
+## Custom Fields
+
+The fields `level:`, `school:`, `casting_time:`, `range:`, and `duration:` all have controlled values with only a few select valid types of values.
+This control measure can be overridden for all of these fields, allowing users to inject whatever text they want into those fields.
+This can be done by making the value of each of these fields be text on one line inside of quotation marks, the same as nonempty `m_components:` values.
+
+Examples:
+
+`level: "10th-level"`
+
+`school: "technomancy"`
+
+`casting_time: "1 action or 8 hours"`
