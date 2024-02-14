@@ -1,7 +1,8 @@
 use std::fs;
-pub extern crate image;
-pub use printpdf::*;
-pub use rusttype::{Font, Scale, point};
+extern crate image;
+pub use printpdf::{Mm, PdfDocumentReference, ImageTransform};
+use printpdf::{PdfDocument, PdfLayerReference, IndirectFontRef, Color, Rgb, Point, Line, PdfPageIndex, Image};
+use rusttype::{Font, Scale, point};
 pub mod spells;
 
 // Used for conveying what type of font is being used
