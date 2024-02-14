@@ -137,8 +137,9 @@ There are three main functions used to create spellbooks and several objects tha
 ```rust
 pub fn generate_spellbook
 (
-	title: &str, spell_list: &Vec<spells::Spell>, font_paths: &FontPaths, page_size_data: &PageSizeData,
-	page_number_options: &Option<PageNumberData>, font_size_data: &FontSizeData, text_colors: &TextColors,
-	font_scalars: &FontScalars, table_options: &TableOptions, background_img_data: &Option<(&str, &ImageTransform)>
+	title: &str, spell_list: &Vec<spells::Spell>, font_paths: &FontPaths,
+	page_size_data: &PageSizeData, page_number_options: &Option<PageNumberData>,
+	font_size_data: &FontSizeData, text_colors: &TextColors, font_scalars: &FontScalars,
+	table_options: &TableOptions, background_img_data: &Option<(&str, &ImageTransform)>
 ) -> Result<PdfDocumentReference, Box<dyn std::error::Error>>
 ```
