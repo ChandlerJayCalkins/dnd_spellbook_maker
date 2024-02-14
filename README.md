@@ -6,19 +6,19 @@ Library for making pdf documents of spells that a D&D character has.
 ### Cargo.toml Dependency
 
 ```toml
-dnd-spellbook-maker-lib = "0.1.0"
+dnd_spellbook_maker = "0.1.0"
 ```
 
 or
 
 ```toml
-dnd-spellbook-maker-lib = { git = "https://github.com/ChandlerJayCalkins/dnd-spellbook-maker-lib" }
+dnd_spellbook_maker = { git = "https://github.com/ChandlerJayCalkins/dnd-spellbook-maker-lib" }
 ```
 
 ### Example Program
 
 ```Rust
-use dnd-spellbook-maker-lib;
+use dnd_spellbook_maker;
 
 fn main()
 {
@@ -49,10 +49,10 @@ fn main()
 	{
 		println!("{}", path);
 		// Convert spell file into spell struct and add it to spell_list vec
-		spell_list.push(dnd-spellbook-maker-lib::spells::Spell::from_file(path).unwrap());
+		spell_list.push(dnd_spellbook_maker::spells::Spell::from_file(path).unwrap());
 	}
 	// File paths to the fonts needed
-	let font_paths = FontPaths
+	let font_paths = dnd_spellbook_maker::FontPaths
 	{
 		regular: String::from("fonts/Bookman/Bookman-Regular.otf"),
 		bold: String::from("fonts/Bookman/Bookman-Bold.otf"),
@@ -60,54 +60,54 @@ fn main()
 		bold_italic: String::from("fonts/Bookman/Bookman-BoldItalic.otf")
 	};
 	// Parameters for determining the size of the page and the text margins on the page
-	let page_size_data = dnd-spellbook-maker-lib::PageSizeData::new
+	let page_size_data = dnd_spellbook_maker::PageSizeData::new
 	(
 		210.0, 297.0, 10.0, 10.0, 10.0, 10.0
 	).unwrap();
 	// Parameters for determining page number behavior
-	let page_number_data = dnd-spellbook-maker-lib::PageNumberData::new
+	let page_number_data = dnd_spellbook_maker::PageNumberData::new
 	(
 		true, false, 1, 5.0, 4.0
 	).unwrap();
 	// Parameters for determining font sizes, the tab amount, and newline amounts
-	let font_size_data = dnd-spellbook-maker-lib::FontSizeData::new
+	let font_size_data = dnd_spellbook_maker::FontSizeData::new
 	(
 		32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0
 	).unwrap();
 	// Colors for each type of text
-	let text_colors = dnd-spellbook-maker-lib::TextColors
+	let text_colors = dnd_spellbook_maker::TextColors
 	{
 		title_color: (0, 0, 0),
 		header_color: (115, 26, 26),
 		body_color: (0, 0, 0)
 	};
 	// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
-	let font_scalars = dnd-spellbook-maker-lib::FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
+	let font_scalars = dnd_spellbook_maker::FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
 	// Parameters for table margins / padding and off-row color / scaling
-	let table_options = dnd-spellbook-maker-lib::TableOptions::new
+	let table_options = dnd_spellbook_maker::TableOptions::new
 	(
 		16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)
 	).unwrap();
 	// File path to the background image
 	let background_path = "img/parchment.jpg";
 	// Image transform data for the background image
-	let background_transform = dnd-spellbook-maker-lib::ImageTransform
+	let background_transform = dnd_spellbook_maker::ImageTransform
 	{
-		translate_x: Some(Mm(0.0)),
-		translate_y: Some(Mm(0.0)),
+		translate_x: Some(dnd_spellbook_maker::Mm(0.0)),
+		translate_y: Some(dnd_spellbook_maker::Mm(0.0)),
 		scale_x: Some(1.95),
 		scale_y: Some(2.125),
 		..Default::default()
 	};
 	// Creates the spellbook
-	let doc = dnd-spellbook-maker-lib::generate_spellbook
+	let doc = dnd_spellbook_maker::generate_spellbook
 	(
 		spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
 		&font_size_data, &text_colors, &font_scalars, &table_options,
 		&Some((background_path, &background_transform))
 	).unwrap();
 	// Saves the spellbook to a pdf document
-	let _ = dnd-spellbook-maker-lib::save_spellbook(doc, "Spellbook.pdf");
+	let _ = dnd_spellbook_maker::save_spellbook(doc, "Spellbook.pdf");
 }
 ```
  

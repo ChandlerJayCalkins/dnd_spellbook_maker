@@ -1,5 +1,5 @@
 [package]
-name = "dnd-spellbook-maker-lib"
+name = "dnd_spellbook_maker"
 version = "0.1.0"
 edition = "2021"
 
