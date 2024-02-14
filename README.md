@@ -2,7 +2,8 @@
 Library for making pdf documents of spells that a D&D character has.
 
 ## Quickstart
-Cargo.toml dependency:
+
+### Cargo.toml Dependency
 
 ```toml
 dnd-spellbook-maker-lib = "0.1.0"
@@ -14,7 +15,7 @@ or
 dnd-spellbook-maker-lib = { git = "https://github.com/ChandlerJayCalkins/dnd-spellbook-maker-lib" }
 ```
 
-Example program of creating a spellbook:
+### Example Program
 
 ```Rust
 use dnd-spellbook-maker-lib
