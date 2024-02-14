@@ -1,5 +1,5 @@
 # dnd_spellbook_maker
-Library for making pdf documents of spells that a D&D character has.
+Library for making pdf documents of spells that a 5th edition D&D character has.
 
 ## Quickstart
 
