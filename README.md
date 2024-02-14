@@ -446,3 +446,151 @@ Examples:
 `school: "technomancy"`
 
 `casting_time: "1 action or 8 hours"`
+
+## Complete Examples
+
+```
+name: Fireball
+level: 3
+school: evocation
+casting_time: actions 1
+range: feet 150
+has_v_component
+has_s_component
+m_components: "a tiny ball of bat guano and sulfur"
+duration: instant
+description: "A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame. Each creature in a 20-foot-radius sphere centered on that point must make a Dexterity saving throw. A target takes 8d6 fire damage on a failed save, or half as much damage on a successful one.
+The fire spreads around corners. It ignites flammable objects in the area that aren't being worn or carried."
+upcast_description: "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d6 for each slot level above 3rd."
+```
+
+```
+name: Counterspell
+level: 3
+school: abjuration
+casting_time: reaction "which you take when you see a creature within 60 feet of you casting a spell"
+range: feet 60
+has_s_component
+duration: instant
+description: "You attempt to interrupt a creature in the process of casting a spell. If the creature is casting a spell of 3rd level or lower, its spell fails and has no effect. If it is casting a spell of 4th level or higher, make an ability check using your spellcasting ability. The DC equals 10 + the spell's level. On a success, the creature's spell fails and has no effect."
+```
+
+```
+name: Antipathy/Sympathy
+level: 8
+school: enchantment
+casting_time: hours 1
+range: feet 60
+has_v_component
+has_s_component
+m_components: "either a lump of alum soaked in vinegar for the <i> antipathy <r> effect or a drop of honey for the <i> sympathy <r> effect"
+duration: days 10
+description: "This spell attracts or repels creatures of your choice. You target something within range, either a Huge or smaller object or creature or an area that is no larger than a 200-foot cube. Then specify a kind of intelligent creature, such as red dragons, goblins, or vampires. You invest the target with an aura that either attracts or repels the specified creatures for the duration. Choose antipathy or sympathy as the aura's effect.
+<bi> Antipathy. <r> The enchantment causes creatures of the kind you designated to feel an intense urge to leave the area and avoid the target. When such a creature can see the target or comes within 60 feet of it, the creature must succeed on a Wisdom saving throw or become frightened. The creature remains frightened while it can see the target or is within 60 feet of it. While frightened by the target, the creature must use its movement to move to the nearest safe spot from which it can't see the target. If the creature moves more than 60 feet from the target and can't see it, the creature is no longer frightened, but the creature becomes frightened again if it regains sight of the target or moves within 60 feet of it.
+<bi> Sympathy. <r> The enchantment causes the specified creatures to feel an intense urge to approach the target while within 60 feet of it or able to see it. When such a creature can see the target or comes within 60 feet of it, the creature must succeed on a Wisdom saving throw or use its movement on each of its turns to enter the area or move within reach of the target. When the creature has done so, it can't willingly move away from the target.
+If the target damages or otherwise harms an affected creature, the affected creature can make a Wisdom saving throw to end the effect, as described below.
+<bi> Ending the Effect. <r> If an affected creature ends its turn while not within 60 feet of the target or able to see it, the creature makes a Wisdom saving throw. On a successful save, the creature is no longer affected by the target and recognizes the feeling of repugnance or attraction as magical. In addition, a creature affected by the spell is allowed another Wisdom saving throw every 24 hours while the spell persists.
+A creature that successfully saves against this effect is immune to it for 1 minute, after which time it can be affected again."
+```
+
+```
+name: Thunderclap
+level: 0
+school: evocation
+casting_time: actions 1
+range: feet 5
+has_s_component
+duration: instant
+description: "You create a burst of thunderous sound that can be heard up to 100 feet away. Each creature within range, other than you, must succeed on a Constitution saving throw or take 1d6 thunder damage.
+The spell's damage increases by 1d6 when you reach 5th level (2d6), 11th level (3d6), and 17th level (4d6)."
+```
+
+```
+name: Leomund's Tiny Hut
+level: 3
+school: evocation
+is_ritual
+casting_time: minutes 1
+range: self hemisphere feet 10
+has_v_component
+has_s_component
+m_components: "a small crystal bead"
+duration: hours 8
+description: "A 10-foot-radius immobile dome of force springs into existence around and above you and remains stationary for the duration. The spell ends if you leave its area.
+Nine creatures of Medium size or smaller can fit inside the dome with you. The spell fails if its area includes a larger creature or more than nine creatures. Creatures and objects within the dome when you cast this spell can move through it freely. All other creatures and objects are barred from passing through it. Spells and other magical effects can't extend through the dome or be cast through it. The atmosphere inside the space is comfortable and dry, regardless of the weather outside.
+Until the spell ends, you can command the interior to become dimly lit or dark. The dome is opaque from the outside, of any color you choose, but it is transparent from the inside."
+```
+
+```
+name: Prestidigitation
+level: 0
+school: transmutation
+casting_time: actions 1
+range: feet 10
+has_v_component
+has_s_component
+duration: hours 1
+description: "This spell is a minor magical trick that novice spellcasters use for practice. You create one of the following magical effects within range:
+- You create an instantaneous, harmless sensory effect, such as a shower of sparks, a puff of wind, faint musical notes, or an odd odor.
+- You instantaneously light or snuff out a candle, a torch, or a small campfire.
+- You instantaneously clean or soil an object no larger than 1 cubic foot.
+- You chill, warm, or flavor up to 1 cubic foot of nonliving material for 1 hour.
+- You make a color, a small mark, or a symbol appear on an object or a surface for 1 hour.
+- You create a nonmagical trinket or an illusory image that can fit in your hand and that lasts until the end of your next turn.
+If you cast this spell multiple times, you can have up to three of its non-instantaneous effects active at a time, and you can dismiss such an effect as an action."
+```
+
+```
+name: Control Weather
+level: 8
+school: transmutation
+casting_time: minutes 10
+range: self sphere miles 5
+has_v_component
+has_s_component
+m_components: "burning incense and bits of earth and wood mixed in water"
+duration: hours 8 concentration
+description: "You take control of the weather within 5 miles of you for the duration. You must be outdoors to cast this spell. Moving to a place where you don't have a clear path to the sky ends the spell early.
+When you cast the spell, you change the current weather conditions, which are determined by the DM based on the climate and season. You can change precipitation, temperature, and wind. It takes 1d4 × 10 minutes for the new conditions to take effect. Once they do so, you can change the conditions again. When the spell ends, the weather gradually returns to normal. When you change the weather conditions, find a current condition on the following tables and change its stage by one, up or down. When changing the wind, you can change its direction.
+<table> <title> Precipitation <title>
+Stage | Condition
+<row> 1 | Clear
+<row> 2 | Light Clouds
+<row> 3 | Overcast or ground fog
+<row> 4 | Rain, hail, or snow
+<row> 5 | Torrential rain, driving hail, or blizzard
+<table>
+<table> <title> Temperature <title>
+Stage | Condition
+<row> 1 | Unbearable heat
+<row> 2 | Hot
+<row> 3 | Warm
+<row> 4 | Cool
+<row> 5 | Cold
+<row> 6 | Arctic cold
+<table>
+<table> <title> Wind <title>
+Stage | Condition
+<row> 1 | Calm
+<row> 2 | Moderate wind
+<row> 3 | Strong wind
+<row> 4 | Gale
+<row> 5 | Storm
+<table>"
+```
+
+```
+name: Control Flames
+level: 0
+school: transmutation
+casting_time: actions 1
+range: feet 60
+has_s_component
+duration: "Instantaneous or 1 hour (see below)"
+description: "You choose a nonmagical flame that you can see within range and that fits within a 5-foot cube. You affect it in one of the following ways:
+- You instantaneously expand the flame 5 feet in one direction, provided that wood or other fuel is present in the new location.
+- You instantaneously extinguish the flames within the cube.
+- You double or halve the area of bright light and dim light cast by the flame, change its color, or both. The change lasts for 1 hour.
+- You cause simple shapes—such as the vague form of a creature, an inanimate object, or a location—to appear within the flames and animate as you like. The shapes last for 1 hour.
+If you cast this spell multiple times, you can have up to three non-instantaneous effects created by it active at a time, and you can dismiss such an effect as an action."
+```
