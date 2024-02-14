@@ -138,7 +138,6 @@ There are three main functions used to create spellbooks and several objects tha
 ## Functions
 
 ### generate_spellbook()
-
 ```rust
 pub fn generate_spellbook
 (
@@ -148,3 +147,23 @@ pub fn generate_spellbook
 	table_options: &TableOptions, background_img_data: &Option<(&str, &ImageTransform)>
 ) -> Result<PdfDocumentReference, Box<dyn std::error::Error>>
 ```
+
+This function is used to create the spellbook itself.
+
+#### Parameters
+- `title: &str` The name of the spellbook. It will determine what text appears on the cover page and what the pdf document will be named in the meta data.
+- `spell_list: &Vec<spells::Spell>` The list of spells that the spellbook will contain.
+- `font_paths: &FontPaths` Struct containing the file paths to the regular, bold, italic, and bold-italic fonts that the spellbook will use for the text.
+- `page_size_data: &PageSizeData` Struct containing the data that determines the size of the page and the text margins (space between edge of page and text).
+- `page_number_options: &Option<PageNumberData>` Option containing a struct of the page number behavior (starting number, positioning, flip sides or not, etc.). A value of "None" will make the spellbook have no page numbers.
+- `font_size_data: &FontSizeData` Struct containing the font size for various types of text and spacing behavior like newline amounts and tabbing amounts.
+- `text_colors: &TextColors` Struct containing the rgb values for each type of text in the spellbook.
+- `font_scalars: &FontScalars` Numbers that determine how the size of each font is calculated. Numbers being slightly off may lead to text spilling off the page or going to new lines too early.
+You may need to tinker with these values for the fonts you are using until the text in your spellbooks look good to get it right.
+- `table_options: &TableOptions` Struct containing options that determine the appearance of tables.
+- `background_img_data: &Option<(&str, &ImageTransform)>` Option containing the data needed to put a background image on every page in the spellbook.
+The "&str" is the file path to the background image and the "&ImageTransform" is a struct containing options that determine the sizing and rotation of the image.
+
+#### Output
+Returns any errors that occur. Otherwise, it returns a struct containing the data of the spellbook that can be saved to a file if there were no errors.
+The struct it returns on a success is a printpdf::PdfDocumentReference from the printpdf crate (https://docs.rs/printpdf/latest/printpdf/struct.PdfDocumentReference.html).
