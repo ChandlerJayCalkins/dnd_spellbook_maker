@@ -1,6 +1,8 @@
 # dnd_spellbook_maker
 Library for making pdf documents of spells that a 5th edition D&D character has.
 
+Documentation at <https://docs.rs/dnd_spellbook_maker>.
+
 ## Quickstart
 
 ### Cargo.toml Dependency
@@ -117,7 +119,7 @@ fn main()
 ```
  
 # Setup
-This library requires fonts files in order to work so it can add text to the document. Adding a background image to each of the pages is optional, but needs to be manually supplied if that is desired.
+This library requires font files in order to work so it can add text to the document. Adding a background image to each of the pages is optional, but needs to be manually supplied if that is desired.
 
 ## Fonts
 Four font files are required to be given to the generate_spellbook() function in one of the struct parameters. The required fonts files must be either **.otf** or **.ttf** files.
@@ -132,67 +134,70 @@ The four font files that are needed for a font are:
 A background image can be added to every page of a spellbook, but it is not required. The image is added to each page of the spellbook via the printpdf crate which has bugs with adding images to pdf page layers.
 If you encounter a bug where your image is not added to the page properly, or at all, try converting the image to a different type (**.jpg** to **.png** or vice versa, etc.).
 
-# Creating a Spellbook
-There are three main functions used to create spellbooks and several objects that are used as the parameters for those functions.
+# Spells
+To create a spellbook using the `generate_spellbook()` function, it needs a vec of `Spell` objects. Spell objects should generally be created from spell files.
+Details on the structure of spell files is below if you wish to create your own. This library comes with a spell file for every spell in the following source material books:
+- The Player's Handbook
+- Xanathar's Guide to Everything
+- Tasha's Cauldron of Everything
+- Strixhaven: A curriculum of Chaos.
 
-## Functions
-
-### generate_spellbook()
-```rust
-pub fn generate_spellbook
-(
-	title: &str, spell_list: &Vec<spells::Spell>, font_paths: &FontPaths,
-	page_size_data: &PageSizeData, page_number_options: &Option<PageNumberData>,
-	font_size_data: &FontSizeData, text_colors: &TextColors, font_scalars: &FontScalars,
-	table_options: &TableOptions, background_img_data: &Option<(&str, &ImageTransform)>
-) -> Result<PdfDocumentReference, Box<dyn std::error::Error>>
-```
-
-This function is for creating spellbooks.
-
-#### Parameters
-- `title: &str` The name of the spellbook. It will determine what text appears on the cover page and what the pdf document will be named in the meta data.
-- `spell_list: &Vec<spells::Spell>` The list of spells that the spellbook will contain. The spells do not have to be in any particular order.
-- `font_paths: &FontPaths` Struct containing the file paths to the regular, bold, italic, and bold-italic fonts that the spellbook will use for the text.
-- `page_size_data: &PageSizeData` Struct containing the data that determines the size of the page and the text margins (space between edge of page and text).
-- `page_number_options: &Option<PageNumberData>` Option containing a struct of the page number behavior (starting number, positioning, flip sides or not, etc.). A value of `None` will make the spellbook have no page numbers.
-- `font_size_data: &FontSizeData` Struct containing the font size for various types of text and spacing behavior like newline amounts and tabbing amounts.
-- `text_colors: &TextColors` Struct containing the rgb values for each type of text in the spellbook.
-- `font_scalars: &FontScalars` Numbers that determine how the size of each font is calculated. Numbers being slightly off may lead to text spilling off the page or going to new lines too early.
-You may need to tinker with these values for the fonts you are using until the text in your spellbooks look good to get it right.
-- `table_options: &TableOptions` Struct containing options that determine the appearance of tables.
-- `background_img_data: &Option<(&str, &ImageTransform)>` Option containing the data needed to put a background image on every page in the spellbook.
-The `&str` is the file path to the background image and the `&ImageTransform` is a struct containing options that determine the sizing and rotation of the image.
-
-#### Output
-Returns any errors that occur. Otherwise, it returns a struct containing the data of the spellbook that can be saved to a file if there were no errors.
-The struct it returns on a success is a printpdf::PdfDocumentReference from the printpdf crate (https://docs.rs/printpdf/latest/printpdf/struct.PdfDocumentReference.html).
-
-### save_spellbook()
-```rust
-pub fn save_spellbook(doc: PdfDocumentReference, file_name: &str)
--> Result<(), Box<dyn std::error::Error>>
-```
-
-This function is for saving spellbooks to a file as a pdf document.
-
-#### Parameters
-- `doc: PdfDocumentReference` The spellbook that gets returned from `generate_spellbook()`
-- `file_name: &str` The name to give to the file that the spellbook will be saved to.
-
-#### Output
-Returns any errors that occur. Otherwise, it returns nothing if there were no errors.
-
-### get_all_spells_in_folder()
-```rust
-pub fn get_all_spells_in_folder(folder_path: &str)
--> Result<Vec<spells::Spell>, Box<dyn std::error::Error>>
-```
-
-This function is for obtaining and entire folder of spells easily. It will assume every file in the folder is a spell.
-
-#### Parameters
-- `folder_path: &str` The file path to the folder to extract every spell from.
-
-#### Output
-Returns any errors that occur. Otherwise, it returns a vec of spell objects that can be inputted into `generate_spellbook()`.
+# Spell Files
+Spell files are plaintext files with fields separated mostly by newlines. Each field in a spell file corresponds to one of the fields in the `Spell` struct. The fields are as follows:
+- `name:` The name of the spell. Can be any string on a single line (doesn't need to be surrounded by quotes).
+- `level:` The level of the spell. Ranges from the integers 0 to 9.
+- `school:` The magic school of the spell. Can be one of the following values:
+	- `abjuration`
+	- `conjuration`
+	- `divination`
+	- `enchantment`
+	- `evocation`
+	- `illusion`
+	- `necromancy`
+	- `transmutation`
+- `is_ritual:` Whether or not the spell is a ritual. Must be either `true` or `false`.
+- `casting_time:` The amount of time it takes to cast this spell. Can one of the following values:
+	- `seconds` Must be followed by a nonnegative integer.
+	- `actions` Must be followed by a nonnegative integer.
+	- `bonusaction`
+	- `reaction` Must be followed by text inside of quotes that does not go to a new line.
+	- `minutes` Must be followed by a nonnegative integer.
+	- `hours` Must be followed by a nonnegative integer.
+	- `days` Must be followed by a nonnegative integer.
+	- `weeks` Must be followed by a nonnegative integer.
+	- `months` Must be followed by a nonnegative integer.
+	- `years` Must be followed by a nonnegative integer.
+	- `special`
+- `range:` The distance / area that this spell can target things within. Can be one of the following values:
+	- `self` This value can optionally be followed by an AOE (area of effect) value. Valid AOE values:
+		- `line` Must be followed by a distance value (details on distances below).
+		- `cone` Must be followed by a distance value.
+		- `cube` Must be followed by a distance value.
+		- `sphere` Must be followed by a distance value.
+		- `hemisphere` Must be followed by a distance value.
+		- `cylinder` Must be followed by two distance values.
+	- `touch`
+	- A distance value (details on distances below).
+	- `sight`
+	- `unlimited`
+	- `special`
+- `has_v_component:` Whether or not the spell has a verbal component. Must be either `true` or `false`.
+- `has_s_component:` Whether or not the spell has a somantic component. Must be either `true` or `false`.
+- `m_components:` The material components for the spell. If the spell has material components, its value should be text inside of quotes that does not go to a new line. 
+If the spell does not have any material components, its value should be `none`.
+- `duration:` The length of time that the spell lasts. Can be one of the following values:
+	- `instant`
+	- `seconds` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
+	- `rounds` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
+	- `minutes` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
+	- `hours` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
+	- `days` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
+	- `weeks` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
+	- `months` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
+	- `years` Must be followed by a nonnegative integer. The integer can also be followed by the value `concentration` if this spell requires concentration.
+	- `dispelledortriggered` Can be followed by the value `concentration` if the spell requires concentration.
+	- `untildispelled` Can be followed by the value `concentration` if the spell requires concentration.
+	- `permanent`
+	- `special` Can be followed by the value `concentration` if the spell requires concentration.
+- `description:` The text that describes what the spell does. This field's value must be text inside of quotes that can span multiple lines. This field is special, more info on it below.
+- `upcast_description:` The text that describes what the spell does when you cast it at a higher level. Follows the same rules as the `description:` field.

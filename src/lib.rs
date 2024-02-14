@@ -1,5 +1,7 @@
 //! Library for making pdf documents of spells that a 5th edition D&D character has.
 //!
+//! See repository for documentation on spell files.
+//!
 //! Repository at <https://github.com/ChandlerJayCalkins/dnd_spellbook_maker>.
 
 use std::fs;
