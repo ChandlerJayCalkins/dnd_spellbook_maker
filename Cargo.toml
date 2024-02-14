@@ -2,7 +2,7 @@
 name = "dnd_spellbook_maker"
 version = "0.1.0"
 edition = "2021"
-description = "Library for making pdf documents of spells that a 5th edition D&D character has."
+description = "Library for making pdf documents of spells that ressemble 5th edition D&D official source book spell descriptions."
 readme = "README.md"
 documentation = "https://docs.rs/dnd_spellbook_maker"
 repository = "https://github.com/ChandlerJayCalkins/dnd_spellbook_maker"

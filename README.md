@@ -1,5 +1,5 @@
 # dnd_spellbook_maker
-Library for making pdf documents of spells that a 5th edition D&D character has.
+Library for making pdf documents of spells that ressemble 5th edition D&D official source book spell descriptions.
 
 Documentation at <https://docs.rs/dnd_spellbook_maker>.
 
@@ -164,10 +164,26 @@ Spell files are plaintext files with fields separated mostly by newlines. Each f
 
 The name of the spell. Can be any string on a single line (doesn't need to be surrounded by quotes).
 
+Examples:
+
+`name: Acid Splash`
+
+`Name: Fireball`
+
+`NAME: Weird`
+
 ### Level
 `level:`
 
-The level of the spell. Ranges from the integers 0 to 9.
+The level of the spell. Ranges from the integers 0 to 9. Level 0 represents cantrips.
+
+Examples:
+
+`level: 3`
+
+`Level: 9`
+
+`LEVEL: 0`
 
 ### School
 `school:`
@@ -182,10 +198,25 @@ The magic school of the spell. Can be one of the following values:
 - `necromancy`
 - `transmutation`
 
+Examples:
+
+`school: Evocation`
+
+`School: illusion`
+
+`SCHOOL: nEcRoMaNcY`
+
 ### Ritual
 `is_ritual:`
 
 Whether or not the spell is a ritual. Must be either `true` or `false`.
+Alternatively, this field can just be placed in the spell file without any colons or value to represent `true`, or not be placed in the spell file at all to represent `false`.
+
+Examples:
+
+`is_ritual: true` or `is_ritual`
+
+`is_ritual: false` or just not having the field in the file.
 
 ### Casting Time
 `casting_time:`
@@ -203,33 +234,78 @@ The amount of time it takes to cast this spell. Can one of the following values:
 - `years` Must be followed by a nonnegative integer.
 - `special`
 
+Examples:
+
+`casting_time: actions 1`
+
+`Casting_Time: bonusaction`
+
+`CASTING_TIME: Minutes 10`
+
+`cAsTiNg_TiMe: REACTION "which you take when you see a creature within 60 feet succeed an attack roll"`
+
 ### Range
 `range:`
 
 The distance / area that this spell can target things within. Can be one of the following values:
-- `self` This value can optionally be followed by an AOE (area of effect) value. Valid AOE values:
-	- `line` Must be followed by a distance value (details on distances below).
-	- `cone` Must be followed by a distance value.
-	- `cube` Must be followed by a distance value.
-	- `sphere` Must be followed by a distance value.
-	- `hemisphere` Must be followed by a distance value.
-	- `cylinder` Must be followed by two distance values.
+- `self` This value can optionally be followed by an AOE (area of effect) value (details on AOEs below).
 - `touch`
 - A distance value (details on distances below).
 - `sight`
 - `unlimited`
 - `special`
 
+AOE (area of effect) values define a volumetric shape that a spell's effect takes place in. They can be one of the following values:
+- `line` Must be followed by a distance value (details on distances below).
+- `cone` Must be followed by a distance value.
+- `cube` Must be followed by a distance value.
+- `sphere` Must be followed by a distance value.
+- `hemisphere` Must be followed by a distance value.
+- `cylinder` Must be followed by two distance values, the first representing its radius, the second representing its height.
+
+Distance values are self explanitory. They are defined by a positive integer and a string representing the unit of measurement of that distance. Valid distance values are:
+- `feet` Must be followed by a nonnegative integer.
+- `miles` Must be followed by a nonnegative integer.
+
+Examples:
+
+`range: feet 120`
+
+`RANGE: Self`
+
+`RaNgE: self cone feet 15`
+
+`Range: self cylinder feet 15 feet 60`
+
+`ranGe: special`
+
 ### V / S Components
 `has_v_component:` / `has_s_component:`
 
-Whether or not the spell has a verbal / somantic component. Must be either `true` or `false`.
+These two fields determine whether or not the spell has verbal / somantic components. Must be either `true` or `false`.
+Alternatively, these fields can just be placed in the spell file without any colons or value to represent `true`, or not be placed in the spell file at all to represent `false`.
+
+Examples:
+
+`has_v_component: true` or `has_v_component`
+
+`has_v_component: false` or just not having the field in the file.
+
+`has_s_component: true` or `has_s_component`
+
+`has_s_component: false` or just not having the field in the file.
 
 ### M Components
 `m_components:`
 
 The material components for the spell. If the spell has material components, its value should be text inside of quotes that does not go to a new line. 
-If the spell does not have any material components, its value should be `none`.
+If the spell does not have any material components, its value should be `none` or you can not include the field in the spell file for the same effect.
+
+Examples:
+
+`m_components: "A piece of string and a bit of wood"`
+
+`m_components: none` or just not having the field in the file
 
 ### Duration
 `duration:`
@@ -248,12 +324,111 @@ The length of time that the spell lasts. Can be one of the following values:
 - `permanent`
 - `special` Can be followed by the value `concentration` if the spell requires concentration.
 
+Examples:
+
+`duration: rounds 1`
+
+`DURATION: minutes 10 concentration`
+
+`dUrAtIoN: untildispelledortriggered`
+
+`Duration: untildispelled Concentration`
+
+`duration: permanent`
+
 ### Description
 `description:`
 
 The text that describes what the spell does. This field's value must be text inside of quotes that can span multiple lines.
+If a line ends in a quote before you want the description text to end, you can place an escape backslash before the quote (like this: `\"`) to prevent the quote from ending the text early.
+If you place another escape backslash before the first one (like this: `\\"`) then a backslash will appear in the text as the last character and the quote will end the line normally, and so on with more backslashes.
+
+Spell descriptions can also have font changes, bullet points, and tables inside of them, just like in the Player's Handbook.
+
+Text starts out using the regular font that is supplied to the `generate_spellbook()` function, but can be switched back and forth between any of the four supplied with these font tags:
+- `<r>` for regular font
+- `<b>` for bold font
+- `<i>` for italic font
+- `<bi>` or `<ib>` for bold-italic font
+
+Once any of these tokens are detected, the following text will use that tag's font. The tags must be individual tokens in order to be detected (surrounded by whitespace).
+
+Examples:
+
+`description: "This text is regular font <bi> and this text is bold italic font <b> and this font is bold <r> and now it's back to regular font."`
+
+`Description: "<i> This text starts out italic <r> and then it changes to regular."`
+
+To do bullet points, just begin a line / paragraph inside of the text with either a dash `-` or a bullet point character `•`.
+
+Examples:
+
+```
+description: "This is normal text on the first paragraph.
+This is new text on a new second paragraph.
+This is the third paragraph.
+- This is the first bullet point in a series of them.
+- This is the second bullet point.
+- This is the third bullet point.
+And now it's back to regular non-bullet-point text in the last paragraph."
+```
+
+```
+DeScRiPtIoN: "This is some normal text in a paragraph.
+• <bi> This is some bold-italic text in a bullet point.
+• This is some more bold- italic text in another bullet point.
+• <r> This text is back to regular font in a third bullet point.
+This text is back to normal paragraph form."
+```
+
+To put tables in the description, you need to use several tags. First is the `<table>` tag which should be at the start and end of every table.
+Second is the `<title>` tag which defines a title for the table.
+This tag is optional, but if it is used it must appear on the same line as the opening `<table>` tag and must surround the title text of the table.
+Next is the column delimiter `|` which separates individual cells inside of a row.
+Lastly is the `<row>` tag which marks where new rows begin. This tag isn't required for the first row, aka the header row / column header row.
+
+Examples:
+
+```
+description: "This is some text in normal paragraph form.
+<table> <title> This is a table <title>
+Column A | Column B
+<row> 1 | Red
+<row> 2 | Green
+<row> 3 | Blue
+<table>
+And here's some more text because why not."
+```
+
+```
+description: "Here is a table with 3 columns but no title.
+<table>
+1 | 2 | 3
+<row> A | Black | Black
+<row> B | Black | White
+<row> C | White | Black
+<row> D | White | White
+<table>"
+```
 
 ### Upcast Description
 `upcast_description:`
 
-The text that describes what the spell does when you cast it at a higher level. Follows the same rules as the `description:` field.
+The text that describes what the spell does when you cast it at a higher level.
+Follows the same rules as the `description:` field, except if the spell doesn't have an upcast description, it can either have a value of `none` or just not be included in the spell file to have the same effect.
+
+Examples:
+
+```
+upcast_description: "This is an upcast description <b> with some font changes <r>.
+- Here are some bullet points too
+- A second bullet point
+Some more text.
+<table> <title> Here's a table too <title>
+A | B | C
+<row> 1 | 2 | 3
+<row> 4 | 5 | 6
+<table>"
+```
+
+`upcast_description: none` or just not having the field in the file.
