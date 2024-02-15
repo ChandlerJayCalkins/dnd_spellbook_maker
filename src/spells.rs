@@ -7,24 +7,35 @@ use std::fs;
 use std::io::Write;
 use std::error;
 
-// For reading and writing to spell files
+/// For reading and writing to spell files.
 trait SpellFileString: Sized
 {
-	// Turns an object into a string that can be written into a spell file
+	/// Turns an object into a string that can be written into a spell file.
 	fn to_spell_file_string(&self) -> String;
-	// Tries to turn a string from a spell file into an object
+	/// Tries to turn a string from a spell file into an object.
+	///
+	/// # Parameters
+	/// - `s` Str of a field value from a spell file to convert into an object.
+	/// - `file_name` The name of the file that `s` is from (for producing errors).
+	/// - `field` The field that s was a value of (for producing errors).
+	///
+	/// # Output
+	/// - `Ok` An instance of the object this trait was implemented for.
+	/// - `Err` Any errors that occurred while processing.
 	fn from_spell_file_string(s: &str, file_name: &str, field: &str) -> Result<Self, Box<SpellFileError>>;
 }
 
-// For holding spell fields with either a controlled value or a custom value represented by a string
+/// Holds spell fields with either a controlled value or a custom value represented by a string.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SpellField<T: fmt::Display + SpellFileString>
 {
-	// Controlled values must implement Display so the spell struct can display them without converting them manually
-	// Controlled values are meant to be fields with limited values to invalid data cannot be displayed
+	/// Controlled values are meant to be fields with limited values so invalid data cannot be displayed.
+	///
+	/// Controlled values must implement Display so the spell struct can display them without converting them manually.
 	Controlled(T),
-	// Custom values allows for anything to be the value at the display level
-	// Custom values are denoted in spell file strings by being surrounded by quotes
+	/// Custom values allow for anything to be displayed in the spellbook.
+	///
+	/// Custom values appear in spell files as text surrounded by quotes in a field that otherwise has controlled values.
 	Custom(String)
 }
 
@@ -77,7 +88,7 @@ impl<T: fmt::Display + SpellFileString> SpellFileString for SpellField<T>
 	}
 }
 
-// The level of a spell
+/// The level of a spell.
 // 0 is a cantrip, max level is 9
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Level
@@ -179,7 +190,7 @@ impl From<Level> for u8
 	}
 }
 
-// The school of magic a spell belongs to
+/// The school of magic a spell belongs to
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MagicSchool
 {
@@ -253,18 +264,21 @@ impl fmt::Display for MagicSchool
 	}
 }
 
-// The amount of time it takes to cast a spell
+/// The amount of time it takes to cast a spell.
+///
+/// u16 values are the number of units of time it takes to cast the spell,
+/// variants are the unit of time.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CastingTime
 {
 	Seconds(u16),
-	// u16 is number of actions a spell takes to cast
 	Actions(u16),
 	BonusAction,
-	// String is the circumstance in which the reaction can be triggered
-	// Ex: "which you take when you or a creature within 60 feet of you falls" or
-	// "which you take when you see a creature within 60 feet of you casting a spell"
-	// Note: whatever you put for this, it will come after the string "1 reaction, " on the spell page
+	/// String is the circumstance in which the reaction can be triggered.
+	/// Ex: "which you take when you or a creature within 60 feet of you falls" or
+	/// "which you take when you see a creature within 60 feet of you casting a spell".
+	///
+	/// Note: whatever you put for this, it will come after the string "1 reaction, " on the spell page.
 	Reaction(String),
 	Minutes(u16),
 	Hours(u16),
@@ -489,7 +503,7 @@ impl fmt::Display for CastingTime
 	}
 }
 
-// Struct for holding a distance value and having the enum variant determine its unit of measurement
+/// Holds a distance value. The enum variant determine its unit of measurement.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Distance
 {
@@ -499,9 +513,10 @@ pub enum Distance
 
 impl Distance
 {
-	// Returns a string of the distance in the format of "d-u" where
-	// d is the distance value and u is the unit of measurement
-	// Used in displaying distances for AOEs
+	/// Returns a string of the distance in the format of "d-u" where
+	/// d is the distance value and u is the unit of measurement.
+	///
+	/// Used in displaying distances for AOEs.
 	pub fn get_aoe_string(&self) -> String
 	{
 		match self
@@ -587,22 +602,22 @@ impl fmt::Display for Distance
 	}
 }
 
-// Area of Effect
-// The shape of the area in which targets of a spell need to be in to be affected by the spell
+/// Area of Effect.
+/// The volumnetric shape in which a spell's effect(s) take place.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AOE
 {
-	// Distance defines length of line (width should be in spell description)
+	/// Distance defines length of line (width should be in spell description).
 	Line(Distance),
-	// Distance defines length / height and diameter of cone
+	/// Distance defines length / height and diameter of cone.
 	Cone(Distance),
-	// Distance defines the length of the edges of the cube
+	/// Distance defines the length of the edges of the cube.
 	Cube(Distance),
-	// Distance defines radius of sphere
+	/// Distance defines radius of sphere.
 	Sphere(Distance),
-	// Distance defines radius of hemisphere
+	/// Distance defines radius of hemisphere.
 	Hemisphere(Distance),
-	// Distances define radius and height of cylinder (respectively)
+	/// Distances define radius and height of cylinder (respectively).
 	Cylinder(Distance, Distance),
 }
 
@@ -741,12 +756,15 @@ impl fmt::Display for AOE
 	}
 }
 
-// The farthest distance a target can be from the caster of a spell
+/// The farthest distance away a spell can target things.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Range
 {
+	/// The AOE option in this variant is for spells that have areas of effect that come from the spellcaster.
+	/// Ex: "Burning Hands" has a range of "Self (15-foot cone)".
 	Yourself(Option<AOE>),
 	Touch,
+	/// This variant is for plain distance ranges like "60 feet" or "5 miles".
 	Dist(Distance),
 	Sight,
 	Unlimited,
@@ -871,9 +889,10 @@ impl fmt::Display for Range
 	}
 }
 
-// How long a spell's effect lasts
-// u16 values are the number of units the spell can last
-// Bool values are whether or not the spell requires concentration
+/// The length of time a spell's effect(s) lasts.
+///
+/// u16 values are the number of units the spell can last.
+/// Bool values are whether or not the spell requires concentration.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Duration
 {
@@ -1404,34 +1423,51 @@ fn str_to_bool(s: &str) -> Result<bool, ()>
 	}
 }
 
-// Data containing all of the information about a spell
+/// Data containing all of the information about a spell needed to display it in a spellbook.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Spell
 {
 	pub name: String,
+	/// Can be custom value or Level.
 	pub level: SpellField<Level>,
+	/// Can be custom value or MagicSchool.
 	pub school: SpellField<MagicSchool>,
-	// Whether or not the spell can be casted as a ritual
+	/// Whether or not the spell can be casted as a ritual.
 	pub is_ritual: bool,
+	/// Can be custom value or CastingTime.
 	pub casting_time: SpellField<CastingTime>,
+	/// Can be custom value or Range.
 	pub range: SpellField<Range>,
-	// Whether or not the spell requires a verbal component to be cast
+	/// Whether or not the spell requires a verbal component to be cast.
 	pub has_v_component: bool,
-	// Whether or not the spell requires a somantic component to be cast
+	/// Whether or not the spell requires a somantic component to be cast.
 	pub has_s_component: bool,
-	// Optional text that lists all of the material components a spell might need to be cast
+	/// Text that lists the material components a spell might need to be cast.
+	/// A value of `None` represents the spell not needing any material components.
 	pub m_components: Option<String>,
+	/// Can be custom value or Duration.
 	pub duration: SpellField<Duration>,
-	// Text that describes the effects of the spell
+	/// Text that describes the effects of the spell.
+	/// 
+	/// Can be formatted with font changing tags, bullet points, and tables.
+	///
+	/// See spell file documentation for more information (<https://github.com/ChandlerJayCalkins/dnd_spellbook_maker>).
 	pub description: String,
-	// Optional text that describes the benefits a spell gains from being upcast
-	// (being cast at a level higher than its base level)
+	/// Optional text that describes the benefits a spell gains from being upcast
+	/// (being cast at a level higher than its base level).
 	pub upcast_description: Option<String>
 }
 
 impl Spell
 {
-	// Constructs a spell object from a file
+	/// Constructs a spell object from a spell file.
+	///
+	/// # Parameters
+	/// - `file_name` The name of the spell file to create a spell from.
+	///
+	/// # Output
+	/// - `Ok` A Spell object.
+	/// - `Err` Any errors that occurred.
 	pub fn from_file(file_name: &str) -> Result<Self, Box<dyn error::Error>>
 	{
 		// Reads the file
@@ -1739,9 +1775,16 @@ impl Spell
 		})
 	}
 
-	// Saves this spell to a file
-	// Compress parameter is whether or not to not write some of the optional fields to the file to save space
-	// Not compressing the file may make it more readable though
+	/// Saves a spell to a file.
+	///
+	/// # Parameters
+	/// - `file_path` The file path (including the file name) to save the spell to.
+	/// - `compress` Whether or not to write some of the optional fields to the the spell file.
+	/// Compressing can save file space, while not compressing can arguably make the spell file easier to read.
+	///
+	/// # Output
+	/// - `Ok` Nothing if there were no errors.
+	/// - `Err` Any errors that occurred.
 	pub fn to_file(&self, file_path: &str, compress: bool) -> Result<(), Box<dyn error::Error>>
 	{
 		// Add the spell's name to the data to write
@@ -1979,8 +2022,9 @@ impl Spell
 		treated_text
 	}
 
-	// Gets a string of the required components for a spell
-	// Ex: "V, S, M (a bit of sulfur and some wood bark)", "V, S", "V, M (a piece of hair)"
+	/// Gets a string of the required components for a spell.
+	///
+	/// Ex: "V, S, M (a bit of sulfur and some wood bark)", "V, S", "V, M (a piece of hair)".
 	pub fn get_component_string(&self) -> String
 	{
 		let mut component_string = String::new();
@@ -2021,7 +2065,9 @@ impl Spell
 		component_string
 	}
 
-	// Gets the school and level info from a spell and turns it into text that says something like "nth-Level School-Type"
+	/// Gets the school and level info from a spell and turns it into text that says something like "nth-Level School-Type".
+	///
+	/// Ex: "1st-Level abjuration", "8th-Level transmutation", "evocation cantrip".
 	pub fn get_level_school_text(&self) -> String
 	{
 		// Gets a string of the level and the school from the spell
