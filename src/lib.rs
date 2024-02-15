@@ -1470,7 +1470,7 @@ impl FontScalars
 	pub fn bold_italic_scalar(&self) -> f32 { self.bold_italic }
 }
 
-/// Options for tables
+/// Options for tables.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct TableOptions
 {
@@ -1547,7 +1547,7 @@ impl TableOptions
 	pub fn off_row_blue(&self) -> u8 { self.off_row_color.2 }
 }
 
-/// RGB colors for types of text in the spellbook
+/// RGB colors for types of text in the spellbook.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct TextColors
 {
@@ -1559,7 +1559,7 @@ pub struct TextColors
 	pub body_color: (u8, u8, u8)
 }
 
-/// Data for determining the size of the page and the margins between sides of the pages and text
+/// Data for determining the size of the page and the margins between sides of the pages and text.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct PageSizeData
 {
@@ -1644,7 +1644,7 @@ impl PageSizeData
 	}
 }
 
-/// Parameters for determining page number behavior
+/// Parameters for determining page number behavior.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct PageNumberData
 {
@@ -2055,7 +2055,7 @@ pub fn save_spellbook(doc: PdfDocumentReference, file_name: &str) -> Result<(), 
 	Ok(())
 }
 
-/// Error for when a file name could not be retrieved when processing spell files in `get_all_spells_in_folder()`
+/// Error for when a file name could not be retrieved when processing spell files in `get_all_spells_in_folder()`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SpellFileNameReadError;
 // Makes the struct displayable
