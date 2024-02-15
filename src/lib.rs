@@ -1347,7 +1347,7 @@ table_title_font_scale: &Scale, tab_amount: f32, newline_amount: f32) -> PdfLaye
 	new_layer
 }
 
-// Holds file paths to all of the fonts types needed for the generate_spellbook()
+/// File paths to all the font files needed for `generate_spellbook()`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FontPaths
 {
@@ -1357,7 +1357,7 @@ pub struct FontPaths
 	pub bold_italic: String
 }
 
-// Holds data for what font sizes to use and how far down newlines should go (in mm)
+/// Data for what font sizes to use and how large tabs and various newline sizes should be.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct FontSizeData
 {
@@ -1372,7 +1372,20 @@ pub struct FontSizeData
 
 impl FontSizeData
 {
-	// Constructor
+	/// Constructor
+	///
+	/// # Parameters
+	/// - `title_font_size` Cover page text font size.
+	/// - `header_font_size` Spell name font size.
+	/// - `body_font_size` Font size for everything else.
+	/// - `tab_amount` Tab size in printpdf Mm.
+	/// - `title_newline_amount` Newline size for title text in printpdf Mm.
+	/// - `header_newline_amount` Newline size for header text in printpdf Mm.
+	/// - `body_newline_amount` Newline size for body text in printpdf Mm.
+	///
+	/// # Output
+	/// - `Ok` A FontSizeData object.
+	/// - `Err` An error message saying which parameter was invalid. Occurs for negative values.
 	pub fn new(title_font_size: f32, header_font_size: f32, body_font_size: f32, tab_amount: f32,
 	title_newline_amount: f32, header_newline_amount: f32, body_newline_amount: f32) -> Result<Self, String>
 	{
@@ -1409,7 +1422,7 @@ impl FontSizeData
 	pub fn body_newline_amount(&self) -> f32 { self.body_newline_amount }
 }
 
-// Holds scalar values to convert rusttype font units to printpdf millimeters (Mm)
+/// Scalar values to convert rusttype font units to printpdf millimeters (Mm).
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct FontScalars
 {
@@ -1421,7 +1434,17 @@ pub struct FontScalars
 
 impl FontScalars
 {
-	// Constructor
+	/// Constructor
+	///
+	/// # Parameters
+	/// - `regular` Scalar value for regular font.
+	/// - `bold` Scalar value for bold font.
+	/// - `italic` Scalar value for italic font.
+	/// - `bold_italic` Scalar value for bold-italic font.
+	///
+	/// # Output
+	/// - `Ok` A FontScalar object.
+	// - `Err` An error message saying which parameter was invalid. Occurs for negative values.
 	pub fn new(regular: f32, bold: f32, italic: f32, bold_italic: f32) -> Result<Self, String>
 	{
 		if regular < 0.0 { Err(String::from("Invalid regular scalar.")) }
@@ -1447,7 +1470,7 @@ impl FontScalars
 	pub fn bold_italic_scalar(&self) -> f32 { self.bold_italic }
 }
 
-// Holds data for formatting tables
+/// Options for tables
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct TableOptions
 {
@@ -1464,7 +1487,21 @@ pub struct TableOptions
 
 impl TableOptions
 {
-	// Constructor
+	/// Constructor
+	///
+	/// # Parameters
+	/// - `title_font_size` Font size for table title text.
+	/// - `horizontal_cell_margin` Space between columns in printpdf Mm.
+	/// - `vertical_cell_margin` Space between rows in printpdf Mm.
+	/// - `outer_horizontal_margin` Minimum space between sides of table and edge of pages.
+	/// - `outer_horizontal_margin` Space above and below table from other text / tables.
+	/// - `off_row_color_lines_y_adjust_scalar` Scalar value to adjust off-row color lines to line up with the rows vertically.
+	/// - `off_row_color_lines_height_scalar` Scalar value to determine the height of off-row color lines.
+	/// - `off_row_color` RGB value of the color of the off-row color lines.
+	///
+	/// # Output
+	/// - `Ok` A TableOptions object.
+	/// - `Err` An error message saying which parameter was invalid. Occurs for negative values.
 	pub fn new(title_font_size: f32, horizontal_cell_margin: f32, vertical_cell_margin: f32, outer_horizontal_margin: f32,
 	outer_vertical_margin: f32, off_row_color_lines_y_adjust_scalar: f32, off_row_color_lines_height_scalar: f32,
 	off_row_color: (u8, u8, u8)) -> Result<Self, String>
@@ -1510,25 +1547,24 @@ impl TableOptions
 	pub fn off_row_blue(&self) -> u8 { self.off_row_color.2 }
 }
 
-// Holds the RGB colors for every piece of text in the spellbook
+/// RGB colors for types of text in the spellbook
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct TextColors
 {
+	/// Cover page text.
 	pub title_color: (u8, u8, u8),
+	/// Spell name text.
 	pub header_color: (u8, u8, u8),
+	/// Everything else.
 	pub body_color: (u8, u8, u8)
 }
 
-// Contains the data for determining the size of the page and the margins between eacg side of the page and the text
+/// Data for determining the size of the page and the margins between sides of the pages and text
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct PageSizeData
 {
-	// Width and height determine size of the page (in printpdf millimeters)
-	// Standard is 210 x 297
 	width: f32,
 	height: f32,
-	// Margins determine distance between each side of the page and the text
-	// Standard for spellbooks is 10 on each side
 	left_margin: f32,
 	right_margin: f32,
 	top_margin: f32,
@@ -1537,7 +1573,19 @@ pub struct PageSizeData
 
 impl PageSizeData
 {
-	// Constructor
+	/// Constructor
+	///
+	/// # Parameters
+	/// - `width` Width of the page in printpdf Mm. Standard is 210.
+	/// - `height` Height of the page in printpdf Mm. Standard is 297.
+	/// - `left_margin` Space between text and left side of page.
+	/// - `right_margin` Space between text and right side of page.
+	/// - `top_margin` Space between text and top of page.
+	/// - `bottom_margin` Space between text and bottom of page.
+	///
+	/// # Output
+	/// - `Ok` A PageSizeData object.
+	/// - `Err` An error message saying which parameter(s) was / were invalid. Occurs for negative or overlapping values.
 	pub fn new(width: f32, height: f32, left_margin: f32, right_margin: f32, top_margin: f32,
 	bottom_margin: f32) -> Result<Self, String>
 	{
@@ -1596,7 +1644,7 @@ impl PageSizeData
 	}
 }
 
-// Contains parameters for determining page number behavior
+/// Parameters for determining page number behavior
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct PageNumberData
 {
@@ -1609,7 +1657,19 @@ pub struct PageNumberData
 
 impl PageNumberData
 {
-	// Constructor
+	/// Constructor
+	///
+	/// # Parameters
+	/// - `start_on_left` Whether or not the page numbers start on the left side.
+	/// If the page numbers do not flip sides, this determines what side all page numbers are on.
+	/// - `flip_sides` Whether or not the page numbers flip sides every page.
+	/// - `starting_num` What number to have the page numbers start on.
+	/// - `side_margin` The distance between the page numbers and the side of the page.
+	/// - `bottom_margin` The distance between the page numbers and the bottom of the page.
+	///
+	/// # Output
+	/// - `Ok` A PageNumberData object.
+	/// - `Err` An error message saying which parameter was invalid. Occurs for negative margin values.
 	pub fn new(start_on_left: bool, flip_sides: bool, starting_num: i32, side_margin: f32, bottom_margin: f32)
 	-> Result<Self, String>
 	{
@@ -1995,7 +2055,7 @@ pub fn save_spellbook(doc: PdfDocumentReference, file_name: &str) -> Result<(), 
 	Ok(())
 }
 
-// Error for when a file name could not be retrieved when processing spell files in get_all_spells_in_folder()
+/// Error for when a file name could not be retrieved when processing spell files in `get_all_spells_in_folder()`
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SpellFileNameReadError;
 // Makes the struct displayable
