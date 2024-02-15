@@ -1854,6 +1854,7 @@ pub fn generate_spellbook
 
 	// Flag for telling which side of the page the page numbers are on, if there are any page numbers
 	// Left is true, right is false
+	#[allow(unused_assignments)]
 	let mut left = true;
 	// Create the page number data parameters
 	let mut page_number_data = match page_number_options

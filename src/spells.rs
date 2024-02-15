@@ -27,6 +27,7 @@ trait SpellFileString: Sized
 
 /// Holds spell fields with either a controlled value or a custom value represented by a string.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[allow(private_bounds)]
 pub enum SpellField<T: fmt::Display + SpellFileString>
 {
 	/// Controlled values are meant to be fields with limited values so invalid data cannot be displayed.
