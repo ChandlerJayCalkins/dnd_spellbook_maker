@@ -2127,10 +2127,10 @@ mod tests
 		// File paths to the fonts needed
 		let font_paths = FontPaths
 		{
-			regular: String::from("fonts/Bookman/Bookman-Regular.otf"),
-			bold: String::from("fonts/Bookman/Bookman-Bold.otf"),
-			italic: String::from("fonts/Bookman/Bookman-Italic.otf"),
-			bold_italic: String::from("fonts/Bookman/Bookman-BoldItalic.otf")
+			regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
+			bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
+			italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
+			bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
 		};
 		// Parameters for determining the size of the page and the text margins on the page
 		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
@@ -2188,10 +2188,10 @@ mod tests
 		// File paths to the fonts needed
 		let font_paths = FontPaths
 		{
-			regular: String::from("fonts/Bookman/Bookman-Regular.otf"),
-			bold: String::from("fonts/Bookman/Bookman-Bold.otf"),
-			italic: String::from("fonts/Bookman/Bookman-Italic.otf"),
-			bold_italic: String::from("fonts/Bookman/Bookman-BoldItalic.otf")
+			regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
+			bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
+			italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
+			bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
 		};
 		// Parameters for determining the size of the page and the text margins on the page
 		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
@@ -2243,10 +2243,10 @@ mod tests
 		// File paths to the fonts needed
 		let font_paths = FontPaths
 		{
-			regular: String::from("fonts/Bookman/Bookman-Regular.otf"),
-			bold: String::from("fonts/Bookman/Bookman-Bold.otf"),
-			italic: String::from("fonts/Bookman/Bookman-Italic.otf"),
-			bold_italic: String::from("fonts/Bookman/Bookman-BoldItalic.otf")
+			regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
+			bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
+			italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
+			bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
 		};
 		// Parameters for determining the size of the page and the text margins on the page
 		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
@@ -2299,10 +2299,10 @@ mod tests
 		// File paths to the fonts needed
 		let font_paths = FontPaths
 		{
-			regular: String::from("fonts/Bookman/Bookman-Regular.otf"),
-			bold: String::from("fonts/Bookman/Bookman-Bold.otf"),
-			italic: String::from("fonts/Bookman/Bookman-Italic.otf"),
-			bold_italic: String::from("fonts/Bookman/Bookman-BoldItalic.otf")
+			regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
+			bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
+			italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
+			bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
 		};
 		// Parameters for determining the size of the page and the text margins on the page
 		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
@@ -2479,10 +2479,10 @@ Creatures that succeed the saving throw take 20d4 scrunching damage."),
 		// File paths to the fonts needed
 		let font_paths = FontPaths
 		{
-			regular: String::from("fonts/Bookman/Bookman-Regular.otf"),
-			bold: String::from("fonts/Bookman/Bookman-Bold.otf"),
-			italic: String::from("fonts/Bookman/Bookman-Italic.otf"),
-			bold_italic: String::from("fonts/Bookman/Bookman-BoldItalic.otf")
+			regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
+			bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
+			italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
+			bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
 		};
 		// Parameters for determining the size of the page and the text margins on the page
 		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
@@ -2547,10 +2547,10 @@ Creatures that succeed the saving throw take 20d4 scrunching damage."),
 		// File paths to the fonts needed
 		let font_paths = FontPaths
 		{
-			regular: String::from("fonts/Bookman/Bookman-Regular.otf"),
-			bold: String::from("fonts/Bookman/Bookman-Bold.otf"),
-			italic: String::from("fonts/Bookman/Bookman-Italic.otf"),
-			bold_italic: String::from("fonts/Bookman/Bookman-BoldItalic.otf")
+			regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
+			bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
+			italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
+			bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
 		};
 		// Parameters for determining the size of the page and the text margins on the page
 		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();

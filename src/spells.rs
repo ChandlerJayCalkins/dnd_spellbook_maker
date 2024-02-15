@@ -135,7 +135,7 @@ impl fmt::Display for Level
 	{
 		let text = match self
 		{
-			Self::Cantrip => String::from("Cantrip"),
+			Self::Cantrip => String::from("cantrip"),
 			Self::Level1 => String::from("1st-Level"),
 			Self::Level2 => String::from("2nd-Level"),
 			Self::Level3 => String::from("3rd-Level"),
@@ -251,14 +251,14 @@ impl fmt::Display for MagicSchool
 	{
 		let text = match self
 		{
-			Self::Abjuration => String::from("abjuration"),
-			Self::Conjuration => String::from("conjuration"),
-			Self::Divination => String::from("divination"),
-			Self::Enchantment => String::from("enchantment"),
-			Self::Evocation => String::from("evocation"),
-			Self::Illusion => String::from("illusion"),
-			Self::Necromancy => String::from("necromancy"),
-			Self::Transmutation => String::from("transmutation")
+			Self::Abjuration => String::from("Abjuration"),
+			Self::Conjuration => String::from("Conjuration"),
+			Self::Divination => String::from("Divination"),
+			Self::Enchantment => String::from("Enchantment"),
+			Self::Evocation => String::from("Evocation"),
+			Self::Illusion => String::from("Illusion"),
+			Self::Necromancy => String::from("Necromancy"),
+			Self::Transmutation => String::from("Transmutation")
 		};
 		write!(f, "{}", text)
 	}
@@ -2071,10 +2071,23 @@ impl Spell
 	pub fn get_level_school_text(&self) -> String
 	{
 		// Gets a string of the level and the school from the spell
-		let mut text = match self.level
+		let mut text = match &self.level
 		{
-			SpellField::Controlled(Level::Cantrip) => format!("{} {}", self.school, self.level),
-			_ => format!("{} {}", self.level, self.school.to_string())
+			// If the spell is a cantrip, make the school come first and then the level
+			SpellField::Controlled(Level::Cantrip) => format!("{} {}", &self.school, &self.level),
+			// If the spell is any other level or a custom value
+			_ =>
+			{
+				let school_text = match &self.school
+				{
+					// If the spell's school is a controlled value, get a lowercase string of it
+					SpellField::Controlled(school) => school.to_string().to_lowercase(),
+					// If the spell's school has a custom value, just use that string untouched
+					SpellField::Custom(s) => s.clone()
+				};
+				// Make the level come before the school
+				format!("{} {}", &self.level, school_text)
+			}
 		};
 		// If the spell is a ritual
 		if self.is_ritual
