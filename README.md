@@ -157,6 +157,8 @@ Spell files are plaintext files with fields separated mostly by newlines. Each f
 - `description:`
 - `upcast_description:`
 
+These fields do not have to be in any particular order in the spell file. They only need to be separated by lines.
+
 ## Fields
 
 ### Name
