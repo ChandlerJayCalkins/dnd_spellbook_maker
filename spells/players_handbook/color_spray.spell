@@ -2,7 +2,7 @@ name: Color Spray
 level: 1
 school: illusion
 casting_time: actions 1
-range: self cone feet 10
+range: self cone feet 15
 has_v_component
 has_s_component
 m_components: "a pinch of powder or sand that is colored red, yellow, and blue"
