@@ -2121,7 +2121,7 @@ mod tests
 		let spellbook_name_1 = "Every Sepll in the Dungeons & Dragons 5th Edition Player's Handbook: Part 1";
 		let spellbook_name_2 = "Every Sepll in the Dungeons & Dragons 5th Edition Player's Handbook: Part 2";
 		// List of every spell in the player's handbook folder
-		let spell_list = get_all_spells_in_folder("spells/players_handbook").unwrap();
+		let spell_list = get_all_spells_in_folder("spells/players_handbook_2014").unwrap();
 		// Split that vec into 2 vecs
 		let spell_list_1 = spell_list[..spell_list.len()/2].to_vec();
 		let spell_list_2 = spell_list[spell_list.len()/2..].to_vec();
@@ -2523,20 +2523,20 @@ Creatures that succeed the saving throw take 20d4 scrunching damage."),
 		// Vec of paths to spell files that will be read from
 		let spell_paths = vec!
 		[
-			"spells/players_handbook/prestidigitation.spell",
-			"spells/players_handbook/mending.spell",
-			"spells/players_handbook/mage_hand.spell",
-			"spells/players_handbook/fire_bolt.spell",
+			"spells/players_handbook_2014/prestidigitation.spell",
+			"spells/players_handbook_2014/mending.spell",
+			"spells/players_handbook_2014/mage_hand.spell",
+			"spells/players_handbook_2014/fire_bolt.spell",
 			"spells/strixhaven/silvery_barbs.spell",
-			"spells/players_handbook/color_spray.spell",
-			"spells/players_handbook/magic_missile.spell",
+			"spells/players_handbook_2014/color_spray.spell",
+			"spells/players_handbook_2014/magic_missile.spell",
 			"spells/xanathars_guide_to_everything/ice_knife.spell",
-			"spells/players_handbook/mage_armor.spell",
-			"spells/players_handbook/unseen_servant.spell",
-			"spells/players_handbook/detect_magic.spell",
-			"spells/players_handbook/alarm.spell",
-			"spells/players_handbook/cloud_of_daggers.spell",
-			"spells/players_handbook/scorching_ray.spell"
+			"spells/players_handbook_2014/mage_armor.spell",
+			"spells/players_handbook_2014/unseen_servant.spell",
+			"spells/players_handbook_2014/detect_magic.spell",
+			"spells/players_handbook_2014/alarm.spell",
+			"spells/players_handbook_2014/cloud_of_daggers.spell",
+			"spells/players_handbook_2014/scorching_ray.spell"
 		];
 		// Attempt to loop through each spell file and convert it into a spell struct
 		for path in spell_paths
