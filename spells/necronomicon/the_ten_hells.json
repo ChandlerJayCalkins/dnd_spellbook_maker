@@ -1,0 +1,33 @@
+{
+  "name": "The Ten Hells",
+  "level": {
+    "Controlled": "Level9"
+  },
+  "school": {
+    "Controlled": "Necromancy"
+  },
+  "is_ritual": true,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Yourself": {
+        "Sphere": {
+          "Feet": 90
+        }
+      }
+    }
+  },
+  "has_v_component": true,
+  "has_s_component": false,
+  "m_components": "the nail or claw of a creature from an evil plane",
+  "duration": {
+    "Controlled": "Instant"
+  },
+  "description": "Choose any number of creatures made of tangible matter within range. Those creatures must all make a constitution savint throw against your spell save DC. All creatures that fail this saving throw get turned inside out, immediately die, and have their souls eternally damned to all nine hells simultaneously.\nCreatures that succeed the saving throw take 20d4 scrunching damage.",
+  "upcast_description": null,
+  "tables": []
+}

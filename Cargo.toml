@@ -16,6 +16,7 @@ exclude = ["spells", "fonts", "img"]
 
 [dependencies]
 serde = { version = "1.0.215", features = ["derive"] }
+serde_json = { version = "1.0.133" }
 image = { version = "0.24.7" }
 printpdf = { version = "0.6.0", features = ["embedded_images"] }
 rusttype = { version = "0.9.3" }

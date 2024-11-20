@@ -2090,7 +2090,7 @@ pub fn get_all_spells_in_folder(folder_path: &str) -> Result<Vec<spells::Spell>,
 	// Loop through each file in the folder
 	for file_path in file_paths
 	{
-		// Attempt to get a path to the file
+		// Attempt to get a path to the file in an option
 		let file_name_option = file_path?.path();
 		// Attempt to turn the path into a string
 		let file_name = match file_name_option.to_str()
@@ -2100,8 +2100,40 @@ pub fn get_all_spells_in_folder(folder_path: &str) -> Result<Vec<spells::Spell>,
 			// If an str of the path could not be gotten, return an error
 			None => return Err(Box::new(SpellFileNameReadError))
 		};
-		// Read the spell file, turn it into a spell, and push it to the spell_list vec
-		spell_list.push(spells::Spell::from_file(file_name)?);
+		if file_name.ends_with(".spell")
+		{
+			// Read the spell file, turn it into a spell, and push it to the spell_list vec
+			spell_list.push(spells::Spell::from_file(file_name)?);
+		}
+	}
+	// Return the list of spells
+	Ok(spell_list)
+}
+
+pub fn get_all_json_spells_in_folder(folder_path: &str) -> Result<Vec<spells::Spell>, Box<dyn std::error::Error>>
+{
+	// Gets a list of every file in the folder
+	let file_paths = fs::read_dir(folder_path)?;
+	// Create a list of the spells that will be returned
+	let mut spell_list = Vec::new();
+	// Loop through each file in the folder
+	for file_path in file_paths
+	{
+		// Attempt to get a path to the file in an option
+		let file_name_option = file_path?.path();
+		// Attempt to turn the path into a string
+		let file_name = match file_name_option.to_str()
+		{
+			// If an str of the path was retrieved successfully, obtain it
+			Some(name) => name,
+			// If an str of the path could not be gotten, return an error
+			None => return Err(Box::new(SpellFileNameReadError))
+		};
+		if file_name.ends_with(".json")
+		{
+			// Read the spell file, turn it into a spell, and push it to the spell_list vec
+			spell_list.push(spells::Spell::from_json_file(file_name)?);
+		}
 	}
 	// Return the list of spells
 	Ok(spell_list)
@@ -2348,16 +2380,8 @@ mod tests
 	#[test]
 	fn create_spell_files()
 	{
-		// String of the path to the output folder
-		let output_folder = String::from("spells/tests/spell/");
 		// Path to hand-made spell files that are compared to generated spells
 		let comparison_folder = String::from("spells/necronomicon/");
-		// If the output folder doesn't exist yet
-		if !Path::new(&output_folder).exists()
-		{
-			// Create it
-			fs::create_dir(&output_folder).unwrap();
-		}
 
 		// Create the spells (necronomicon spell duplicates)
 		let hell_spell = spells::Spell
@@ -2396,7 +2420,8 @@ COLUMN OF CHAOS | COLUMN OF NECROMANCY
 YOU CAN'T HANDLE THIS SPELL A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A
 A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A
 A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A A"),
-			upcast_description: Some(String::from("HELL ON EARTH"))
+			upcast_description: Some(String::from("HELL ON EARTH")),
+			tables: Vec::new()
 		};
 		let power_word_scrunch = spells::Spell
 		{
@@ -2419,7 +2444,8 @@ Target | Effect
 <table>
 - Scrunch balls (balls produced from scrunching) can be thrown and do 1d6 bludgeoning damage on hit.
 Scrunch ball funny lol."),
-			upcast_description: None
+			upcast_description: None,
+			tables: Vec::new()
 		};
 		let the_ten_hells = spells::Spell
 		{
@@ -2435,24 +2461,35 @@ Scrunch ball funny lol."),
 			duration: spells::SpellField::Controlled(spells::Duration::Instant),
 			description: String::from("Choose any number of creatures made of tangible matter within range. Those creatures must all make a constitution savint throw against your spell save DC. All creatures that fail this saving throw get turned inside out, immediately die, and have their souls eternally damned to all nine hells simultaneously.
 Creatures that succeed the saving throw take 20d4 scrunching damage."),
-			upcast_description: None
+			upcast_description: None,
+			tables: Vec::new()
 		};
 
 		// Create vec of test spells and their file names (without extension or path)
 		let spell_list = vec![(hell_spell, "hell_spell"), (power_word_scrunch, "power_word_scrunch"), (the_ten_hells, "the_ten_hells")];
 		// Test to make sure spell files can be created properly
-		spell_file_test(&spell_list, true, &output_folder);
+		spell_file_test(&spell_list, true, "spells/tests/spell/", &comparison_folder);
+		json_file_test(&spell_list, false, "spells/tests/json/", &comparison_folder);
 	}
 
-	// Creates spell files from a list of spells into the output folder and tests if they were created perfectly
-	fn spell_file_test(spell_list: &Vec<(spells::Spell, &str)>, compress: bool, output_folder: &str)
+	// Creates spell files from a list of spells into the output folder and compares them to the same spells hand-crafted in the comparison folder
+	fn spell_file_test(spell_list: &Vec<(spells::Spell, &str)>, compress: bool, output_folder: &str, comparison_folder: &str)
 	{
+		const FILE_EXTENSION: &str = ".spell";
+
+		// If the output folder doesn't exist yet
+		if !Path::new(&output_folder).exists()
+		{
+			// Create it
+			fs::create_dir(&output_folder).unwrap();
+		}
+
 		// Create vec of file paths to each spell that is going to be generated
 		let mut spell_paths = Vec::with_capacity(spell_list.len());
 		for spell in spell_list
 		{
 			// Get file path to the spell that's about to be generated and add it to the vec
-			let spell_path = output_folder.clone().to_owned() + spell.1 + ".spell";
+			let spell_path = output_folder.to_owned() + spell.1 + FILE_EXTENSION;
 			spell_paths.push(spell_path.clone());
 			// Generate the spell file for this spell
 			spell.0.to_file(&spell_path, compress).unwrap();
@@ -2469,7 +2506,7 @@ Creatures that succeed the saving throw take 20d4 scrunching damage."),
 		for (spell, spell_path) in spell_list.iter().zip(spell_paths.iter())
 		{
 			// Read all of the bytes from the original spell that the generated one was based on
-			let real_spell_bytes = fs::read(&("spells/necronomicon/".to_owned() + spell.1 + ".spell")).unwrap();
+			let real_spell_bytes = fs::read(&(comparison_folder.to_owned() + spell.1 + FILE_EXTENSION)).unwrap();
 			// Read all of the bytes from the generated spell file
 			let test_spell_bytes = fs::read(&spell_path).unwrap();
 			// Compare the bytes from both files to make sure they are the same
@@ -2477,9 +2514,45 @@ Creatures that succeed the saving throw take 20d4 scrunching damage."),
 		}
 	}
 
-	fn json_file_test(spell_list: &Vec<(spells::Spell, &str)>, compress: bool, output_folder: &str)
+	fn json_file_test(spell_list: &Vec<(spells::Spell, &str)>, compress: bool, output_folder: &str, comparison_folder: &str)
 	{
+		const FILE_EXTENSION: &str = ".json";
 
+		// If the output folder doesn't exist yet
+		if !Path::new(&output_folder).exists()
+		{
+			// Create it
+			fs::create_dir(&output_folder).unwrap();
+		}
+
+		// Create vec of file paths to each spell that is going to be generated
+		let mut spell_paths = Vec::with_capacity(spell_list.len());
+		for spell in spell_list
+		{
+			// Get file path to the spell that's about to be generated and add it to the vec
+			let spell_path = output_folder.to_owned() + spell.1 + FILE_EXTENSION;
+			spell_paths.push(spell_path.clone());
+			// Generate the json file for this spell
+			spell.0.to_json_file(&spell_path, compress).unwrap();
+		}
+
+		// Create a list of just the spells and the file names from the spell_list parameter
+		let real_spell_list: Vec<spells::Spell> = spell_list.into_iter().map(|(s, _)| s.clone()).collect();
+		// Read all of the generated spell files into spell objects and put them into a list
+		let test_spell_list = get_all_json_spells_in_folder(&output_folder).unwrap();
+		// Compare if the spell objects are the same
+		assert_eq!(real_spell_list, test_spell_list);
+
+		// Loop through spell file paths
+		for (spell, spell_path) in spell_list.iter().zip(spell_paths.iter())
+		{
+			// Read all of the bytes from the original spell that the generated one was based on
+			let real_spell_bytes = fs::read(&(comparison_folder.to_owned() + spell.1 + FILE_EXTENSION)).unwrap();
+			// Read all of the bytes from the generated spell file
+			let test_spell_bytes = fs::read(&spell_path).unwrap();
+			// Compare the bytes from both files to make sure they are the same
+			assert_eq!(real_spell_bytes, test_spell_bytes);
+		}
 	}
 
 	// Stress testing the text formatting

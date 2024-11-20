@@ -4,9 +4,10 @@
 
 use std::fmt;
 use std::fs;
-use std::io::Write;
+use std::io::{Write, BufReader};
 use std::error;
 use serde::{Serialize, Deserialize};
+use serde_json::{from_reader, to_writer, to_writer_pretty};
 
 /// For reading and writing to spell files.
 trait SpellFileString: Sized
@@ -1457,23 +1458,58 @@ pub struct Spell
 	pub description: String,
 	/// Optional text that describes the benefits a spell gains from being upcast
 	/// (being cast at a level higher than its base level).
-	pub upcast_description: Option<String>
+	pub upcast_description: Option<String>,
+	/// Any tables that the spell might have in its description
+	pub tables: Vec<Vec<Vec<String>>>
 }
 
 impl Spell
 {
+	/// Constructs a spell object from a json file.
+	///
+	/// # Parameters
+	/// - `file_path` The path to the json file to create the spell from.
+	///
+	/// # Output
+	/// - `Ok` A spell object.
+	/// - `Err` Any errors that occured.
+	pub fn from_json_file(file_path: &str) -> Result<Self, Box<dyn error::Error>>
+	{
+		let file = fs::File::open(file_path)?;
+		let reader = BufReader::new(file);
+		let spell = from_reader(reader)?;
+		Ok(spell)
+	}
+
+	/// Saves a spell to a json file.
+	///
+	/// # Parameters
+	/// - `file_path` The file path to save the spell to.
+	/// - `compress` True to put all the data onto one line, false to make the file more human readable.
+	///
+	/// # Output
+	/// - `Ok` Nothing if there were no errors.
+	/// - `Err` Any errors that occurred.
+	pub fn to_json_file(&self, file_path: &str, compress: bool) -> Result<(), Box<dyn error::Error>>
+	{
+		let file = fs::File::create(file_path)?;
+		if compress { to_writer(file, self)?; }
+		else { to_writer_pretty(file, self)?; }
+		Ok(())
+	}
+
 	/// Constructs a spell object from a spell file.
 	///
 	/// # Parameters
-	/// - `file_name` The name of the spell file to create a spell from.
+	/// - `file_path` The path to the spell file to create a spell from.
 	///
 	/// # Output
 	/// - `Ok` A Spell object.
 	/// - `Err` Any errors that occurred.
-	pub fn from_file(file_name: &str) -> Result<Self, Box<dyn error::Error>>
+	pub fn from_file(file_path: &str) -> Result<Self, Box<dyn error::Error>>
 	{
 		// Reads the file
-		let file_contents = fs::read_to_string(file_name)?;
+		let file_contents = fs::read_to_string(file_path)?;
 		// Separates the file into lines
 		let lines: Vec<_> = file_contents.lines().collect();
 
@@ -1523,7 +1559,7 @@ impl Spell
 					{
 						// Try to convert the value for this field into a level object
 						let result = SpellField::<Level>::from_spell_file_string(tokens[1..].join(" ").as_str(),
-							file_name, tokens[0]);
+						file_path, tokens[0]);
 						// Assign the level value if parsing succeeded, return error if not
 						level = match result
 						{
@@ -1539,7 +1575,7 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to convert the value for this field into a MagicSchool object
-						let result = SpellField::<MagicSchool>::from_spell_file_string(tokens[1..].join(" ").as_str(), file_name,
+						let result = SpellField::<MagicSchool>::from_spell_file_string(tokens[1..].join(" ").as_str(), file_path,
 							tokens[0]);
 						// Assign the school value if parsing succeeded, return error if not
 						school = match result
@@ -1559,7 +1595,7 @@ impl Spell
 						is_ritual = match str_to_bool(tokens[1..].join(" ").as_str())
 						{
 							Ok(b) => Some(b),
-							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
+							Err(_) => return Err(SpellFileError::get_box(false, file_path, lines[line_index]))
 						}
 					}
 					// If no value was given, assume the field name alone means true
@@ -1573,7 +1609,7 @@ impl Spell
 					{
 						// Try to convert the value for this field into a SpellField<CastingTime> object
 						let result = SpellField::<CastingTime>::from_spell_file_string(tokens[1..].join(" ").as_str(),
-							file_name, tokens[0]);
+							file_path, tokens[0]);
 						// Assign the casting_time value if parsing succeeded, return error if not
 						casting_time = match result
 						{
@@ -1590,7 +1626,7 @@ impl Spell
 					{
 						// Try to convert the value for this field into a Range object
 						let result = SpellField::<Range>::from_spell_file_string(tokens[1..].join(" ").as_str(),
-							file_name, tokens[0]);
+							file_path, tokens[0]);
 						// Assign the range value if parsing succeeded, return error if not
 						range = match result
 						{
@@ -1609,7 +1645,7 @@ impl Spell
 						has_v_component = match str_to_bool(tokens[1..].join(" ").as_str())
 						{
 							Ok(b) => Some(b),
-							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
+							Err(_) => return Err(SpellFileError::get_box(false, file_path, lines[line_index]))
 						}
 					}
 					// If no value was given, assume the field name alone means true
@@ -1625,7 +1661,7 @@ impl Spell
 						has_s_component = match str_to_bool(tokens[1..].join(" ").as_str())
 						{
 							Ok(b) => Some(b),
-							Err(_) => return Err(SpellFileError::get_box(false, file_name, lines[line_index]))
+							Err(_) => return Err(SpellFileError::get_box(false, file_path, lines[line_index]))
 						}
 					}
 					// If no value was given, assume the field name alone means true
@@ -1641,7 +1677,7 @@ impl Spell
 						if tokens[1].to_lowercase().as_str() != "none"
 						{
 							// Try to collect value of this field as some text
-							let text_result = Self::get_text_field(&tokens, &lines, &mut line_index, file_name)?;
+							let text_result = Self::get_text_field(&tokens, &lines, &mut line_index, file_path)?;
 							m_components = Some(text_result);
 						}
 					}
@@ -1654,7 +1690,7 @@ impl Spell
 					{
 						// Try to convert the value for this field into a Duration object
 						let result = SpellField::<Duration>::from_spell_file_string(tokens[1..].join(" ").as_str(),
-							file_name, tokens[0]);
+							file_path, tokens[0]);
 						// Assign the duration value if parsing succeeded, return error if not
 						duration = match result
 						{
@@ -1670,7 +1706,7 @@ impl Spell
 					if tokens.len() > 1
 					{
 						// Try to collect value of this field as some text
-						let description_result = Self::get_text_field(&tokens, &lines, &mut line_index, file_name)?;
+						let description_result = Self::get_text_field(&tokens, &lines, &mut line_index, file_path)?;
 						description = Some(description_result);
 					}
 				},
@@ -1683,12 +1719,12 @@ impl Spell
 						if tokens[1].to_lowercase().as_str() != "none"
 						{
 							// Try to collect value of this field as some text
-							let description_result = Self::get_text_field(&tokens, &lines, &mut line_index, file_name)?;
+							let description_result = Self::get_text_field(&tokens, &lines, &mut line_index, file_path)?;
 							upcast_description = Some(description_result);
 						}
 					}
 				},
-				_ => return Err(SpellFileError::get_box(false, file_name, tokens[0]))
+				_ => return Err(SpellFileError::get_box(false, file_path, tokens[0]))
 			}
 
 			line_index += 1;
@@ -1702,19 +1738,19 @@ impl Spell
 		let name = match name
 		{
 			Some(s) => s,
-			None => return Err(SpellFileError::get_box(true, file_name, "name"))
+			None => return Err(SpellFileError::get_box(true, file_path, "name"))
 		};
 		// Level field (required)
 		let level = match level
 		{
 			Some(s) => s,
-			None => return Err(SpellFileError::get_box(true, file_name, "level"))
+			None => return Err(SpellFileError::get_box(true, file_path, "level"))
 		};
 		// School field (required)
 		let school = match school
 		{
 			Some(s) => s,
-			None => return Err(SpellFileError::get_box(true, file_name, "school"))
+			None => return Err(SpellFileError::get_box(true, file_path, "school"))
 		};
 		// Ritual field (optional)
 		let is_ritual = match is_ritual
@@ -1726,13 +1762,13 @@ impl Spell
 		let casting_time = match casting_time
 		{
 			Some(s) => s,
-			None => return Err(SpellFileError::get_box(true, file_name, "casting_time"))
+			None => return Err(SpellFileError::get_box(true, file_path, "casting_time"))
 		};
 		// Range field (required)
 		let range = match range
 		{
 			Some(s) => s,
-			None => return Err(SpellFileError::get_box(true, file_name, "range"))
+			None => return Err(SpellFileError::get_box(true, file_path, "range"))
 		};
 		// V component field (optional)
 		let has_v_component = match has_v_component
@@ -1750,13 +1786,13 @@ impl Spell
 		let duration = match duration
 		{
 			Some(s) => s,
-			None => return Err(SpellFileError::get_box(true, file_name, "duration"))
+			None => return Err(SpellFileError::get_box(true, file_path, "duration"))
 		};
 		// Description field (required)
 		let description = match description
 		{
 			Some(s) => s,
-			None => return Err(SpellFileError::get_box(true, file_name, "description"))
+			None => return Err(SpellFileError::get_box(true, file_path, "description"))
 		};
 
 		// Create and return the spell object
@@ -1773,7 +1809,8 @@ impl Spell
 			m_components: m_components,
 			duration: duration,
 			description: description,
-			upcast_description: upcast_description
+			upcast_description: upcast_description,
+			tables: Vec::new()
 		})
 	}
 
