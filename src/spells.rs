@@ -1375,6 +1375,14 @@ impl fmt::Display for Duration
 	}
 }
 
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct Table
+{
+	pub title: String,
+	pub column_labels: Vec<String>,
+	pub cells: Vec<Vec<String>>
+}
+
 // Gets text within quotes as a field from a spell file
 fn get_text_field(text: &str, file_name: &str, field_prefix: &str) -> Result<String, Box<SpellFileError>>
 {
@@ -1460,7 +1468,7 @@ pub struct Spell
 	/// (being cast at a level higher than its base level).
 	pub upcast_description: Option<String>,
 	/// Any tables that the spell might have in its description
-	pub tables: Vec<Vec<Vec<String>>>
+	pub tables: Vec<Table>
 }
 
 impl Spell
