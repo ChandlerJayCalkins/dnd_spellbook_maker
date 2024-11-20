@@ -6,6 +6,7 @@ use std::fmt;
 use std::fs;
 use std::io::Write;
 use std::error;
+use serde::{Serialize, Deserialize};
 
 /// For reading and writing to spell files.
 trait SpellFileString: Sized
@@ -26,7 +27,7 @@ trait SpellFileString: Sized
 }
 
 /// Holds spell fields with either a controlled value or a custom value represented by a string.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[allow(private_bounds)]
 pub enum SpellField<T: fmt::Display + SpellFileString>
 {
@@ -91,7 +92,7 @@ impl<T: fmt::Display + SpellFileString> SpellFileString for SpellField<T>
 
 /// The level of a spell.
 // 0 is a cantrip, max level is 9
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Level
 {
 	Cantrip,
@@ -192,7 +193,7 @@ impl From<Level> for u8
 }
 
 /// The school of magic a spell belongs to
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MagicSchool
 {
 	Abjuration,
@@ -269,7 +270,7 @@ impl fmt::Display for MagicSchool
 ///
 /// u16 values are the number of units of time it takes to cast the spell,
 /// variants are the unit of time.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum CastingTime
 {
 	Seconds(u16),
@@ -505,7 +506,7 @@ impl fmt::Display for CastingTime
 }
 
 /// Holds a distance value. The enum variant determine its unit of measurement.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Distance
 {
 	Feet(u16),
@@ -605,7 +606,7 @@ impl fmt::Display for Distance
 
 /// Area of Effect.
 /// The volumnetric shape in which a spell's effect(s) take place.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AOE
 {
 	/// Distance defines length of line (width should be in spell description).
@@ -758,7 +759,7 @@ impl fmt::Display for AOE
 }
 
 /// The farthest distance away a spell can target things.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Range
 {
 	/// The AOE option in this variant is for spells that have areas of effect that come from the spellcaster.
@@ -894,7 +895,7 @@ impl fmt::Display for Range
 ///
 /// u16 values are the number of units the spell can last.
 /// Bool values are whether or not the spell requires concentration.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Duration
 {
 	Instant,
@@ -1425,7 +1426,7 @@ fn str_to_bool(s: &str) -> Result<bool, ()>
 }
 
 /// Data containing all of the information about a spell needed to display it in a spellbook.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Spell
 {
 	pub name: String,

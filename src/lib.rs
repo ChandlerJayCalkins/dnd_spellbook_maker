@@ -2349,7 +2349,9 @@ mod tests
 	fn create_spell_files()
 	{
 		// String of the path to the output folder
-		let output_folder = String::from("spells/generated_spells");
+		let output_folder = String::from("spells/tests/spell/");
+		// Path to hand-made spell files that are compared to generated spells
+		let comparison_folder = String::from("spells/necronomicon/");
 		// If the output folder doesn't exist yet
 		if !Path::new(&output_folder).exists()
 		{
@@ -2436,36 +2438,48 @@ Creatures that succeed the saving throw take 20d4 scrunching damage."),
 			upcast_description: None
 		};
 
-		// The file paths that each of the spells will be written to
-		let hell_spell_path = output_folder.clone() + "/hell_spell.spell";
-		let power_word_scrunch_path = output_folder.clone() + "/power_word_scrunch.spell";
-		let the_ten_hells_path = output_folder.clone() + "/the_ten_hells.spell";
-		// Write the spells to their own files in the output folder
-		hell_spell.to_file(&hell_spell_path, true).unwrap();
-		power_word_scrunch.to_file(&power_word_scrunch_path, true).unwrap();
-		the_ten_hells.to_file(&the_ten_hells_path, true).unwrap();
+		// Create vec of test spells and their file names (without extension or path)
+		let spell_list = vec![(hell_spell, "hell_spell"), (power_word_scrunch, "power_word_scrunch"), (the_ten_hells, "the_ten_hells")];
+		// Test to make sure spell files can be created properly
+		spell_file_test(&spell_list, true, &output_folder);
+	}
 
-		// Get a vec of the spells that were just created in this test function
-		let real_spell_list = vec![hell_spell, power_word_scrunch, the_ten_hells];
-		// Get a vec of the spells from the spell files that were just created
+	// Creates spell files from a list of spells into the output folder and tests if they were created perfectly
+	fn spell_file_test(spell_list: &Vec<(spells::Spell, &str)>, compress: bool, output_folder: &str)
+	{
+		// Create vec of file paths to each spell that is going to be generated
+		let mut spell_paths = Vec::with_capacity(spell_list.len());
+		for spell in spell_list
+		{
+			// Get file path to the spell that's about to be generated and add it to the vec
+			let spell_path = output_folder.clone().to_owned() + spell.1 + ".spell";
+			spell_paths.push(spell_path.clone());
+			// Generate the spell file for this spell
+			spell.0.to_file(&spell_path, compress).unwrap();
+		}
+
+		// Create a list of just the spells and the file names from the spell_list parameter
+		let real_spell_list: Vec<spells::Spell> = spell_list.into_iter().map(|(s, _)| s.clone()).collect();
+		// Read all of the generated spell files into spell objects and put them into a list
 		let test_spell_list = get_all_spells_in_folder(&output_folder).unwrap();
-		// Ensure that they are exactly the same
+		// Compare if the spell objects are the same
 		assert_eq!(real_spell_list, test_spell_list);
 
-		// Read the bytes from the spell files that were just created
-		let test_hell_spell_bytes = fs::read(&hell_spell_path).unwrap();
-		let test_power_word_scrunch_bytes = fs::read(&power_word_scrunch_path).unwrap();
-		let test_the_ten_hells_bytes = fs::read(&the_ten_hells_path).unwrap();
+		// Loop through spell file paths
+		for (spell, spell_path) in spell_list.iter().zip(spell_paths.iter())
+		{
+			// Read all of the bytes from the original spell that the generated one was based on
+			let real_spell_bytes = fs::read(&("spells/necronomicon/".to_owned() + spell.1 + ".spell")).unwrap();
+			// Read all of the bytes from the generated spell file
+			let test_spell_bytes = fs::read(&spell_path).unwrap();
+			// Compare the bytes from both files to make sure they are the same
+			assert_eq!(real_spell_bytes, test_spell_bytes);
+		}
+	}
 
-		// Read the bytes from the hand made spells that these test spells were based on
-		let real_hell_spell_bytes = fs::read("spells/necronomicon/hell_spell.spell").unwrap();
-		let real_power_word_scrunch_bytes = fs::read("spells/necronomicon/power_word_scrunch.spell").unwrap();
-		let real_the_ten_hells_bytes = fs::read("spells/necronomicon/the_ten_hells.spell").unwrap();
+	fn json_file_test(spell_list: &Vec<(spells::Spell, &str)>, compress: bool, output_folder: &str)
+	{
 
-		// Ensure that they are all exactly the same
-		assert_eq!(real_hell_spell_bytes, test_hell_spell_bytes);
-		assert_eq!(real_power_word_scrunch_bytes, test_power_word_scrunch_bytes);
-		assert_eq!(real_the_ten_hells_bytes, test_the_ten_hells_bytes);
 	}
 
 	// Stress testing the text formatting

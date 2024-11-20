@@ -15,7 +15,7 @@ exclude = ["spells", "fonts", "img"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-serde = { version = "1.0.215" }
+serde = { version = "1.0.215", features = ["derive"] }
 image = { version = "0.24.7" }
 printpdf = { version = "0.6.0", features = ["embedded_images"] }
 rusttype = { version = "0.9.3" }
