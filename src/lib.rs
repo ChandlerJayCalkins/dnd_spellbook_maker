@@ -2472,7 +2472,7 @@ Creatures that succeed the saving throw take 20d4 scrunching damage."),
 		json_file_test(&spell_list, false, "spells/tests/json/", &comparison_folder);
 	}
 
-	// Creates spell files from a list of spells into the output folder and compares them to the same spells hand-crafted in the comparison folder
+	// Creates spell files from a list of spells into the output folder and compares them to the same hand-crafted spells in the comparison folder
 	fn spell_file_test(spell_list: &Vec<(spells::Spell, &str)>, compress: bool, output_folder: &str, comparison_folder: &str)
 	{
 		const FILE_EXTENSION: &str = ".spell";
@@ -2514,6 +2514,7 @@ Creatures that succeed the saving throw take 20d4 scrunching damage."),
 		}
 	}
 
+	// Creates json files from a list of spells into the output folder and compares them to the same hand-crafted spells in the comparison folder
 	fn json_file_test(spell_list: &Vec<(spells::Spell, &str)>, compress: bool, output_folder: &str, comparison_folder: &str)
 	{
 		const FILE_EXTENSION: &str = ".json";
