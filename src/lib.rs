@@ -1002,6 +1002,11 @@ font_type: &FontType, font_size_data: &Font, font_scale: &Scale, tab_amount: f32
 	*text = String::new();
 }
 
+// TODO
+// 1. Combine all static parameters into one struct
+// 2. Rewrite `write_spell_description` function to be combined with `write_textbox` so tokens get parsed and written
+// at the same time. Make it so text gets written when it either switches fonts or gets too long to fit on the page.
+
 // Writes a spell description to a spellbook, including processing changing fonts and adding tables
 // Returns the layer of the page that the description text last appears on
 fn write_spell_description(doc: &PdfDocumentReference, layer_name_prefix: &str, layer: &PdfLayerReference,
