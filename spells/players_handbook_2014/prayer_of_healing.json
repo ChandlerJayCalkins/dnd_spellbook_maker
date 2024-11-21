@@ -1,0 +1,31 @@
+{
+  "name": "Prayer of Healing",
+  "level": {
+    "Controlled": "Level2"
+  },
+  "school": {
+    "Controlled": "Evocation"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Minutes": 10
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Dist": {
+        "Feet": 30
+      }
+    }
+  },
+  "has_v_component": true,
+  "has_s_component": false,
+  "m_components": null,
+  "duration": {
+    "Controlled": "Instant"
+  },
+  "description": "Up to six creatures of your choice that you can see within range each regain hit points equal to 2d8 + your spellcasting ability modifier. This spell has no effect on undead or constructs.",
+  "upcast_description": "When you cast this spell using a spell slot of 3rd level or higher, the healing increases by 1d8 for each slot level above 2nd.",
+  "tables": []
+}

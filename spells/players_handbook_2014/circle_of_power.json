@@ -1,0 +1,38 @@
+{
+  "name": "Circle of Power",
+  "level": {
+    "Controlled": "Level5"
+  },
+  "school": {
+    "Controlled": "Abjuration"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Yourself": {
+        "Sphere": {
+          "Feet": 30
+        }
+      }
+    }
+  },
+  "has_v_component": true,
+  "has_s_component": false,
+  "m_components": null,
+  "duration": {
+    "Controlled": {
+      "Minutes": [
+        10,
+        true
+      ]
+    }
+  },
+  "description": "Divine energy radiates from you, distorting and diffusing magical energy within 30 feet of you. Until the spell ends, the sphere moves with you, centered on you. For the duration, each friendly creature in the area (including you) has advantage on saving throws against spells and other magical effects.Additionally, when an affected creature succeeds on a saving throw made against a spell or magical effect that allows it to make a saving throw to take only half damage, it instead takes no damage if it succeeds on the saving throws.",
+  "upcast_description": null,
+  "tables": []
+}

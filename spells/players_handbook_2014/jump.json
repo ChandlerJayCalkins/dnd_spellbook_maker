@@ -1,0 +1,32 @@
+{
+  "name": "Jump",
+  "level": {
+    "Controlled": "Level1"
+  },
+  "school": {
+    "Controlled": "Transmutation"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": "Touch"
+  },
+  "has_v_component": true,
+  "has_s_component": true,
+  "m_components": "a grasshopper's hind leg",
+  "duration": {
+    "Controlled": {
+      "Minutes": [
+        1,
+        false
+      ]
+    }
+  },
+  "description": "You touch a creature. The creature's jump distance is tripled until the spell ends.",
+  "upcast_description": null,
+  "tables": []
+}

@@ -1,0 +1,32 @@
+{
+  "name": "Darkvision",
+  "level": {
+    "Controlled": "Level2"
+  },
+  "school": {
+    "Controlled": "Transmutation"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": "Touch"
+  },
+  "has_v_component": true,
+  "has_s_component": true,
+  "m_components": "either a pinch of dried carrot or an agate",
+  "duration": {
+    "Controlled": {
+      "Hours": [
+        8,
+        false
+      ]
+    }
+  },
+  "description": "You touch a willing creature to grant it the ability to see in the dark. For the duration, that creature has darkvision out to a range of 60 feet.",
+  "upcast_description": null,
+  "tables": []
+}

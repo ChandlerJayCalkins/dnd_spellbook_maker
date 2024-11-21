@@ -1,0 +1,36 @@
+{
+  "name": "Conjure Celestial",
+  "level": {
+    "Controlled": "Level7"
+  },
+  "school": {
+    "Controlled": "Conjuration"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Minutes": 1
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Dist": {
+        "Feet": 90
+      }
+    }
+  },
+  "has_v_component": true,
+  "has_s_component": true,
+  "m_components": null,
+  "duration": {
+    "Controlled": {
+      "Hours": [
+        1,
+        true
+      ]
+    }
+  },
+  "description": "You summon a celestial of challenge rating 4 or lower, which appears in an unoccupied space that you can see within range. The celestial disappears when it drops to 0 hit points or when the spell ends.\nThe celestial is friendly to you and your companions for the duration. Roll initiative for the celestial, which has its own turns. It obeys any verbal commands that you issue to it (no action required by you), as long as they don't violate its alignment. If you don't issue any commands to the celestial, it defends itself from hostile creatures but otherwise takes no actions.\nThe DM has the celestial's statistics.",
+  "upcast_description": "When you cast this spell using a 9th-level spell slot, you summon a celestial of challenge rating 5 or lower.",
+  "tables": []
+}

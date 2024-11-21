@@ -1,0 +1,31 @@
+{
+  "name": "Chaos Bolt",
+  "level": {
+    "Controlled": "Level1"
+  },
+  "school": {
+    "Controlled": "Evocation"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Dist": {
+        "Feet": 120
+      }
+    }
+  },
+  "has_v_component": true,
+  "has_s_component": true,
+  "m_components": null,
+  "duration": {
+    "Controlled": "Instant"
+  },
+  "description": "You hurl an undulating, warbling mass of chaotic energy at one creature in range. Make a ranged spell attack against the target. On a hit, the target takes 2d8 + 1d6 damage. Choose one of the d8s. The number rolled on that die determines the attack's damage type, as shown below.\n<table>\nd8 | Damage Type\n<row> 1 | Acid\n<row> 2 | Cold\n<row> 3 | Fire\n<row> 4 | Force\n<row> 5 | Lightning\n<row> 6 | Poison\n<row> 7 | Psychic\n<row> 8 | Thunder\n<table>\nIf you roll the same number on both d8s, the chaotic energy leaps from the target to a different creature of your choice within 30 feet of it. Make a new attack roll against the new target, and make a new damage roll, which could cause the chaotic energy to leap again.\nA creature can be targeted only once by each casting of this spell.",
+  "upcast_description": "When you cast this spell using a spell slot of 2nd level or higher, each target takes 1d6 extra damage of the type rolled for each slot level above 1st.",
+  "tables": []
+}

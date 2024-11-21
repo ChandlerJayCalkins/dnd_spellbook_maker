@@ -1,0 +1,33 @@
+{
+  "name": "Thunderwave",
+  "level": {
+    "Controlled": "Level1"
+  },
+  "school": {
+    "Controlled": "Evocation"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Yourself": {
+        "Cube": {
+          "Feet": 15
+        }
+      }
+    }
+  },
+  "has_v_component": true,
+  "has_s_component": true,
+  "m_components": null,
+  "duration": {
+    "Controlled": "Instant"
+  },
+  "description": "A wave of thunderous force sweeps out from you. Each creature in a 15-foot cube originating from you must make a Constitution saving throw. On a failed save, a creature takes 2d8 thunder damage and is pushed 10 feet away from you. On a successful save, the creature takes half as much damage and isn't pushed.\nIn addition, unsecured objects that are completely within the area of effect are automatically pushed 10 feet away from you by the spell's effect, and the spell emits a thunderous boom audible out to 300 feet.",
+  "upcast_description": "When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d8 for each slot level above 1st.",
+  "tables": []
+}

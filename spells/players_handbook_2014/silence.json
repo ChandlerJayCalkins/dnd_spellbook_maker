@@ -1,0 +1,36 @@
+{
+  "name": "Silence",
+  "level": {
+    "Controlled": "Level2"
+  },
+  "school": {
+    "Controlled": "Illusion"
+  },
+  "is_ritual": true,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Dist": {
+        "Feet": 120
+      }
+    }
+  },
+  "has_v_component": true,
+  "has_s_component": true,
+  "m_components": null,
+  "duration": {
+    "Controlled": {
+      "Minutes": [
+        10,
+        true
+      ]
+    }
+  },
+  "description": "For the duration, no sound can be created within or pass through a 20-foot-radius sphere centered on a point you choose within range. Any creature or object entirely inside the sphere is immune to thunder damage, and creatures are deafened while entirely inside it. Casting a spell that includes a verbal component is impossible there.",
+  "upcast_description": null,
+  "tables": []
+}

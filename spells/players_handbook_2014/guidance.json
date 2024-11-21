@@ -1,0 +1,32 @@
+{
+  "name": "Guidance",
+  "level": {
+    "Controlled": "Cantrip"
+  },
+  "school": {
+    "Controlled": "Divination"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": "Touch"
+  },
+  "has_v_component": true,
+  "has_s_component": true,
+  "m_components": null,
+  "duration": {
+    "Controlled": {
+      "Minutes": [
+        1,
+        true
+      ]
+    }
+  },
+  "description": "You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one ability check of its choice. It can roll the die before or after making the ability check. The spell then ends.",
+  "upcast_description": null,
+  "tables": []
+}

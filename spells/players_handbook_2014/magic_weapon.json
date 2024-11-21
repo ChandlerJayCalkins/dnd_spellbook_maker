@@ -1,0 +1,30 @@
+{
+  "name": "Magic Weapon",
+  "level": {
+    "Controlled": "Level2"
+  },
+  "school": {
+    "Controlled": "Transmutation"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": "BonusAction"
+  },
+  "range": {
+    "Controlled": "Touch"
+  },
+  "has_v_component": true,
+  "has_s_component": true,
+  "m_components": null,
+  "duration": {
+    "Controlled": {
+      "Hours": [
+        1,
+        true
+      ]
+    }
+  },
+  "description": "You touch a nonmagical weapon. Until the spell ends, that weapon becomes a magic weapon with a +1 bonus to attack rolls and damage rolls.",
+  "upcast_description": "When you cast this spell using a spell slot of 4th level or higher, the bonus increases to +2. When you use a spell slot of 6th level or higher, the bonus increases to +3.",
+  "tables": []
+}

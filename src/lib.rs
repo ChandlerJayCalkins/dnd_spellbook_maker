@@ -2072,7 +2072,7 @@ impl std::error::Error for SpellFileNameReadError {}
 
 /// Returns a vec of spells from every spell file in a folder.
 ///
-/// It assumes that all files in the folder are spell files.
+/// It only uses files that end in the `.spell` extension.
 /// 
 /// #### Parameters
 /// - `folder_path` The file path to the folder to extract every spell from.
@@ -2085,7 +2085,7 @@ pub fn get_all_spells_in_folder(folder_path: &str) -> Result<Vec<spells::Spell>,
 {
 	// Gets a list of every file in the folder
 	let file_paths = fs::read_dir(folder_path)?;
-	// Create a list of the spells that will be returned
+	// Create a list of the spells that will be returned (can't figure out how to count the number of files in file_paths to build vec with exact capacity)
 	let mut spell_list = Vec::new();
 	// Loop through each file in the folder
 	for file_path in file_paths
@@ -2100,9 +2100,10 @@ pub fn get_all_spells_in_folder(folder_path: &str) -> Result<Vec<spells::Spell>,
 			// If an str of the path could not be gotten, return an error
 			None => return Err(Box::new(SpellFileNameReadError))
 		};
+		// If the file is a spell file
 		if file_name.ends_with(".spell")
 		{
-			// Read the spell file, turn it into a spell, and push it to the spell_list vec
+			// Read the file, turn it into a spell, and push it to the spell_list vec
 			spell_list.push(spells::Spell::from_file(file_name)?);
 		}
 	}
@@ -2110,11 +2111,22 @@ pub fn get_all_spells_in_folder(folder_path: &str) -> Result<Vec<spells::Spell>,
 	Ok(spell_list)
 }
 
+/// Returns a vec of spells from every json spell file in a folder.
+///
+/// It only uses files that end in the `.json` extension.
+/// 
+/// #### Parameters
+/// - `folder_path` The file path to the folder to extract every spell from.
+/// 
+/// #### Output
+/// Returns a Result enum.
+/// - `Ok` Returns a vec of spell objects that can be inputted into `generate_spellbook()`.
+/// - `Err` Returns any errors that occurred.
 pub fn get_all_json_spells_in_folder(folder_path: &str) -> Result<Vec<spells::Spell>, Box<dyn std::error::Error>>
 {
 	// Gets a list of every file in the folder
 	let file_paths = fs::read_dir(folder_path)?;
-	// Create a list of the spells that will be returned
+	// Create a list of the spells that will be returned (can't figure out how to count the number of files in file_paths to build vec with exact capacity)
 	let mut spell_list = Vec::new();
 	// Loop through each file in the folder
 	for file_path in file_paths
@@ -2129,9 +2141,10 @@ pub fn get_all_json_spells_in_folder(folder_path: &str) -> Result<Vec<spells::Sp
 			// If an str of the path could not be gotten, return an error
 			None => return Err(Box::new(SpellFileNameReadError))
 		};
+		// If the file is a json file
 		if file_name.ends_with(".json")
 		{
-			// Read the spell file, turn it into a spell, and push it to the spell_list vec
+			// Read the file, turn it into a spell, and push it to the spell_list vec
 			spell_list.push(spells::Spell::from_json_file(file_name)?);
 		}
 	}
@@ -2599,6 +2612,34 @@ Creatures that succeed the saving throw take 20d4 scrunching damage."),
 		// Saves the spellbook to a pdf document
 		let _ = save_spellbook(doc, "NECRONOMICON.pdf");
 	}
+
+	// #[test]
+	// // Creates json files for every existing spell file except the spells in the necronomicon and test folders
+	// fn convert_to_json()
+	// {
+	// 	let spell_folders = ["spells/players_handbook_2014", "spells/strixhaven", "spells/tashas_cauldron_of_everything", "spells/xanathars_guide_to_everything"];
+	// 	for folder in spell_folders
+	// 	{
+	// 		// Gets a list of every file in the folder
+	// 		let file_paths = fs::read_dir(folder).unwrap();
+	// 		// Loop through each file in the folder
+	// 		for file_path in file_paths
+	// 		{
+	// 			// Attempt to get a path to the file
+	// 			let file_name = file_path.unwrap().path();
+	// 			let file_name = file_name.to_str().unwrap();
+	// 			// If the file is a spell file
+	// 			if file_name.ends_with(".spell")
+	// 			{
+	// 				let spell = spells::Spell::from_file(file_name).unwrap();
+	// 				let mut json_file_name = String::from(file_name);
+	// 				json_file_name.truncate(json_file_name.len() - 5);
+	// 				json_file_name += "json";
+	// 				let _ = spell.to_json_file(&json_file_name, false);
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	// For creating spellbooks for myself and friends while I work on creating a ui to use this library
 	/*#[test]

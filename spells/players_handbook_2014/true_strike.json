@@ -1,0 +1,36 @@
+{
+  "name": "True Strike",
+  "level": {
+    "Controlled": "Cantrip"
+  },
+  "school": {
+    "Controlled": "Divination"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Dist": {
+        "Feet": 30
+      }
+    }
+  },
+  "has_v_component": false,
+  "has_s_component": true,
+  "m_components": null,
+  "duration": {
+    "Controlled": {
+      "Rounds": [
+        1,
+        true
+      ]
+    }
+  },
+  "description": "You extend your hand and point a finger at a target in range. Your magic grants you a brief insight into the target's defenses. On your next turn, you gain advantage on your first attack roll against the target, provided that this spell hasn't ended.",
+  "upcast_description": null,
+  "tables": []
+}

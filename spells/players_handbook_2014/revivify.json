@@ -1,0 +1,27 @@
+{
+  "name": "Revivify",
+  "level": {
+    "Controlled": "Level3"
+  },
+  "school": {
+    "Controlled": "Conjuration"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": "Touch"
+  },
+  "has_v_component": true,
+  "has_s_component": true,
+  "m_components": "diamonds worth 300 gp, which the spell consumes",
+  "duration": {
+    "Controlled": "Instant"
+  },
+  "description": "You touch a creature that has died within the last minute. That creature returns to life with 1 hit point. This spell can't return to life a creature that has died of old age, nor can it restore any missing body parts.",
+  "upcast_description": null,
+  "tables": []
+}

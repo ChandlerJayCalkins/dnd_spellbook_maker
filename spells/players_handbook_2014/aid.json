@@ -1,0 +1,36 @@
+{
+  "name": "Aid",
+  "level": {
+    "Controlled": "Level2"
+  },
+  "school": {
+    "Controlled": "Abjuration"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Dist": {
+        "Feet": 30
+      }
+    }
+  },
+  "has_v_component": true,
+  "has_s_component": true,
+  "m_components": "a tiny strip of white cloth",
+  "duration": {
+    "Controlled": {
+      "Hours": [
+        8,
+        false
+      ]
+    }
+  },
+  "description": "Your spell bolsters your allies with toughness and resolve. Choose up to three creatures within range. Each target's hit point maximum and current hit points increase by 5 for the duration.",
+  "upcast_description": "When you cast this spell using a spell slot of 3rd level or higher, a target's hit points increase by an additional 5 for each slot level above 2nd.",
+  "tables": []
+}

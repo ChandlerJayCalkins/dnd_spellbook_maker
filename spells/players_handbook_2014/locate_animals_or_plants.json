@@ -1,0 +1,29 @@
+{
+  "name": "Locate Animals or Plants",
+  "level": {
+    "Controlled": "Level2"
+  },
+  "school": {
+    "Controlled": "Divination"
+  },
+  "is_ritual": true,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Yourself": null
+    }
+  },
+  "has_v_component": true,
+  "has_s_component": true,
+  "m_components": "a bit of fur from a bloodhound",
+  "duration": {
+    "Controlled": "Instant"
+  },
+  "description": "Describe or name a specific kind of beast or plant. Concentrating on the voice of nature in your surroundings, you learn the direction and distance to the closest creature or plant of that kind within 5 miles, if any are present.",
+  "upcast_description": null,
+  "tables": []
+}

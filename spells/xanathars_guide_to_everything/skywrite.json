@@ -1,0 +1,32 @@
+{
+  "name": "Skywrite",
+  "level": {
+    "Controlled": "Level2"
+  },
+  "school": {
+    "Controlled": "Transmutation"
+  },
+  "is_ritual": true,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": "Sight"
+  },
+  "has_v_component": true,
+  "has_s_component": true,
+  "m_components": null,
+  "duration": {
+    "Controlled": {
+      "Hours": [
+        1,
+        true
+      ]
+    }
+  },
+  "description": "You cause up to ten words to form in a part of the sky you can see. The words appear to be made of cloud and remain in place for the spell's duration. The words dissipate when the spell ends. A strong wind can disperse the clouds and end the spell early.",
+  "upcast_description": null,
+  "tables": []
+}

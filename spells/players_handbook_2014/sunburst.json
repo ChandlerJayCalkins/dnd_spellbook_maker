@@ -1,0 +1,31 @@
+{
+  "name": "Sunburst",
+  "level": {
+    "Controlled": "Level8"
+  },
+  "school": {
+    "Controlled": "Evocation"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Dist": {
+        "Feet": 150
+      }
+    }
+  },
+  "has_v_component": true,
+  "has_s_component": true,
+  "m_components": "fire and a piece of sunstone",
+  "duration": {
+    "Controlled": "Instant"
+  },
+  "description": "Brilliant sunlight flashes in a 60-foot radius centered on a point you choose within range. Each creature in that light must make a Constitution saving throw. On a failed save, a creature takes 12d6 radiant damage and is blinded for 1 minute. On a successful save, it takes half as much damage and isn't blinded by this spell. Undead and oozes have disadvantage on this saving throw.\nA creature blinded by this spell makes another Constitution saving throw at the end of each of its turns. On a successful save, it is no longer blinded.\nThis spell dispels any darkness in its area that was created by a spell.",
+  "upcast_description": null,
+  "tables": []
+}

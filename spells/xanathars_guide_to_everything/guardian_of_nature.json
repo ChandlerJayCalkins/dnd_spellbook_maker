@@ -1,0 +1,32 @@
+{
+  "name": "Guardian of Nature",
+  "level": {
+    "Controlled": "Level4"
+  },
+  "school": {
+    "Controlled": "Transmutation"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": "BonusAction"
+  },
+  "range": {
+    "Controlled": {
+      "Yourself": null
+    }
+  },
+  "has_v_component": true,
+  "has_s_component": false,
+  "m_components": null,
+  "duration": {
+    "Controlled": {
+      "Minutes": [
+        1,
+        true
+      ]
+    }
+  },
+  "description": "A nature spirit answers your call and transforms you into a powerful guardian. The transformation lasts until the spell ends. You choose one of the following forms to assume: Primal Beast or Great Tree.\n<bi> Primal Beast. <r> Bestial fur covers your body, your facial features become feral, and you gain the following benefits:\n- Your walking speed increases by 10 feet.\n- You gain darkvision with a range of 120 feet.\n- You make Strength-based attack rolls with advantage.\n- Your melee weapon attacks deal an extra 1d6 force damage on a hit.\n<bi> Great Tree. <r> Your skin appears barky, leaves sprout from your hair, and you gain the following benefits:\n- You gain 10 temporary hit points.\n- You make Constitution saving throws with advantage.\n- You make Dexterity and Wisdom-based attack rolls with advantage.\n- While you are on the ground, the ground within 15 feet of you is difficult terrain for your enemies.",
+  "upcast_description": null,
+  "tables": []
+}

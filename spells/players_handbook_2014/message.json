@@ -1,0 +1,36 @@
+{
+  "name": "Message",
+  "level": {
+    "Controlled": "Cantrip"
+  },
+  "school": {
+    "Controlled": "Transmutation"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Dist": {
+        "Feet": 120
+      }
+    }
+  },
+  "has_v_component": true,
+  "has_s_component": true,
+  "m_components": "a short piece of copper wire",
+  "duration": {
+    "Controlled": {
+      "Rounds": [
+        1,
+        false
+      ]
+    }
+  },
+  "description": "You point your finger toward a creature within range and whisper a message. The target (and only the target) hears the message and can reply in a whisper that only you can hear.\nYou can cast this spell through solid objects if you re familiar with the target and know it is beyond the barrier. Magical silence, 1 foot of stone, 1 inch of common metal, a thin sheet of lead, or 3 feet of wood blocks the spell. The spell doesn't have to follow a straight line and can travel freely around corners or through openings.",
+  "upcast_description": null,
+  "tables": []
+}

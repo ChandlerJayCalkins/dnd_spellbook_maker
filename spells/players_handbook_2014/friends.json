@@ -1,0 +1,34 @@
+{
+  "name": "Friends",
+  "level": {
+    "Controlled": "Cantrip"
+  },
+  "school": {
+    "Controlled": "Enchantment"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Yourself": null
+    }
+  },
+  "has_v_component": false,
+  "has_s_component": true,
+  "m_components": "a small amount of makeup applied to the face as this spell is cast",
+  "duration": {
+    "Controlled": {
+      "Minutes": [
+        1,
+        true
+      ]
+    }
+  },
+  "description": "For the duration, you have advantage on all Charisma checks directed at one creature of your choice that isn't hostile toward you. When the spell ends, the creature realizes that you used magic to influence its mood and becomes hostile toward you. A creature prone to violence might attack you. Another creature might seek retribution in other ways (at the DM's discretion), depending on the nature of your interaction with it.",
+  "upcast_description": null,
+  "tables": []
+}

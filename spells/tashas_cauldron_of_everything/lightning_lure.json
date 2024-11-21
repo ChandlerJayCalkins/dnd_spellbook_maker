@@ -1,0 +1,33 @@
+{
+  "name": "Lightning Lure",
+  "level": {
+    "Controlled": "Cantrip"
+  },
+  "school": {
+    "Controlled": "Evocation"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Yourself": {
+        "Sphere": {
+          "Feet": 15
+        }
+      }
+    }
+  },
+  "has_v_component": true,
+  "has_s_component": false,
+  "m_components": null,
+  "duration": {
+    "Controlled": "Instant"
+  },
+  "description": "You create a lash of lightning energy that strikes at one creature of your choice that you can see within 15 feet of you. The target must succeed on a Strength saving throw or be pulled up to 10 feet in a straight line toward you and then take 1d8 lightning damage if it is within 5 feet of you.\nThis spell's damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8).",
+  "upcast_description": null,
+  "tables": []
+}

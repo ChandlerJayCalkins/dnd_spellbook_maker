@@ -1,0 +1,29 @@
+{
+  "name": "Continual Flame",
+  "level": {
+    "Controlled": "Level2"
+  },
+  "school": {
+    "Controlled": "Evocation"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": "Touch"
+  },
+  "has_v_component": true,
+  "has_s_component": true,
+  "m_components": "ruby dust worth 50 gp, which the spell consumes",
+  "duration": {
+    "Controlled": {
+      "UntilDispelled": false
+    }
+  },
+  "description": "A flame, equivalent in brightness to a torch, springs forth from an object that you touch. The effect looks like a regular flame, but it creates no heat and doesn't use oxygen. A continual flame can be covered or hidden but not smothered or quenched.",
+  "upcast_description": null,
+  "tables": []
+}

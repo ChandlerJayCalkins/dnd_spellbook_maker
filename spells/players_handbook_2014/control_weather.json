@@ -1,0 +1,38 @@
+{
+  "name": "Control Weather",
+  "level": {
+    "Controlled": "Level8"
+  },
+  "school": {
+    "Controlled": "Transmutation"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Minutes": 10
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Yourself": {
+        "Sphere": {
+          "Miles": 5
+        }
+      }
+    }
+  },
+  "has_v_component": true,
+  "has_s_component": true,
+  "m_components": "burning incense and bits of earth and wood mixed in water",
+  "duration": {
+    "Controlled": {
+      "Hours": [
+        8,
+        true
+      ]
+    }
+  },
+  "description": "You take control of the weather within 5 miles of you for the duration. You must be outdoors to cast this spell. Moving to a place where you don't have a clear path to the sky ends the spell early.\nWhen you cast the spell, you change the current weather conditions, which are determined by the DM based on the climate and season. You can change precipitation, temperature, and wind. It takes 1d4 × 10 minutes for the new conditions to take effect. Once they do so, you can change the conditions again. When the spell ends, the weather gradually returns to normal. When you change the weather conditions, find a current condition on the following tables and change its stage by one, up or down. When changing the wind, you can change its direction.\n<table> <title> Precipitation <title>\nStage | Condition\n<row> 1 | Clear\n<row> 2 | Light Clouds\n<row> 3 | Overcast or ground fog\n<row> 4 | Rain, hail, or snow\n<row> 5 | Torrential rain, driving hail, or blizzard\n<table>\n<table> <title> Temperature <title>\nStage | Condition\n<row> 1 | Unbearable heat\n<row> 2 | Hot\n<row> 3 | Warm\n<row> 4 | Cool\n<row> 5 | Cold\n<row> 6 | Arctic cold\n<table>\n<table> <title> Wind <title>\nStage | Condition\n<row> 1 | Calm\n<row> 2 | Moderate wind\n<row> 3 | Strong wind\n<row> 4 | Gale\n<row> 5 | Storm\n<table>",
+  "upcast_description": null,
+  "tables": []
+}

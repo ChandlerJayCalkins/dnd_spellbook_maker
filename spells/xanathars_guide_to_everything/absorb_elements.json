@@ -1,0 +1,34 @@
+{
+  "name": "Absorb Elements",
+  "level": {
+    "Controlled": "Level1"
+  },
+  "school": {
+    "Controlled": "Abjuration"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Reaction": "which you take when you take acid, cold, fire, lightning, or thunder damage"
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Yourself": null
+    }
+  },
+  "has_v_component": false,
+  "has_s_component": true,
+  "m_components": null,
+  "duration": {
+    "Controlled": {
+      "Rounds": [
+        1,
+        false
+      ]
+    }
+  },
+  "description": "The spell captures some of the incoming energy, lessening its effect on you and storing it for your next melee attack. You have resistance to the triggering damage type until the start of your next turn. Also, the first time you hit with a melee attack on your next turn, the target takes an extra 1d6 damage of the triggering type, and the spell ends.",
+  "upcast_description": "When you cast this spell using a spell slot of 2nd level or higher, the extra damage increases by 1d6 for each slot level above 1st.",
+  "tables": []
+}

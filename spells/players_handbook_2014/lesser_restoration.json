@@ -1,0 +1,27 @@
+{
+  "name": "Lesser Restoration",
+  "level": {
+    "Controlled": "Level2"
+  },
+  "school": {
+    "Controlled": "Abjuration"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": "Touch"
+  },
+  "has_v_component": true,
+  "has_s_component": true,
+  "m_components": null,
+  "duration": {
+    "Controlled": "Instant"
+  },
+  "description": "You touch a creature and can end either one disease or one condition afflicting it. The condition can be blinded, deafened, paralyzed, or poisoned.",
+  "upcast_description": null,
+  "tables": []
+}

@@ -1,0 +1,36 @@
+{
+  "name": "Spike Growth",
+  "level": {
+    "Controlled": "Level2"
+  },
+  "school": {
+    "Controlled": "Transmutation"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Dist": {
+        "Feet": 150
+      }
+    }
+  },
+  "has_v_component": true,
+  "has_s_component": true,
+  "m_components": "seven sharp thorns or seven small twigs, each sharpened to a point",
+  "duration": {
+    "Controlled": {
+      "Minutes": [
+        10,
+        true
+      ]
+    }
+  },
+  "description": "The ground in a 20-foot radius centered on a point within range twists and sprouts hard spikes and thorns. The area becomes difficult terrain for the duration. When a creature moves into or within the area, it takes 2d4 piercing damage for every 5 feet it travels.\nThe transformation of the ground is camouflaged to look natural. Any creature that can't see the area at the time the spell is cast must make a Wisdom (Perception) check against your spell save DC to recognize the terrain as hazardous before entering it.",
+  "upcast_description": null,
+  "tables": []
+}

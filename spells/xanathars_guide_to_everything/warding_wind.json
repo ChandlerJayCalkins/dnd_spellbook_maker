@@ -1,0 +1,34 @@
+{
+  "name": "Warding Wind",
+  "level": {
+    "Controlled": "Level2"
+  },
+  "school": {
+    "Controlled": "Evocation"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Yourself": null
+    }
+  },
+  "has_v_component": true,
+  "has_s_component": false,
+  "m_components": null,
+  "duration": {
+    "Controlled": {
+      "Minutes": [
+        10,
+        true
+      ]
+    }
+  },
+  "description": "A strong wind (20 miles per hour) blows around you in a 10-foot radius and moves with you, remaining centered on you. The wind lasts for the spell's duration.\nThe wind has the following effects:\n- It deafens you and other creatures in its area.\n- It extinguishes unprotected flames in its area that are torch-sized or smaller.\n- It hedges out vapor, gas, and fog that can be dispersed by strong wind.\n- The area is difficult terrain for creatures other than you.\n- The attack rolls of ranged weapon attacks have disadvantage if they pass in or out of the wind.",
+  "upcast_description": null,
+  "tables": []
+}

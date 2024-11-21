@@ -1,0 +1,31 @@
+{
+  "name": "Steel Wind Strike",
+  "level": {
+    "Controlled": "Level5"
+  },
+  "school": {
+    "Controlled": "Conjuration"
+  },
+  "is_ritual": false,
+  "casting_time": {
+    "Controlled": {
+      "Actions": 1
+    }
+  },
+  "range": {
+    "Controlled": {
+      "Dist": {
+        "Feet": 30
+      }
+    }
+  },
+  "has_v_component": false,
+  "has_s_component": true,
+  "m_components": "a melee weapon worth at least 1 sp",
+  "duration": {
+    "Controlled": "Instant"
+  },
+  "description": "You flourish the weapon used in the casting and then vanish to strike like the wind. Choose up to five creatures you can see within range. Make a melee spell attack against each target. On a hit, a target takes 6d10 force damage.\nYou can then teleport to an unoccupied space you can see within 5 feet of one of the targets you hit or missed.",
+  "upcast_description": null,
+  "tables": []
+}
