@@ -5,7 +5,8 @@
 //! Repository at <https://github.com/ChandlerJayCalkins/dnd_spellbook_maker>.
 
 use std::fs;
-extern crate image;
+//extern crate image;
+use image::DynamicImage;
 pub use printpdf::{Mm, PdfDocumentReference, ImageTransform, ImageRotation};
 use printpdf::{PdfDocument, PdfLayerReference, IndirectFontRef, Color, Rgb, Point, Line, PdfPageIndex, Image};
 use rusttype::{Font, Scale, point};
@@ -32,12 +33,14 @@ impl FontScalars
 	/// Constructor
 	///
 	/// # Parameters
+	///
 	/// - `regular` Scalar value for regular font.
 	/// - `bold` Scalar value for bold font.
 	/// - `italic` Scalar value for italic font.
 	/// - `bold_italic` Scalar value for bold-italic font.
 	///
 	/// # Output
+	///
 	/// - `Ok` A FontScalar object.
 	/// - `Err` An error message saying which parameter was invalid. Occurs for negative values.
 	pub fn new(regular: f32, bold: f32, italic: f32, bold_italic: f32) -> Result<Self, String>
@@ -94,6 +97,7 @@ impl FontSizes
 	/// Constructor
 	///
 	/// # Parameters
+	///
 	/// - `title_font_size` Cover page text font size.
 	/// - `header_font_size` Spell name font size.
 	/// - `body_font_size` Font size for everything else.
@@ -103,6 +107,7 @@ impl FontSizes
 	/// - `body_newline_amount` Newline size for body text in printpdf Mm.
 	///
 	/// # Output
+	///
 	/// - `Ok` A FontSizes object.
 	/// - `Err` An error message saying which parameter was invalid. Occurs for negative values.
 	pub fn new(title_font_size: f32, header_font_size: f32, body_font_size: f32, tab_amount: f32,
@@ -161,6 +166,7 @@ impl TableOptions
 	/// Constructor
 	///
 	/// # Parameters
+	///
 	/// - `title_font_size` Font size for table title text.
 	/// - `horizontal_cell_margin` Space between columns in printpdf Mm.
 	/// - `vertical_cell_margin` Space between rows in printpdf Mm.
@@ -171,6 +177,7 @@ impl TableOptions
 	/// - `off_row_color` RGB value of the color of the off-row color lines.
 	///
 	/// # Output
+	///
 	/// - `Ok` A TableOptions object.
 	/// - `Err` An error message saying which parameter was invalid. Occurs for negative values.
 	pub fn new(title_font_size: f32, horizontal_cell_margin: f32, vertical_cell_margin: f32, outer_horizontal_margin: f32,
@@ -247,6 +254,7 @@ impl PageSizeData
 	/// Constructor
 	///
 	/// # Parameters
+	///
 	/// - `width` Width of the page in printpdf Mm. Standard is 210.
 	/// - `height` Height of the page in printpdf Mm. Standard is 297.
 	/// - `left_margin` Space between text and left side of page.
@@ -255,6 +263,7 @@ impl PageSizeData
 	/// - `bottom_margin` Space between text and bottom of page.
 	///
 	/// # Output
+	///
 	/// - `Ok` A PageSizeData object.
 	/// - `Err` An error message saying which parameter(s) was / were invalid. Occurs for negative or overlapping values.
 	pub fn new(width: f32, height: f32, left_margin: f32, right_margin: f32, top_margin: f32,
@@ -339,46 +348,35 @@ impl std::ops::Not for HSide
 }
 
 /// Parameters for determining page number behavior.
-#[derive(Clone, Debug)]
-pub struct PageNumberData<'a>
+#[derive(Clone, Copy, Debug)]
+pub struct PageNumberData
 {
 	starting_side: HSide,
 	current_side: HSide,
 	flip_sides: bool,
 	starting_num: i32,
 	side_margin: f32,
-	bottom_margin: f32,
-	font_data: &'a FontData<'a>
+	bottom_margin: f32
 }
 
-impl <'a> PageNumberData<'a>
+impl PageNumberData
 {
 	/// Constructor
 	///
 	/// # Parameters
+	///
 	/// - `starting_side` Whether or not the page numbers start on the left side.
 	/// If the page numbers do not flip sides, this determines what side all page numbers are on.
 	/// - `flip_sides` Whether or not the page numbers flip sides every page.
 	/// - `starting_num` What number to have the page numbers start on.
 	/// - `side_margin` The distance between the page numbers and the side of the page.
 	/// - `bottom_margin` The distance between the page numbers and the bottom of the page.
-	/// - `font_size` The font size of the page numbers.
-	/// - `font_type` The type of font (regular, italic, bold, bold-italic) that the page numbers will be.
-	/// - `font` A reference to the font data that the page numbers will be using.
-	/// - `font_size_data` 
 	///
 	/// # Output
+	///
 	/// - `Ok` A PageNumberData object.
 	/// - `Err` An error message saying which parameter was invalid. Occurs for negative margin values.
-	pub fn new
-	(
-		starting_side: HSide,
-		flip_sides: bool,
-		starting_num: i32,
-		side_margin: f32,
-		bottom_margin: f32,
-		font_data: &'a FontData
-	)
+	pub fn new(starting_side: HSide, flip_sides: bool, starting_num: i32, side_margin: f32, bottom_margin: f32)
 	-> Result<Self, String>
 	{
 		// If the side margin is less than 0, return an error
@@ -401,8 +399,7 @@ impl <'a> PageNumberData<'a>
 				flip_sides: flip_sides,
 				starting_num: starting_num,
 				side_margin: side_margin,
-				bottom_margin: bottom_margin,
-				font_data: font_data
+				bottom_margin: bottom_margin
 			})
 		}
 	}
@@ -413,7 +410,6 @@ impl <'a> PageNumberData<'a>
 	pub fn starting_num(&self) -> i32 { self.starting_num }
 	pub fn side_margin(&self) -> f32 { self.side_margin }
 	pub fn bottom_margin(&self) -> f32 { self.bottom_margin }
-	pub fn font_data(&self) -> &FontData { self.font_data }
 
 	// Setters
 	pub fn flip_side(&mut self) { self.current_side = !self.current_side; }
@@ -476,7 +472,9 @@ struct FontData<'a>
 impl <'a> FontData<'a>
 {
 	/// Constructor
+	///
 	/// # Parameters
+	///
 	/// - `font_type` The current type of font being used.
 	/// - `size` The font size of the text this font is being used for.
 	/// - `scalars` Scalar values to convert rusttype font units to printpdf millimeters (Mm).
@@ -550,11 +548,124 @@ impl <'a> FontData<'a>
 	pub fn set_scale(&mut self, scale: Scale) { self.scale = scale; }
 }
 
-#[derive(Clone, Debug)]
+/// Holds the background image and the transform data for it (positioning, size, rotation, etc.)
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct BackgroundImage<'a>
+{
+	pub image: &'a DynamicImage,
+	pub transform: &'a ImageTransform
+}
+
+/// Holds the width and height of the spellbook pages, and the min and max coordinates for text on the page.
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct PageLimits
+{
+	width: f32,
+	height: f32,
+	// Left
+	x_min: f32,
+	// Right
+	x_max: f32,
+	// Bottom
+	y_min: f32,
+	// Top
+	y_max: f32
+}
+
+impl From<PageSizeData> for PageLimits
+{
+	/// Allows page limit coordinates to be constructed from the `PageSizeData` user input type.
+	fn from(data: PageSizeData) -> Self
+	{
+		Self
+		{
+			width: data.width(),
+			height: data.height(),
+			x_min: data.left_margin(),
+			x_max: data.width() - data.right_margin(),
+			y_min: data.bottom_margin(),
+			y_max: data.height() - data.top_margin()
+		}
+	}
+}
+
+impl PageLimits
+{
+		// Getters
+
+		pub fn width(&self) -> f32 { self.width }
+		pub fn height(&self) -> f32 { self.height }
+		pub fn x_min(&self) -> f32 { self.x_min }
+		pub fn x_max(&self) -> f32 { self.x_max }
+		pub fn y_min(&self) -> f32 { self.y_min }
+		pub fn y_max(&self) -> f32 { self.y_max }
+}
+
+/// All data needed to write to a pdf document.
+#[derive(Clone)]
 struct DocumentData<'a>
 {
+	document: &'a PdfDocumentReference,
+	current_layer: &'a PdfLayerReference,
 	layer_name_prefix: &'a str,
-	font_data: &'a FontData<'a>
+	font_data: &'a FontData<'a>,
+	text_color: &'a Color,
+	background: Option<&'a BackgroundImage<'a>>,
+	page_limits: PageLimits,
+	page_number_data: Option<(PageNumberData, &'a FontData<'a>)>,
+	table_options: &'a TableOptions,
+	table_title_font_scale: Scale,
+	tab_amount: f32,
+	newline_amount: f32,
+	// Current x position of text
+	x: f32,
+	// Current y position of text
+	y: f32
+}
+
+impl <'a> DocumentData<'a>
+{
+	/// Constructor
+	///
+	/// # Parameters
+	///
+	/// - `document` Reference to the `printpdf` crate pdf document object.
+	/// - `current_layer` Reference to the `printpdf` crate layer object.
+	/// - `layer_name_prefix` The prefix of each layer / page name. usually just "Layer " followed by the page number.
+	/// - `font_data` Keeps track of all the data the fonts need to be used to apply text properly.
+	/// - `text_color` The color of the text bring written to the pdf.
+	/// - `background` The background image and transform data (position, size, rotation, etc.) for it (if desired).
+	/// - `page_limits` The page width and height, along with the min and max x coordinates for text on the page.
+	/// - `page_number_data` The options for how page numbers appear (if desired).
+	/// - `table_options` The options for how tables appear.
+	/// - `table_title_fond_scale` The font scale for titles on tables.
+	/// - `tab_amount` The width of tabs in printpdf Mm.
+	/// - `newline_amount` The length of newlines in printpdf Mm.
+	/// - `x` The starting x positioni of the text.
+	/// - `y` The starting y position of the text.
+	fn new(document: &'a PdfDocumentReference, current_layer: &'a PdfLayerReference, layer_name_prefix: &'a str,
+	font_data: &'a FontData, text_color: &'a Color, background: &'a BackgroundImage, page_limits: PageLimits,
+	page_number_data: Option<(PageNumberData, &'a FontData)>, table_options: &'a TableOptions,
+	table_title_font_scale: Scale, tab_amount: f32, newline_amount: f32, x: f32, y: f32) -> Self
+	{
+		Self
+		{
+			document: document,
+			current_layer: current_layer,
+			layer_name_prefix: layer_name_prefix,
+			font_data: font_data,
+			text_color: text_color,
+			background: background,
+			page_limits: page_limits,
+			page_number_data: page_number_data,
+			table_options: table_options,
+			table_title_font_scale: table_title_font_scale,
+			tab_amount: tab_amount,
+			newline_amount: newline_amount,
+			x: x,
+			y: y
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
