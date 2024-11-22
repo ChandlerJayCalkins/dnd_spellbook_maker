@@ -11,23 +11,11 @@ use printpdf::{PdfDocument, PdfLayerReference, IndirectFontRef, Color, Rgb, Poin
 use rusttype::{Font, Scale, point};
 pub mod spells;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum FontType
-{
-	Regular,
-	Bold,
-	Italic,
-	BoldItalic
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct FontRefs<'a>
-{
-	pub regular: &'a IndirectFontRef,
-	pub bold: &'a IndirectFontRef,
-	pub italic: &'a IndirectFontRef,
-	pub bold_italic: &'a IndirectFontRef
-}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//	Input types for generate_spellbook
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// Scalar values to convert rusttype font units to printpdf millimeters (Mm).
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -51,7 +39,7 @@ impl FontScalars
 	///
 	/// # Output
 	/// - `Ok` A FontScalar object.
-	// - `Err` An error message saying which parameter was invalid. Occurs for negative values.
+	/// - `Err` An error message saying which parameter was invalid. Occurs for negative values.
 	pub fn new(regular: f32, bold: f32, italic: f32, bold_italic: f32) -> Result<Self, String>
 	{
 		if regular < 0.0 { Err(String::from("Invalid regular scalar.")) }
@@ -71,131 +59,11 @@ impl FontScalars
 	}
 
 	// Getters
+
 	pub fn regular_scalar(&self) -> f32 { self.regular }
 	pub fn bold_scalar(&self) -> f32 { self.bold }
 	pub fn italic_scalar(&self) -> f32 { self.italic }
 	pub fn bold_italic_scalar(&self) -> f32 { self.bold_italic }
-}
-
-#[derive(Clone, Debug)]
-struct FontSizeData<'a>
-{
-	pub regular: &'a Font<'a>,
-	pub bold: &'a Font<'a>,
-	pub italic: &'a Font<'a>,
-	pub bold_italic: &'a Font<'a>
-}
-
-
-#[derive(Clone, Debug)]
-struct FontData<'a>
-{
-	current_type: FontType,
-	size: f32,
-	scalars: FontScalars,
-	size_data: &'a FontSizeData<'a>,
-	scale: Scale,
-	font_refs: &'a FontRefs<'a>
-}
-
-impl <'a> FontData<'a>
-{
-	// Constructor
-	pub fn new(font_type: FontType, size: f32, scalars: FontScalars, size_data: &'a FontSizeData, scale: Scale,
-	font_refs: &'a FontRefs)
-	-> Self
-	{
-		Self
-		{
-			current_type: font_type,
-			size: size,
-			scalars: scalars,
-			size_data: size_data,
-			scale: scale,
-			font_refs: font_refs
-		}
-	}
-
-	// Getters
-
-	pub fn current_type(&self) -> FontType { self.current_type }
-	pub fn size(&self) -> f32 { self.size }
-	pub fn all_scalars(&self) -> FontScalars { self.scalars }
-	pub fn all_size_data(&self) -> &FontSizeData { self.size_data }
-	pub fn scale(&self) -> Scale { self.scale }
-	pub fn all_font_refs(&self) -> &FontRefs { self.font_refs }
-
-	pub fn current_scalar(&self) -> f32
-	{
-		match self.current_type
-		{
-			FontType::Regular => self.scalars.regular_scalar(),
-			FontType::Bold => self.scalars.bold_scalar(),
-			FontType::Italic => self.scalars.italic_scalar(),
-			FontType::BoldItalic => self.scalars.bold_italic_scalar()
-		}
-	}
-
-	pub fn current_size_data(&self) -> &Font
-	{
-		match self.current_type
-		{
-			FontType::Regular => self.size_data.regular,
-			FontType::Bold => self.size_data.bold,
-			FontType::Italic => self.size_data.italic,
-			FontType::BoldItalic => self.size_data.bold_italic
-		}
-	}
-
-	pub fn current_font_ref(&self) -> &IndirectFontRef
-	{
-		match self.current_type
-		{
-			FontType::Regular => self.font_refs.regular,
-			FontType::Bold => self.font_refs.bold,
-			FontType::Italic => self.font_refs.italic,
-			FontType::BoldItalic => self.font_refs.bold_italic
-		}
-	}
-
-	// Setters
-
-	pub fn set_current_type(&mut self, font_type: FontType) { self.current_type = font_type; }
-	pub fn set_size(&mut self, size: f32) { self.size = size; }
-	pub fn set_scale(&mut self, scale: Scale) { self.scale = scale; }
-}
-
-// TODO
-// 1. Combine all static parameters into one struct
-// 2. Rewrite `write_spell_description` function to be combined with `write_textbox` so tokens get parsed and written
-// at the same time. Make it so text gets written when it either switches fonts or gets too long to fit on the page.
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-enum HSide
-{
-	Left,
-	Right
-}
-
-impl std::ops::Not for HSide
-{
-	type Output = Self;
-
-	fn not(self) -> Self::Output
-	{
-		match self
-		{
-			Self::Left => Self::Right,
-			Self::Right => Self::Left
-		}
-	}
-}
-
-#[derive(Clone, Debug)]
-struct DocumentData<'a>
-{
-	layer_name_prefix: &'a str,
-	font_data: &'a FontData<'a>
 }
 
 /// File paths to all the font files needed for `generate_spellbook()`.
@@ -447,6 +315,29 @@ impl PageSizeData
 	}
 }
 
+/// Horizontal Side, used for determining the side of the page a page number goes on.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+enum HSide
+{
+	Left,
+	Right
+}
+
+impl std::ops::Not for HSide
+{
+	type Output = Self;
+
+	/// Flips to the opposite side
+	fn not(self) -> Self::Output
+	{
+		match self
+		{
+			Self::Left => Self::Right,
+			Self::Right => Self::Left
+		}
+	}
+}
+
 /// Parameters for determining page number behavior.
 #[derive(Clone, Debug)]
 pub struct PageNumberData<'a>
@@ -527,6 +418,150 @@ impl <'a> PageNumberData<'a>
 	// Setters
 	pub fn flip_side(&mut self) { self.current_side = !self.current_side; }
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//	Input types for pdf writing functions
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// TODO
+// 1. Combine all static parameters into one struct
+// 2. Rewrite `write_spell_description` function to be combined with `write_textbox` so tokens get parsed and written
+// at the same time. Make it so text gets written when it either switches fonts or gets too long to fit on the page.
+
+/// Conveys what type of font is being used.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum FontType
+{
+	Regular,
+	Bold,
+	Italic,
+	BoldItalic
+}
+
+/// Holds size data for each font type of a font.
+#[derive(Clone, Debug)]
+struct FontSizeData<'a>
+{
+	pub regular: &'a Font<'a>,
+	pub bold: &'a Font<'a>,
+	pub italic: &'a Font<'a>,
+	pub bold_italic: &'a Font<'a>
+}
+
+/// Holds references to each font type of a font.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct FontRefs<'a>
+{
+	pub regular: &'a IndirectFontRef,
+	pub bold: &'a IndirectFontRef,
+	pub italic: &'a IndirectFontRef,
+	pub bold_italic: &'a IndirectFontRef
+}
+
+
+/// Keeps track of the current font being used, its size, and other data needed for using the font to apply text.
+#[derive(Clone, Debug)]
+struct FontData<'a>
+{
+	current_type: FontType,
+	size: f32,
+	scalars: FontScalars,
+	size_data: &'a FontSizeData<'a>,
+	scale: Scale,
+	font_refs: &'a FontRefs<'a>
+}
+
+impl <'a> FontData<'a>
+{
+	/// Constructor
+	/// # Parameters
+	/// - `font_type` The current type of font being used.
+	/// - `size` The font size of the text this font is being used for.
+	/// - `scalars` Scalar values to convert rusttype font units to printpdf millimeters (Mm).
+	/// - `size_data` Size data for each type of font.
+	/// - `scale` More size data to determine how large the text should be.
+	/// - `font_refs` References to each font type of the font being used.
+	pub fn new(font_type: FontType, size: f32, scalars: FontScalars, size_data: &'a FontSizeData, scale: Scale,
+	font_refs: &'a FontRefs)
+	-> Self
+	{
+		Self
+		{
+			current_type: font_type,
+			size: size,
+			scalars: scalars,
+			size_data: size_data,
+			scale: scale,
+			font_refs: font_refs
+		}
+	}
+
+	// Getters
+
+	pub fn current_type(&self) -> FontType { self.current_type }
+	pub fn size(&self) -> f32 { self.size }
+	pub fn all_scalars(&self) -> FontScalars { self.scalars }
+	pub fn all_size_data(&self) -> &FontSizeData { self.size_data }
+	pub fn scale(&self) -> Scale { self.scale }
+	pub fn all_font_refs(&self) -> &FontRefs { self.font_refs }
+
+	/// Returns the scalar value for the current font type being used.
+	pub fn current_scalar(&self) -> f32
+	{
+		match self.current_type
+		{
+			FontType::Regular => self.scalars.regular_scalar(),
+			FontType::Bold => self.scalars.bold_scalar(),
+			FontType::Italic => self.scalars.italic_scalar(),
+			FontType::BoldItalic => self.scalars.bold_italic_scalar()
+		}
+	}
+
+	/// Returns the size data for the current font type being used.
+	pub fn current_size_data(&self) -> &Font
+	{
+		match self.current_type
+		{
+			FontType::Regular => self.size_data.regular,
+			FontType::Bold => self.size_data.bold,
+			FontType::Italic => self.size_data.italic,
+			FontType::BoldItalic => self.size_data.bold_italic
+		}
+	}
+
+	/// Returns the font ref to the current font type bring used.
+	pub fn current_font_ref(&self) -> &IndirectFontRef
+	{
+		match self.current_type
+		{
+			FontType::Regular => self.font_refs.regular,
+			FontType::Bold => self.font_refs.bold,
+			FontType::Italic => self.font_refs.italic,
+			FontType::BoldItalic => self.font_refs.bold_italic
+		}
+	}
+
+	// Setters
+
+	pub fn set_current_type(&mut self, font_type: FontType) { self.current_type = font_type; }
+	pub fn set_size(&mut self, size: f32) { self.size = size; }
+	pub fn set_scale(&mut self, scale: Scale) { self.scale = scale; }
+}
+
+#[derive(Clone, Debug)]
+struct DocumentData<'a>
+{
+	layer_name_prefix: &'a str,
+	font_data: &'a FontData<'a>
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//	Utility Functions
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// Saves spellbooks to a file as a pdf document.
 ///
@@ -640,6 +675,12 @@ pub fn get_all_json_spells_in_folder(folder_path: &str) -> Result<Vec<spells::Sp
 	// Return the list of spells
 	Ok(spell_list)
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//	Tests
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(test)]
 mod tests
