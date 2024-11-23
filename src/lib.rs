@@ -18,6 +18,69 @@ pub mod spells;
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/// File paths to all the font files needed for `generate_spellbook()`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FontPaths
+{
+	pub regular: String,
+	pub bold: String,
+	pub italic: String,
+	pub bold_italic: String
+}
+
+/// Data for what font sizes to use and how large tabs and various newline sizes should be.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct FontSizes
+{
+	title_font_size: f32,
+	table_title_font_size: f32,
+	header_font_size: f32,
+	body_font_size: f32
+}
+
+impl FontSizes
+{
+	/// Constructor
+	///
+	/// # Parameters
+	///
+	/// - `title_font_size` Cover page text font size.
+	/// - `table_title_font_size` Table header text font size.
+	/// - `header_font_size` Spell name font size.
+	/// - `body_font_size` Font size for everything else.
+	///
+	/// # Output
+	///
+	/// - `Ok` A `FontSizes` object.
+	/// - `Err` An error message saying which parameter was invalid. Occurs for negative values.
+	pub fn new(title_font_size: f32, table_title_font_size: f32, header_font_size: f32, body_font_size: f32)
+	-> Result<Self, String>
+	{
+		// Makes sure no values are below 0
+		if title_font_size < 0.0 { Err(String::from("Invalid title_font_size.")) }
+		else if table_title_font_size < 0.0 { Err(String::from("Invalid table_title_font_size.")) }
+		else if header_font_size < 0.0 { Err(String::from("Invalid header_font_size.")) }
+		else if body_font_size < 0.0 { Err(String::from("Invalid body_font_size.")) }
+		else
+		{
+			Ok(Self
+			{
+				title_font_size: title_font_size,
+				table_title_font_size: table_title_font_size,
+				header_font_size: header_font_size,
+				body_font_size: body_font_size
+			})
+		}
+	}
+
+	// Getters
+
+	pub fn title_font_size(&self) -> f32 { self.title_font_size }
+	pub fn table_title_font_size(&self) -> f32 { self.table_title_font_size }
+	pub fn header_font_size(&self) -> f32 { self.header_font_size }
+	pub fn body_font_size(&self) -> f32 { self.body_font_size }
+}
+
 /// Scalar values to convert rusttype font units to printpdf millimeters (Mm).
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct FontScalars
@@ -41,10 +104,11 @@ impl FontScalars
 	///
 	/// # Output
 	///
-	/// - `Ok` A FontScalar object.
+	/// - `Ok` A `FontScalar` object.
 	/// - `Err` An error message saying which parameter was invalid. Occurs for negative values.
 	pub fn new(regular: f32, bold: f32, italic: f32, bold_italic: f32) -> Result<Self, String>
 	{
+		// Makes sure no values are below 0
 		if regular < 0.0 { Err(String::from("Invalid regular scalar.")) }
 		else if bold < 0.0 { Err(String::from("Invalid bold scalar.")) }
 		else if italic < 0.0 { Err(String::from("Invalid italic scalar.")) }
@@ -69,67 +133,48 @@ impl FontScalars
 	pub fn bold_italic_scalar(&self) -> f32 { self.bold_italic }
 }
 
-/// File paths to all the font files needed for `generate_spellbook()`.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct FontPaths
-{
-	pub regular: String,
-	pub bold: String,
-	pub italic: String,
-	pub bold_italic: String
-}
-
-/// Data for what font sizes to use and how large tabs and various newline sizes should be.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct FontSizes
+pub struct SpacingOptions
 {
-	title_font_size: f32,
-	header_font_size: f32,
-	body_font_size: f32,
 	tab_amount: f32,
 	title_newline_amount: f32,
+	table_title_newline_amount: f32,
 	header_newline_amount: f32,
 	body_newline_amount: f32
 }
 
-impl FontSizes
+impl SpacingOptions
 {
 	/// Constructor
 	///
-	/// # Parameters
+	/// Parameters
 	///
-	/// - `title_font_size` Cover page text font size.
-	/// - `header_font_size` Spell name font size.
-	/// - `body_font_size` Font size for everything else.
 	/// - `tab_amount` Tab size in printpdf Mm.
 	/// - `title_newline_amount` Newline size for title text in printpdf Mm.
+	/// - `table_title_newline_amount` Newline size for table title text in printpdf Mm.
 	/// - `header_newline_amount` Newline size for header text in printpdf Mm.
 	/// - `body_newline_amount` Newline size for body text in printpdf Mm.
 	///
-	/// # Output
+	/// Output
 	///
-	/// - `Ok` A FontSizes object.
+	/// - `Ok` A `SpacingOptions` object.
 	/// - `Err` An error message saying which parameter was invalid. Occurs for negative values.
-	pub fn new(title_font_size: f32, header_font_size: f32, body_font_size: f32, tab_amount: f32,
-	title_newline_amount: f32, header_newline_amount: f32, body_newline_amount: f32) -> Result<Self, String>
+	pub fn new(tab_amount: f32, title_newline_amount: f32, table_title_newline_amount: f32, header_newline_amount: f32,
+	body_newline_amount: f32) -> Result<Self, String>
 	{
 		// Makes sure no values are below 0
-		if title_font_size < 0.0 { Err(String::from("Invalid title_font_size.")) }
-		else if header_font_size < 0.0 { Err(String::from("Invalid header_font_size.")) }
-		else if body_font_size < 0.0 { Err(String::from("Invalid body_font_size.")) }
-		else if tab_amount < 0.0 { Err(String::from("Invalid tab_amount.")) }
+		if tab_amount < 0.0 { Err(String::from("Invalid tab_amount.")) }
 		else if title_newline_amount < 0.0 { Err(String::from("Invalid title_newline_amount.")) }
+		else if table_title_newline_amount < 0.0 { Err(String::from("Invalid table_title_newline_amount.")) }
 		else if header_newline_amount < 0.0 { Err(String::from("Invalid header_newline_amount.")) }
 		else if body_newline_amount < 0.0 { Err(String::from("Invalid body_newline_amount.")) }
 		else
 		{
 			Ok(Self
 			{
-				title_font_size: title_font_size,
-				header_font_size: header_font_size,
-				body_font_size: body_font_size,
 				tab_amount: tab_amount,
 				title_newline_amount: title_newline_amount,
+				table_title_newline_amount: table_title_newline_amount,
 				header_newline_amount: header_newline_amount,
 				body_newline_amount: body_newline_amount
 			})
@@ -137,92 +182,12 @@ impl FontSizes
 	}
 
 	// Getters
-	pub fn title_font_size(&self) -> f32 { self.title_font_size }
-	pub fn header_font_size(&self) -> f32 { self.header_font_size }
-	pub fn body_font_size(&self) -> f32 { self.body_font_size }
+
 	pub fn tab_amount(&self) -> f32 { self.tab_amount }
 	pub fn title_newline_amount(&self) -> f32 { self.title_newline_amount }
+	pub fn table_title_newline_amount(&self) -> f32 { self.table_title_newline_amount }
 	pub fn header_newline_amount(&self) -> f32 { self.header_newline_amount }
 	pub fn body_newline_amount(&self) -> f32 { self.body_newline_amount }
-}
-
-/// Options for tables.
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct TableOptions
-{
-	title_font_size: f32,
-	horizontal_cell_margin: f32,
-	vertical_cell_margin: f32,
-	outer_horizontal_margin: f32,
-	outer_vertical_margin: f32,
-	off_row_color_lines_y_adjust_scalar: f32,
-	off_row_color_lines_height_scalar: f32,
-	// RGB
-	off_row_color: (u8, u8, u8)
-}
-
-impl TableOptions
-{
-	/// Constructor
-	///
-	/// # Parameters
-	///
-	/// - `title_font_size` Font size for table title text.
-	/// - `horizontal_cell_margin` Space between columns in printpdf Mm.
-	/// - `vertical_cell_margin` Space between rows in printpdf Mm.
-	/// - `outer_horizontal_margin` Minimum space between sides of table and edge of pages.
-	/// - `outer_horizontal_margin` Space above and below table from other text / tables.
-	/// - `off_row_color_lines_y_adjust_scalar` Scalar value to adjust off-row color lines to line up with the rows vertically.
-	/// - `off_row_color_lines_height_scalar` Scalar value to determine the height of off-row color lines.
-	/// - `off_row_color` RGB value of the color of the off-row color lines.
-	///
-	/// # Output
-	///
-	/// - `Ok` A TableOptions object.
-	/// - `Err` An error message saying which parameter was invalid. Occurs for negative values.
-	pub fn new(title_font_size: f32, horizontal_cell_margin: f32, vertical_cell_margin: f32, outer_horizontal_margin: f32,
-	outer_vertical_margin: f32, off_row_color_lines_y_adjust_scalar: f32, off_row_color_lines_height_scalar: f32,
-	off_row_color: (u8, u8, u8)) -> Result<Self, String>
-	{
-		// Makes sure none of the float values are below 0
-		if title_font_size < 0.0 { Err(String::from("Invalid title_font_size.")) }
-		else if horizontal_cell_margin < 0.0 { Err(String::from("Invalid horizontal_cell_margin.")) }
-		else if vertical_cell_margin < 0.0 { Err(String::from("Invalid vertical_cell_margin.")) }
-		else if outer_horizontal_margin < 0.0 { Err(String::from("Invalid outer_horizontal_margin.")) }
-		else if outer_vertical_margin < 0.0 { Err(String::from("Invalid outer_vertical_margin.")) }
-		else if off_row_color_lines_y_adjust_scalar < 0.0
-		{ Err(String::from("Invalid off_row_color_lines_y_adjust_scalar.")) }
-		else if off_row_color_lines_height_scalar < 0.0
-		{ Err(String::from("Invalid off_row_color_lines_height_scalar.")) }
-		else
-		{
-			Ok(Self
-			{
-				title_font_size: title_font_size,
-				horizontal_cell_margin: horizontal_cell_margin,
-				vertical_cell_margin: vertical_cell_margin,
-				outer_horizontal_margin: outer_horizontal_margin,
-				outer_vertical_margin: outer_vertical_margin,
-				off_row_color_lines_y_adjust_scalar: off_row_color_lines_y_adjust_scalar,
-				off_row_color_lines_height_scalar: off_row_color_lines_height_scalar,
-				off_row_color: off_row_color
-			})
-		}
-	}
-
-	// Getters
-	pub fn title_font_size(&self) -> f32 { self.title_font_size }
-	pub fn horizontal_cell_margin(&self) -> f32 { self.horizontal_cell_margin }
-	pub fn vertical_cell_margin(&self) -> f32 { self.vertical_cell_margin }
-	pub fn outer_horizontal_margin(&self) -> f32 { self.outer_horizontal_margin }
-	pub fn outer_vertical_margin(&self) -> f32 { self.outer_vertical_margin }
-	pub fn off_row_color_lines_y_adjust_scalar(&self) -> f32 { self.off_row_color_lines_y_adjust_scalar }
-	pub fn off_row_color_lines_height_scalar(&self) -> f32 { self.off_row_color_lines_height_scalar }
-	pub fn off_row_color(&self) -> (u8, u8, u8) { self.off_row_color }
-	// Gives specific values for each rgb value for the off row color
-	pub fn off_row_red(&self) -> u8 { self.off_row_color.0 }
-	pub fn off_row_green(&self) -> u8 { self.off_row_color.1 }
-	pub fn off_row_blue(&self) -> u8 { self.off_row_color.2 }
 }
 
 /// RGB colors for types of text in the spellbook.
@@ -239,7 +204,7 @@ pub struct TextColors
 
 /// Data for determining the size of the page and the margins between sides of the pages and text.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub struct PageSizeData
+pub struct PageSizeOptions
 {
 	width: f32,
 	height: f32,
@@ -249,7 +214,7 @@ pub struct PageSizeData
 	bottom_margin: f32
 }
 
-impl PageSizeData
+impl PageSizeOptions
 {
 	/// Constructor
 	///
@@ -264,7 +229,7 @@ impl PageSizeData
 	///
 	/// # Output
 	///
-	/// - `Ok` A PageSizeData object.
+	/// - `Ok` A PageSizeOptions object.
 	/// - `Err` An error message saying which parameter(s) was / were invalid. Occurs for negative or overlapping values.
 	pub fn new(width: f32, height: f32, left_margin: f32, right_margin: f32, top_margin: f32,
 	bottom_margin: f32) -> Result<Self, String>
@@ -326,7 +291,7 @@ impl PageSizeData
 
 /// Horizontal Side, used for determining the side of the page a page number goes on.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-enum HSide
+pub enum HSide
 {
 	Left,
 	Right
@@ -349,7 +314,7 @@ impl std::ops::Not for HSide
 
 /// Parameters for determining page number behavior.
 #[derive(Clone, Copy, Debug)]
-pub struct PageNumberData
+pub struct PageNumberOptions
 {
 	starting_side: HSide,
 	current_side: HSide,
@@ -359,7 +324,7 @@ pub struct PageNumberData
 	bottom_margin: f32
 }
 
-impl PageNumberData
+impl PageNumberOptions
 {
 	/// Constructor
 	///
@@ -374,7 +339,7 @@ impl PageNumberData
 	///
 	/// # Output
 	///
-	/// - `Ok` A PageNumberData object.
+	/// - `Ok` A PageNumberOptions object.
 	/// - `Err` An error message saying which parameter was invalid. Occurs for negative margin values.
 	pub fn new(starting_side: HSide, flip_sides: bool, starting_num: i32, side_margin: f32, bottom_margin: f32)
 	-> Result<Self, String>
@@ -406,6 +371,7 @@ impl PageNumberData
 
 	// Getters
 	pub fn starting_side(&self) -> HSide { self.starting_side }
+	pub fn current_side(&self) -> HSide { self.current_side }
 	pub fn flip_sides(&self) -> bool { self.flip_sides }
 	pub fn starting_num(&self) -> i32 { self.starting_num }
 	pub fn side_margin(&self) -> f32 { self.side_margin }
@@ -415,6 +381,80 @@ impl PageNumberData
 	pub fn flip_side(&mut self) { self.current_side = !self.current_side; }
 }
 
+/// Options for tables.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct TableOptions
+{
+	horizontal_cell_margin: f32,
+	vertical_cell_margin: f32,
+	outer_horizontal_margin: f32,
+	outer_vertical_margin: f32,
+	off_row_color_lines_y_adjust_scalar: f32,
+	off_row_color_lines_height_scalar: f32,
+	// RGB
+	off_row_color: (u8, u8, u8)
+}
+
+impl TableOptions
+{
+	/// Constructor
+	///
+	/// # Parameters
+	///
+	/// - `horizontal_cell_margin` Space between columns in printpdf Mm.
+	/// - `vertical_cell_margin` Space between rows in printpdf Mm.
+	/// - `outer_horizontal_margin` Minimum space between sides of table and edge of pages.
+	/// - `outer_horizontal_margin` Space above and below table from other text / tables.
+	/// - `off_row_color_lines_y_adjust_scalar` Scalar value to adjust off-row color lines to line up with the rows vertically.
+	/// - `off_row_color_lines_height_scalar` Scalar value to determine the height of off-row color lines.
+	/// - `off_row_color` RGB value of the color of the off-row color lines.
+	///
+	/// # Output
+	///
+	/// - `Ok` A TableOptions object.
+	/// - `Err` An error message saying which parameter was invalid. Occurs for negative values.
+	pub fn new(horizontal_cell_margin: f32, vertical_cell_margin: f32, outer_horizontal_margin: f32,
+	outer_vertical_margin: f32, off_row_color_lines_y_adjust_scalar: f32, off_row_color_lines_height_scalar: f32,
+	off_row_color: (u8, u8, u8)) -> Result<Self, String>
+	{
+		// Makes sure none of the float values are below 0
+		if horizontal_cell_margin < 0.0 { Err(String::from("Invalid horizontal_cell_margin.")) }
+		else if vertical_cell_margin < 0.0 { Err(String::from("Invalid vertical_cell_margin.")) }
+		else if outer_horizontal_margin < 0.0 { Err(String::from("Invalid outer_horizontal_margin.")) }
+		else if outer_vertical_margin < 0.0 { Err(String::from("Invalid outer_vertical_margin.")) }
+		else if off_row_color_lines_y_adjust_scalar < 0.0
+		{ Err(String::from("Invalid off_row_color_lines_y_adjust_scalar.")) }
+		else if off_row_color_lines_height_scalar < 0.0
+		{ Err(String::from("Invalid off_row_color_lines_height_scalar.")) }
+		else
+		{
+			Ok(Self
+			{
+				horizontal_cell_margin: horizontal_cell_margin,
+				vertical_cell_margin: vertical_cell_margin,
+				outer_horizontal_margin: outer_horizontal_margin,
+				outer_vertical_margin: outer_vertical_margin,
+				off_row_color_lines_y_adjust_scalar: off_row_color_lines_y_adjust_scalar,
+				off_row_color_lines_height_scalar: off_row_color_lines_height_scalar,
+				off_row_color: off_row_color
+			})
+		}
+	}
+
+	// Getters
+	pub fn horizontal_cell_margin(&self) -> f32 { self.horizontal_cell_margin }
+	pub fn vertical_cell_margin(&self) -> f32 { self.vertical_cell_margin }
+	pub fn outer_horizontal_margin(&self) -> f32 { self.outer_horizontal_margin }
+	pub fn outer_vertical_margin(&self) -> f32 { self.outer_vertical_margin }
+	pub fn off_row_color_lines_y_adjust_scalar(&self) -> f32 { self.off_row_color_lines_y_adjust_scalar }
+	pub fn off_row_color_lines_height_scalar(&self) -> f32 { self.off_row_color_lines_height_scalar }
+	pub fn off_row_color(&self) -> (u8, u8, u8) { self.off_row_color }
+	// Gives specific values for each rgb value for the off row color
+	pub fn off_row_red(&self) -> u8 { self.off_row_color.0 }
+	pub fn off_row_green(&self) -> u8 { self.off_row_color.1 }
+	pub fn off_row_blue(&self) -> u8 { self.off_row_color.2 }
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //	Input types for pdf writing functions
@@ -422,13 +462,14 @@ impl PageNumberData
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // TODO
-// 1. Combine all static parameters into one struct
-// 2. Rewrite `write_spell_description` function to be combined with `write_textbox` so tokens get parsed and written
+// 1. Add TextColors struct to FontData struct.
+// 2. Finish writing SpellbookWritier constrcutor and then write a test to make sure it works.
+// 3. Rewrite `write_spell_description` function to be combined with `write_textbox` so tokens get parsed and written
 // at the same time. Make it so text gets written when it either switches fonts or gets too long to fit on the page.
 
-/// Conveys what type of font is being used.
+/// Conveys which variant of a font is being used.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum FontType
+enum FontVariant
 {
 	Regular,
 	Bold,
@@ -436,38 +477,73 @@ enum FontType
 	BoldItalic
 }
 
-/// Holds size data for each font type of a font.
-#[derive(Clone, Debug)]
-struct FontSizeData<'a>
+/// Conveys the type of text that is being used.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum TextType
 {
-	pub regular: &'a Font<'a>,
-	pub bold: &'a Font<'a>,
-	pub italic: &'a Font<'a>,
-	pub bold_italic: &'a Font<'a>
+	Title,
+	TableTitle,
+	Header,
+	Body,
 }
 
 /// Holds references to each font type of a font.
 #[derive(Clone, Debug, PartialEq, Eq)]
-struct FontRefs<'a>
+struct FontRefs
 {
-	pub regular: &'a IndirectFontRef,
-	pub bold: &'a IndirectFontRef,
-	pub italic: &'a IndirectFontRef,
-	pub bold_italic: &'a IndirectFontRef
+	pub regular: IndirectFontRef,
+	pub bold: IndirectFontRef,
+	pub italic: IndirectFontRef,
+	pub bold_italic: IndirectFontRef
 }
 
+/// Holds size data for each font type of a font.
+#[derive(Clone, Debug)]
+struct FontSizeData<'a>
+{
+	pub regular: Font<'a>,
+	pub bold: Font<'a>,
+	pub italic: Font<'a>,
+	pub bold_italic: Font<'a>
+}
 
-/// Keeps track of the current font being used, its size, and other data needed for using the font to apply text.
+/// Holds scale size data for each type of text.
+#[derive(Clone, Debug, PartialEq)]
+struct FontScales
+{
+	pub title: Scale,
+	pub table_title: Scale,
+	pub header: Scale,
+	pub body: Scale
+}
+
+/// Keeps track of the current font variant being used, the current type of text, and other data needed to use fonts.
 #[derive(Clone, Debug)]
 struct FontData<'a>
 {
-	current_type: FontType,
-	size: f32,
+	current_font_variant: FontVariant,
+	current_text_type: TextType,
+	font_refs: FontRefs,
+	font_sizes: FontSizes,
 	scalars: FontScalars,
-	size_data: &'a FontSizeData<'a>,
-	scale: Scale,
-	font_refs: &'a FontRefs<'a>
+	size_data: FontSizeData<'a>,
+	scales: FontScales,
+	spacing_options: SpacingOptions
 }
+
+/// Error for when font size data couldn't be converted from bytes read from a font file to an object in rust.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct BytesToFontSizeDataConversionError(String);
+
+impl std::fmt::Display for BytesToFontSizeDataConversionError
+{
+	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result
+	{
+		write!(f, "{}", self.0)
+	}
+}
+
+impl std::error::Error for BytesToFontSizeDataConversionError {}
 
 impl <'a> FontData<'a>
 {
@@ -475,90 +551,191 @@ impl <'a> FontData<'a>
 	///
 	/// # Parameters
 	///
-	/// - `font_type` The current type of font being used.
-	/// - `size` The font size of the text this font is being used for.
-	/// - `scalars` Scalar values to convert rusttype font units to printpdf millimeters (Mm).
-	/// - `size_data` Size data for each type of font.
-	/// - `scale` More size data to determine how large the text should be.
-	/// - `font_refs` References to each font type of the font being used.
-	pub fn new(font_type: FontType, size: f32, scalars: FontScalars, size_data: &'a FontSizeData, scale: Scale,
-	font_refs: &'a FontRefs)
-	-> Self
+	/// - `doc` Reference to the pdf document that this font will be used in.
+	/// - `font_paths` File paths to the font files.
+	/// - `font_sizes` The sizes of each type of text.
+	/// - `font_scalars` Scalar values for each font variant so their sizes can be calculated correctly.
+	pub fn new(doc: &PdfDocumentReference, font_paths: FontPaths, font_sizes: FontSizes, font_scalars: FontScalars,
+	spacing_options: SpacingOptions) -> Result<Self, Box<dyn std::error::Error>>
 	{
-		Self
+		// Read the data from the font files
+		let regular_font_bytes = fs::read(&font_paths.regular)?;
+		let bold_font_bytes = fs::read(&font_paths.bold)?;
+		let italic_font_bytes = fs::read(&font_paths.italic)?;
+		let bold_italic_font_bytes = fs::read(&font_paths.bold_italic)?;
+
+		// Create font size data for each font variant
+		let regular_font_size_data = match Font::try_from_vec(regular_font_bytes.clone())
 		{
-			current_type: font_type,
-			size: size,
-			scalars: scalars,
+			Some(d) => d,
+			None => return Err(Box::new(BytesToFontSizeDataConversionError(String::from
+				("Could not convert regular font size data from bytes."))))
+		};
+		let bold_font_size_data = match Font::try_from_vec(bold_font_bytes.clone())
+		{
+			Some(d) => d,
+			None => return Err(Box::new(BytesToFontSizeDataConversionError(String::from
+				("Could not convert bold font size data from bytes."))))
+		};
+		let italic_font_size_data = match Font::try_from_vec(italic_font_bytes.clone())
+		{
+			Some(d) => d,
+			None => return Err(Box::new(BytesToFontSizeDataConversionError(String::from
+				("Could not convert italic font size data from bytes."))))
+		};
+		let bold_italic_font_size_data = match Font::try_from_vec(bold_italic_font_bytes.clone())
+		{
+			Some(d) => d,
+			None => return Err(Box::new(BytesToFontSizeDataConversionError(String::from
+				("Could not convert bold italic font size data from bytes."))))
+		};
+
+		// Combine all size data into one struct
+		let size_data = FontSizeData
+		{
+			regular: regular_font_size_data,
+			bold: bold_font_size_data,
+			italic: italic_font_size_data,
+			bold_italic: bold_italic_font_size_data
+		};
+
+		// Create font scale objects for each font size
+		let title_font_scale = Scale::uniform(font_sizes.title_font_size());
+		let table_title_font_scale = Scale::uniform(font_sizes.table_title_font_size());
+		let header_font_scale = Scale::uniform(font_sizes.header_font_size());
+		let body_font_scale = Scale::uniform(font_sizes.body_font_size());
+
+		// Combine all font scales into one struct
+		let scales = FontScales
+		{
+			title: title_font_scale,
+			table_title: table_title_font_scale,
+			header: header_font_scale,
+			body: body_font_scale
+		};
+
+		// Add all custom font variants to the document and get references to them
+		let regular_font_ref = doc.add_external_font(&*regular_font_bytes)?;
+		let bold_font_ref = doc.add_external_font(&*bold_font_bytes)?;
+		let italic_font_ref = doc.add_external_font(&*italic_font_bytes)?;
+		let bold_italic_font_ref = doc.add_external_font(&*bold_italic_font_bytes)?;
+
+		// Combine all font references into one struct
+		let font_refs = FontRefs
+		{
+			regular: regular_font_ref,
+			italic: italic_font_ref,
+			bold: bold_font_ref,
+			bold_italic: bold_italic_font_ref
+		};
+
+		// Construct and return
+		Ok(Self
+		{
+			// Use these defaults for the first two fields since the cover page is what gets created first
+			current_font_variant: FontVariant::Regular,
+			current_text_type: TextType::Title,
+			font_refs: font_refs,
+			font_sizes: font_sizes,
+			scalars: font_scalars,
 			size_data: size_data,
-			scale: scale,
-			font_refs: font_refs
-		}
+			scales: scales,
+			spacing_options: spacing_options
+		})
 	}
 
 	// Getters
 
-	pub fn current_type(&self) -> FontType { self.current_type }
-	pub fn size(&self) -> f32 { self.size }
-	pub fn all_scalars(&self) -> FontScalars { self.scalars }
-	pub fn all_size_data(&self) -> &FontSizeData { self.size_data }
-	pub fn scale(&self) -> Scale { self.scale }
-	pub fn all_font_refs(&self) -> &FontRefs { self.font_refs }
+	pub fn current_font_variant(&self) -> &FontVariant { &self.current_font_variant }
+	pub fn current_text_type(&self) -> &TextType { &self.current_text_type }
+	pub fn all_font_refs(&self) -> &FontRefs { &self.font_refs }
+	pub fn all_font_sizes(&self) -> &FontSizes { &self.font_sizes }
+	pub fn all_scalars(&self) -> &FontScalars { &self.scalars }
+	pub fn all_size_data(&self) -> &FontSizeData { &self.size_data }
+	pub fn all_scales(&self) -> &FontScales { &self.scales }
+	pub fn all_spacing_options(&self) -> &SpacingOptions { &self.spacing_options }
+	pub fn tab_amount(&self) -> f32 { self.spacing_options.tab_amount() }
 
-	/// Returns the scalar value for the current font type being used.
-	pub fn current_scalar(&self) -> f32
-	{
-		match self.current_type
-		{
-			FontType::Regular => self.scalars.regular_scalar(),
-			FontType::Bold => self.scalars.bold_scalar(),
-			FontType::Italic => self.scalars.italic_scalar(),
-			FontType::BoldItalic => self.scalars.bold_italic_scalar()
-		}
-	}
-
-	/// Returns the size data for the current font type being used.
-	pub fn current_size_data(&self) -> &Font
-	{
-		match self.current_type
-		{
-			FontType::Regular => self.size_data.regular,
-			FontType::Bold => self.size_data.bold,
-			FontType::Italic => self.size_data.italic,
-			FontType::BoldItalic => self.size_data.bold_italic
-		}
-	}
-
-	/// Returns the font ref to the current font type bring used.
+	/// Returns the font ref to the current font variant bring used.
 	pub fn current_font_ref(&self) -> &IndirectFontRef
 	{
-		match self.current_type
+		match self.current_font_variant
 		{
-			FontType::Regular => self.font_refs.regular,
-			FontType::Bold => self.font_refs.bold,
-			FontType::Italic => self.font_refs.italic,
-			FontType::BoldItalic => self.font_refs.bold_italic
+			FontVariant::Regular => &self.font_refs.regular,
+			FontVariant::Bold => &self.font_refs.bold,
+			FontVariant::Italic => &self.font_refs.italic,
+			FontVariant::BoldItalic => &self.font_refs.bold_italic
+		}
+	}
+
+	/// Returns the font size of the current text type bring used.
+	pub fn current_font_size(&self) -> f32
+	{
+		match self.current_text_type
+		{
+			TextType::Title => self.font_sizes.title_font_size(),
+			TextType::TableTitle => self.font_sizes.table_title_font_size(),
+			TextType::Header => self.font_sizes.header_font_size(),
+			TextType::Body => self.font_sizes.body_font_size()
+		}
+	}
+
+	/// Returns the scalar value for the current font variant being used.
+	pub fn current_scalar(&self) -> f32
+	{
+		match self.current_font_variant
+		{
+			FontVariant::Regular => self.scalars.regular_scalar(),
+			FontVariant::Bold => self.scalars.bold_scalar(),
+			FontVariant::Italic => self.scalars.italic_scalar(),
+			FontVariant::BoldItalic => self.scalars.bold_italic_scalar()
+		}
+	}
+
+	/// Returns the size data for the current font variant being used.
+	pub fn current_size_data(&self) -> &Font
+	{
+		match self.current_font_variant
+		{
+			FontVariant::Regular => &self.size_data.regular,
+			FontVariant::Bold => &self.size_data.bold,
+			FontVariant::Italic => &self.size_data.italic,
+			FontVariant::BoldItalic => &self.size_data.bold_italic
+		}
+	}
+
+	/// Returns the font scale of the current text type bring used.
+	pub fn current_font_scale(&self) -> &Scale
+	{
+		match self.current_text_type
+		{
+			TextType::Title => &self.scales.title,
+			TextType::TableTitle => &self.scales.table_title,
+			TextType::Header => &self.scales.header,
+			TextType::Body => &self.scales.body
+		}
+	}
+
+	pub fn current_newline_amount(&self) -> f32
+	{
+		match self.current_text_type
+		{
+			TextType::Title => self.spacing_options.title_newline_amount(),
+			TextType::TableTitle => self.spacing_options.table_title_newline_amount(),
+			TextType::Header => self.spacing_options.header_newline_amount(),
+			TextType::Body => self.spacing_options.body_newline_amount()
 		}
 	}
 
 	// Setters
 
-	pub fn set_current_type(&mut self, font_type: FontType) { self.current_type = font_type; }
-	pub fn set_size(&mut self, size: f32) { self.size = size; }
-	pub fn set_scale(&mut self, scale: Scale) { self.scale = scale; }
-}
-
-/// Holds the background image and the transform data for it (positioning, size, rotation, etc.)
-#[derive(Clone, Copy, Debug, PartialEq)]
-struct BackgroundImage<'a>
-{
-	pub image: &'a DynamicImage,
-	pub transform: &'a ImageTransform
+	pub fn set_current_font_variant(&mut self, font_type: FontVariant) { self.current_font_variant = font_type; }
+	pub fn set_current_text_type(&mut self, text_type: TextType) { self.current_text_type = text_type; }
 }
 
 /// Holds the width and height of the spellbook pages, and the min and max coordinates for text on the page.
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct PageLimits
+struct PageSizeData
 {
 	width: f32,
 	height: f32,
@@ -572,10 +749,10 @@ struct PageLimits
 	y_max: f32
 }
 
-impl From<PageSizeData> for PageLimits
+impl From<PageSizeOptions> for PageSizeData
 {
-	/// Allows page limit coordinates to be constructed from the `PageSizeData` user input type.
-	fn from(data: PageSizeData) -> Self
+	/// Allows page limit coordinates to be constructed from the `PageSizeOptions` user input type.
+	fn from(data: PageSizeOptions) -> Self
 	{
 		Self
 		{
@@ -589,81 +766,232 @@ impl From<PageSizeData> for PageLimits
 	}
 }
 
-impl PageLimits
+impl PageSizeData
 {
 		// Getters
 
 		pub fn width(&self) -> f32 { self.width }
 		pub fn height(&self) -> f32 { self.height }
+		/// Left
 		pub fn x_min(&self) -> f32 { self.x_min }
+		/// Right
 		pub fn x_max(&self) -> f32 { self.x_max }
+		/// Bottom
 		pub fn y_min(&self) -> f32 { self.y_min }
+		/// Top
 		pub fn y_max(&self) -> f32 { self.y_max }
 }
 
-/// All data needed to write to a pdf document.
-#[derive(Clone)]
-struct DocumentData<'a>
+/// Holds the background image and the transform data for it (positioning, size, rotation, etc.)
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct BackgroundImage<'a>
 {
-	document: &'a PdfDocumentReference,
-	current_layer: &'a PdfLayerReference,
+	pub image: &'a DynamicImage,
+	pub transform: &'a ImageTransform
+}
+
+/// All data needed to write spells to a pdf document.
+// Can't derive clone or debug unfortunately.
+struct SpellbookWriter<'a>
+{
+	document: PdfDocumentReference,
+	current_layer: PdfLayerReference,
+	current_layer_number: i32,
 	layer_name_prefix: &'a str,
-	font_data: &'a FontData<'a>,
-	text_color: &'a Color,
-	background: Option<&'a BackgroundImage<'a>>,
-	page_limits: PageLimits,
-	page_number_data: Option<(PageNumberData, &'a FontData<'a>)>,
-	table_options: &'a TableOptions,
+	font_data: FontData<'a>,
+	spacing_options: SpacingOptions,
+	text_color: Color,
+	page_size_data: PageSizeData,
+	page_number_data: Option<(PageNumberOptions, FontData<'a>)>,
+	background: Option<BackgroundImage<'a>>,
+	table_options: TableOptions,
 	table_title_font_scale: Scale,
-	tab_amount: f32,
-	newline_amount: f32,
 	// Current x position of text
 	x: f32,
 	// Current y position of text
 	y: f32
 }
 
-impl <'a> DocumentData<'a>
+impl <'a> SpellbookWriter<'a>
 {
-	/// Constructor
-	///
-	/// # Parameters
-	///
-	/// - `document` Reference to the `printpdf` crate pdf document object.
-	/// - `current_layer` Reference to the `printpdf` crate layer object.
-	/// - `layer_name_prefix` The prefix of each layer / page name. usually just "Layer " followed by the page number.
-	/// - `font_data` Keeps track of all the data the fonts need to be used to apply text properly.
-	/// - `text_color` The color of the text bring written to the pdf.
-	/// - `background` The background image and transform data (position, size, rotation, etc.) for it (if desired).
-	/// - `page_limits` The page width and height, along with the min and max x coordinates for text on the page.
-	/// - `page_number_data` The options for how page numbers appear (if desired).
-	/// - `table_options` The options for how tables appear.
-	/// - `table_title_fond_scale` The font scale for titles on tables.
-	/// - `tab_amount` The width of tabs in printpdf Mm.
-	/// - `newline_amount` The length of newlines in printpdf Mm.
-	/// - `x` The starting x positioni of the text.
-	/// - `y` The starting y position of the text.
-	fn new(document: &'a PdfDocumentReference, current_layer: &'a PdfLayerReference, layer_name_prefix: &'a str,
-	font_data: &'a FontData, text_color: &'a Color, background: &'a BackgroundImage, page_limits: PageLimits,
-	page_number_data: Option<(PageNumberData, &'a FontData)>, table_options: &'a TableOptions,
-	table_title_font_scale: Scale, tab_amount: f32, newline_amount: f32, x: f32, y: f32) -> Self
+	pub fn from_options(font_paths: FontPaths, font_sizes: FontSizes, font_scalars: FontScalars,
+	spacing_options: SpacingOptions, text_colors: TextColors, page_size_options: PageSizeOptions,
+	page_number_options: PageNumberOptions, table_options: TableOptions) -> Self
 	{
-		Self
+		todo!()
+	}
+
+	// General Getters
+
+	pub fn document(&self) -> &PdfDocumentReference { &self.document }
+	pub fn current_layer(&self) -> &PdfLayerReference { &self.current_layer }
+	pub fn layer_name_prefix(&self) -> &str { self.layer_name_prefix }
+	pub fn font_data(&self) -> &FontData { &self.font_data }
+	pub fn spacing_options(&self) -> &SpacingOptions { &self.spacing_options }
+	pub fn text_color(&self) -> &Color { &self.text_color }
+	pub fn background(&self) -> Option<BackgroundImage> { self.background }
+	pub fn page_size_data(&self) -> &PageSizeData { &self.page_size_data }
+	pub fn page_number_data(&self) -> &Option<(PageNumberOptions, FontData)> { &self.page_number_data }
+	pub fn table_options(&self) -> &TableOptions { &self.table_options }
+	pub fn table_title_font_scale(&self) -> &Scale { &self.table_title_font_scale }
+	/// Current x position of the text
+	pub fn x(&self) -> &f32 { &self.x }
+	/// Current y position of the text
+	pub fn y(&self) -> &f32 { &self.y }
+
+	// Font Getters
+
+	pub fn current_font_variant(&self) -> &FontVariant { self.font_data.current_font_variant() }
+	pub fn current_text_type(&self) -> &TextType { self.font_data.current_text_type() }
+	pub fn all_font_refs(&self) -> &FontRefs { self.font_data.all_font_refs() }
+	pub fn all_font_sizes(&self) -> &FontSizes { self.font_data.all_font_sizes() }
+	pub fn all_scalars(&self) -> &FontScalars { self.font_data.all_scalars() }
+	pub fn all_size_data(&self) -> &FontSizeData { self.font_data.all_size_data() }
+	pub fn all_scales(&self) -> &FontScales { self.font_data.all_scales() }
+	pub fn all_spacing_options(&self) -> &SpacingOptions { self.font_data.all_spacing_options() }
+	pub fn tab_amount(&self) -> f32 { self.font_data.tab_amount() }
+	pub fn current_font_ref(&self) -> &IndirectFontRef { self.font_data.current_font_ref() }
+	pub fn current_font_size(&self) -> f32 { self.font_data.current_font_size() }
+	pub fn current_scalar(&self) -> f32 { self.font_data.current_scalar() }
+	pub fn current_size_data(&self) -> &Font { self.font_data.current_size_data() }
+	pub fn current_font_scale(&self) -> &Scale { self.font_data.current_font_scale() }
+	pub fn current_newline_amount(&self) -> f32 { self.font_data.current_newline_amount() }
+
+	// Page Size Getters
+
+	pub fn page_width(&self) -> f32 { self.page_size_data.width() }
+	pub fn page_height(&self) -> f32 { self.page_size_data.height() }
+	/// Left
+	pub fn x_min(&self) -> f32 { self.page_size_data.x_min() }
+	/// Right
+	pub fn x_max(&self) -> f32 { self.page_size_data.x_max() }
+	/// Bottom
+	pub fn y_min(&self) -> f32 { self.page_size_data.y_min() }
+	/// Top
+	pub fn y_max(&self) -> f32 { self.page_size_data.y_max() }
+
+	// Page Number Getters
+
+	/// The side of the page (left or right) the page number starts on.
+	pub fn starting_side(&self) -> Option<HSide>
+	{
+		match self.page_number_data
 		{
-			document: document,
-			current_layer: current_layer,
-			layer_name_prefix: layer_name_prefix,
-			font_data: font_data,
-			text_color: text_color,
-			background: background,
-			page_limits: page_limits,
-			page_number_data: page_number_data,
-			table_options: table_options,
-			table_title_font_scale: table_title_font_scale,
-			tab_amount: tab_amount,
-			newline_amount: newline_amount,
-			x: x,
-			y: y
+			Some((data, _)) => Some(data.starting_side()),
+			None => None
+		}
+	}
+
+	/// The current side of the page (left or right) the page number is on.
+	pub fn current_side(&self) -> Option<HSide>
+	{
+		match self.page_number_data
+		{
+			Some((data, _)) => Some(data.current_side()),
+			None => None
+		}
+	}
+
+	/// Whether or not the page number flips sides every page.
+	pub fn flip_sides(&self) -> Option<bool>
+	{
+		match self.page_number_data
+		{
+			Some((data, _)) => Some(data.flip_sides()),
+			None => None
+		}
+	}
+
+	/// The starting page number.
+	pub fn starting_num(&self) -> Option<i32>
+	{
+		match self.page_number_data
+		{
+			Some((data, _)) => Some(data.starting_num()),
+			None => None
+		}
+	}
+
+	pub fn side_margin(&self) -> Option<f32>
+	{
+		match self.page_number_data
+		{
+			Some((data, _)) => Some(data.side_margin()),
+			None => None
+		}
+	}
+	
+	pub fn bottom_margin(&self) -> Option<f32>
+	{
+		match self.page_number_data
+		{
+			Some((data, _)) => Some(data.bottom_margin()),
+			None => None
+		}
+	}
+
+	/// Returns the scalar value of the font type being used for page numbers.
+	pub fn page_number_font_scalar(&self) -> Option<f32>
+	{
+		match &self.page_number_data
+		{
+			Some((_, font_data)) => match font_data.current_font_variant()
+			{
+				FontVariant::Regular => Some(font_data.all_scalars().regular_scalar()),
+				FontVariant::Bold => Some(font_data.all_scalars().bold_scalar()),
+				FontVariant::Italic => Some(font_data.all_scalars().italic_scalar()),
+				FontVariant::BoldItalic => Some(font_data.all_scalars().bold_italic_scalar())
+			},
+			None => None
+		}
+	}
+
+	/// Returns the size data of the current font type being used for page numbers.
+	pub fn page_number_size_data(&self) -> Option<&Font>
+	{
+		match &self.page_number_data
+		{
+			Some((_, font_data)) => match font_data.current_font_variant()
+			{
+				FontVariant::Regular => Some(&font_data.all_size_data().regular),
+				FontVariant::Bold => Some(&font_data.all_size_data().bold),
+				FontVariant::Italic => Some(&font_data.all_size_data().italic),
+				FontVariant::BoldItalic => Some(&font_data.all_size_data().bold_italic)
+			},
+			None => None
+		}
+	}
+
+	/// Returns the font ref to the current font type bring used for page numbers.
+	pub fn page_number_font_ref(&self) -> Option<&IndirectFontRef>
+	{
+		match &self.page_number_data
+		{
+			Some((_, font_data)) => match font_data.current_font_variant()
+			{
+				FontVariant::Regular => Some(&font_data.all_font_refs().regular),
+				FontVariant::Bold => Some(&font_data.all_font_refs().bold),
+				FontVariant::Italic => Some(&font_data.all_font_refs().italic),
+				FontVariant::BoldItalic => Some(&font_data.all_font_refs().bold_italic)
+			},
+			None => None
+		}
+	}
+
+	// Font Setters
+
+	pub fn set_current_font_variant(&mut self, font_type: FontVariant)
+	{ self.font_data.set_current_font_variant(font_type); }
+	pub fn set_current_text_type(&mut self, text_type: TextType) { self.font_data.set_current_text_type(text_type); }
+
+	// Page Number Setters
+
+	pub fn flip_side(&mut self)
+	{
+		match &self.page_number_data
+		{
+			Some((mut data, _)) => data.flip_side(),
+			None => ()
 		}
 	}
 }
@@ -798,237 +1126,6 @@ mod tests
 {
 	use super::*;
 	use std::path::Path;
-
-	// Creates 2 spellbooks that combined contain every spell from the official d&d 5e player's handbook
-	#[test]
-	fn players_handbook()
-	{
-		// Spellbook names
-		let spellbook_name_1 = "Every Sepll in the Dungeons & Dragons 5th Edition Player's Handbook: Part 1";
-		let spellbook_name_2 = "Every Sepll in the Dungeons & Dragons 5th Edition Player's Handbook: Part 2";
-		// List of every spell in the player's handbook folder
-		let spell_list = get_all_spells_in_folder("spells/players_handbook_2014").unwrap();
-		// Split that vec into 2 vecs
-		let spell_list_1 = spell_list[..spell_list.len()/2].to_vec();
-		let spell_list_2 = spell_list[spell_list.len()/2..].to_vec();
-		// File paths to the fonts needed
-		let font_paths = FontPaths
-		{
-			regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
-			bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
-			italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
-			bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
-		};
-		// Parameters for determining the size of the page and the text margins on the page
-		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
-		// Parameters for determining page number behavior
-		let page_number_data = PageNumberData::new(true, false, 1, 5.0, 4.0).unwrap();
-		// Parameters for determining font sizes, the tab amount, and newline amounts
-		let font_size_data = FontSizes::new(32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0).unwrap();
-		// Colors for each type of text
-		let text_colors = TextColors
-		{
-			title_color: (0, 0, 0),
-			header_color: (115, 26, 26),
-			body_color: (0, 0, 0)
-		};
-		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
-		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
-		// Parameters for table margins / padding and off-row color / scaling
-		let table_options = TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
-		// File path to the background image
-		let background_path = "img/parchment.jpg";
-		// Image transform data for the background image
-		let background_transform = ImageTransform
-		{
-			translate_x: Some(Mm(0.0)),
-			translate_y: Some(Mm(0.0)),
-			scale_x: Some(1.95),
-			scale_y: Some(2.125),
-			..Default::default()
-		};
-		// Creates the spellbooks
-		let doc_1 = generate_spellbook
-		(
-			spellbook_name_1, &spell_list_1, &font_paths, &page_size_data, &Some(page_number_data),
-			&font_size_data, &text_colors, &font_scalars, &table_options,
-			&Some((background_path, &background_transform))
-		).unwrap();
-		let doc_2 = generate_spellbook
-		(spellbook_name_2, &spell_list_2, &font_paths, &page_size_data, &Some(page_number_data),
-			&font_size_data, &text_colors, &font_scalars, &table_options,
-			&Some((background_path, &background_transform))
-		).unwrap();
-		// Saves the spellbooks as pdf documents
-		let _ = save_spellbook(doc_1, "Player's Handbook Spells 1.pdf").unwrap();
-		let _ = save_spellbook(doc_2, "Player's Handbook Spells 2.pdf").unwrap();
-	}
-
-	// Create a spellbook with every spell from the xanathar's guide to everything source book
-	#[test]
-	fn xanathars_guide_to_everything()
-	{
-		// Spellbook's name
-		let spellbook_name = "Every Sepll in the Dungeons & Dragons 5th Edition Source Material Book \"Xanathar's Guide to Everything\"";
-		// List of every spell in this folder
-		let spell_list = get_all_spells_in_folder("spells/xanathars_guide_to_everything").unwrap();
-		// File paths to the fonts needed
-		let font_paths = FontPaths
-		{
-			regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
-			bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
-			italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
-			bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
-		};
-		// Parameters for determining the size of the page and the text margins on the page
-		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
-		// Parameters for determining page number behavior
-		let page_number_data = PageNumberData::new(true, false, 1, 5.0, 4.0).unwrap();
-		// Parameters for determining font sizes, the tab amount, and newline amounts
-		let font_size_data = FontSizes::new(32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0).unwrap();
-		// Colors for each type of text
-		let text_colors = TextColors
-		{
-			title_color: (0, 0, 0),
-			header_color: (115, 26, 26),
-			body_color: (0, 0, 0)
-		};
-		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
-		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
-		// Parameters for table margins / padding and off-row color / scaling
-		let table_options = TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
-		// File path to the background image
-		let background_path = "img/parchment.jpg";
-		// Image transform data for the background image
-		let background_transform = ImageTransform
-		{
-			translate_x: Some(Mm(0.0)),
-			translate_y: Some(Mm(0.0)),
-			scale_x: Some(1.95),
-			scale_y: Some(2.125),
-			..Default::default()
-		};
-		// Creates the spellbook
-		let doc = generate_spellbook
-		(
-			spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
-			&font_size_data, &text_colors, &font_scalars, &table_options,
-			&Some((background_path, &background_transform))
-		).unwrap();
-		// Saves the spellbook to a pdf document
-		let _ = save_spellbook(doc, "Xanathar's Guide to Everything Spells.pdf");
-	}
-
-	// Create a spellbook with every spell from the tasha's cauldron of everything source book
-	#[test]
-	fn tashas_cauldron_of_everything()
-	{
-		// Spellbook's name
-		let spellbook_name = "Every Sepll in the Dungeons & Dragons 5th Edition Source Material Book \"Tasha's Cauldron of Everything\"";
-		// List of every spell in this folder
-		let spell_list = get_all_spells_in_folder("spells/tashas_cauldron_of_everything").unwrap();
-		// File paths to the fonts needed
-		let font_paths = FontPaths
-		{
-			regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
-			bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
-			italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
-			bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
-		};
-		// Parameters for determining the size of the page and the text margins on the page
-		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
-		// Parameters for determining page number behavior
-		let page_number_data = PageNumberData::new(true, false, 1, 5.0, 4.0).unwrap();
-		// Parameters for determining font sizes, the tab amount, and newline amounts
-		let font_size_data = FontSizes::new(32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0).unwrap();
-		// Colors for each type of text
-		let text_colors = TextColors
-		{
-			title_color: (0, 0, 0),
-			header_color: (115, 26, 26),
-			body_color: (0, 0, 0)
-		};
-		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
-		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
-		// Parameters for table margins / padding and off-row color / scaling
-		let table_options = TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
-		// File path to the background image
-		let background_path = "img/parchment.jpg";
-		// Image transform data for the background image
-		let background_transform = ImageTransform
-		{
-			translate_x: Some(Mm(0.0)),
-			translate_y: Some(Mm(0.0)),
-			scale_x: Some(1.95),
-			scale_y: Some(2.125),
-			..Default::default()
-		};
-		// Creates the spellbook
-		let doc = generate_spellbook
-		(
-			spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
-			&font_size_data, &text_colors, &font_scalars, &table_options,
-			&Some((background_path, &background_transform))
-		).unwrap();
-		// Saves the spellbook to a pdf document
-		let _ = save_spellbook(doc, "Tasha's Cauldron of Everything Spells.pdf");
-	}
-
-	// Create a spellbook with every spell from the strixhaven: a curriculum of chaos source book
-	#[test]
-	fn strixhaven()
-	{
-		// Spellbook's name
-		let spellbook_name =
-		"Every Sepll in the Dungeons & Dragons 5th Edition Source Material Book \"Strixhaven: A Curriculum of Chaos\"";
-		// List of every spell in this folder
-		let spell_list = get_all_spells_in_folder("spells/strixhaven").unwrap();
-		// File paths to the fonts needed
-		let font_paths = FontPaths
-		{
-			regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
-			bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
-			italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
-			bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
-		};
-		// Parameters for determining the size of the page and the text margins on the page
-		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
-		// Parameters for determining page number behavior
-		let page_number_data = PageNumberData::new(true, false, 1, 5.0, 4.0).unwrap();
-		// Parameters for determining font sizes, the tab amount, and newline amounts
-		let font_size_data = FontSizes::new(32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0).unwrap();
-		// Colors for each type of text
-		let text_colors = TextColors
-		{
-			title_color: (0, 0, 0),
-			header_color: (115, 26, 26),
-			body_color: (0, 0, 0)
-		};
-		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
-		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
-		// Parameters for table margins / padding and off-row color / scaling
-		let table_options = TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
-		// File path to the background image
-		let background_path = "img/parchment.jpg";
-		// Image transform data for the background image
-		let background_transform = ImageTransform
-		{
-			translate_x: Some(Mm(0.0)),
-			translate_y: Some(Mm(0.0)),
-			scale_x: Some(1.95),
-			scale_y: Some(2.125),
-			..Default::default()
-		};
-		// Creates the spellbook
-		let doc = generate_spellbook
-		(
-			spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
-			&font_size_data, &text_colors, &font_scalars, &table_options,
-			&Some((background_path, &background_transform))
-		).unwrap();
-		// Saves the spellbook to a pdf document
-		let _ = save_spellbook(doc, "Strixhaven A Curriculum of Chaos Spells.pdf");
-	}
 
 	// Makes sure that creating valid spell files works
 	#[test]
@@ -1210,6 +1307,245 @@ Creatures that succeed the saving throw take 20d4 scrunching damage."),
 		}
 	}
 
+	// Creates 2 spellbooks that combined contain every spell from the official d&d 5e player's handbook
+	#[test]
+	fn players_handbook()
+	{
+		// Spellbook names
+		let spellbook_name_1 = "Every Sepll in the 2014 Dungeons & Dragons 5th Edition Player's Handbook: Part 1";
+		let spellbook_name_2 = "Every Sepll in the 2014 Dungeons & Dragons 5th Edition Player's Handbook: Part 2";
+		// List of every spell in the player's handbook folder
+		let spell_list = get_all_spells_in_folder("spells/players_handbook_2014").unwrap();
+		// Split that vec into 2 vecs
+		let spell_list_1 = spell_list[..spell_list.len()/2].to_vec();
+		let spell_list_2 = spell_list[spell_list.len()/2..].to_vec();
+		// File paths to the fonts needed
+		let font_paths = FontPaths
+		{
+			regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
+			bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
+			italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
+			bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
+		};
+		// Parameters for determining font sizes
+		let font_sizes = FontSizes::new(32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0).unwrap();
+		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
+		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
+		// Parameters for determining tab and newline sizes
+		let spacing_options = SpacingOptions::new(7.5, 12.0, 8.0, 5.0).unwrap();
+		// Colors for each type of text
+		let text_colors = TextColors
+		{
+			title_color: (0, 0, 0),
+			header_color: (115, 26, 26),
+			body_color: (0, 0, 0)
+		};
+		// Parameters for determining the size of the page and the text margins on the page
+		let page_size_options = PageSizeOptions::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
+		// Parameters for determining page number behavior
+		let page_number_options = PageNumberOptions::new(HSide::Left, false, 1, 5.0, 4.0).unwrap();
+		// Parameters for table margins / padding and off-row color / scaling
+		let table_options = TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
+		// File path to the background image
+		let background_path = "img/parchment.jpg";
+		// Image transform data for the background image
+		let background_transform = ImageTransform
+		{
+			translate_x: Some(Mm(0.0)),
+			translate_y: Some(Mm(0.0)),
+			scale_x: Some(1.95),
+			scale_y: Some(2.125),
+			..Default::default()
+		};
+		// Creates the spellbooks
+		let doc_1 = generate_spellbook
+		(
+			spellbook_name_1, &spell_list_1, &font_paths, &font_sizes, &font_scalars, &spacing_options, &text_colors,
+			&page_size_options, &Some(page_number_options), &Some((background_path, &background_transform)),
+			&table_options
+		).unwrap();
+		let doc_2 = generate_spellbook
+		(spellbook_name_2, &spell_list_2, &font_paths, &font_sizes, &font_scalars, &spacing_options, &text_colors,
+			&page_size_options, &Some(page_number_options), &Some((background_path, &background_transform)),
+			&table_options
+		).unwrap();
+		// Saves the spellbooks as pdf documents
+		let _ = save_spellbook(doc_1, "Player's Handbook 2014 Spells 1.pdf").unwrap();
+		let _ = save_spellbook(doc_2, "Player's Handbook 2014 Spells 2.pdf").unwrap();
+	}
+
+	// Create a spellbook with every spell from the xanathar's guide to everything source book
+	#[test]
+	fn xanathars_guide_to_everything()
+	{
+		// Spellbook's name
+		let spellbook_name = "Every Sepll in the Dungeons & Dragons 5th Edition Source Material Book \"Xanathar's Guide to Everything\"";
+		// List of every spell in this folder
+		let spell_list = get_all_spells_in_folder("spells/xanathars_guide_to_everything").unwrap();
+		// File paths to the fonts needed
+		let font_paths = FontPaths
+		{
+			regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
+			bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
+			italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
+			bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
+		};
+		// Parameters for determining font sizes
+		let font_sizes = FontSizes::new(32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0).unwrap();
+		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
+		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
+		// Parameters for determining tab and newline sizes
+		let spacing_options = SpacingOptions::new(7.5, 12.0, 8.0, 5.0).unwrap();
+		// Colors for each type of text
+		let text_colors = TextColors
+		{
+			title_color: (0, 0, 0),
+			header_color: (115, 26, 26),
+			body_color: (0, 0, 0)
+		};
+		// Parameters for determining the size of the page and the text margins on the page
+		let page_size_options = PageSizeOptions::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
+		// Parameters for determining page number behavior
+		let page_number_options = PageNumberOptions::new(HSide::Left, false, 1, 5.0, 4.0).unwrap();
+		// Parameters for table margins / padding and off-row color / scaling
+		let table_options = TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
+		// File path to the background image
+		let background_path = "img/parchment.jpg";
+		// Image transform data for the background image
+		let background_transform = ImageTransform
+		{
+			translate_x: Some(Mm(0.0)),
+			translate_y: Some(Mm(0.0)),
+			scale_x: Some(1.95),
+			scale_y: Some(2.125),
+			..Default::default()
+		};
+		// Creates the spellbook
+		let doc = generate_spellbook
+		(
+			spellbook_name, &spell_list, &font_paths, &font_sizes, &font_scalars, &spacing_options, &text_colors,
+			&page_size_options, &Some(page_number_options), &Some((background_path, &background_transform)),
+			&table_options
+		).unwrap();
+		// Saves the spellbook to a pdf document
+		let _ = save_spellbook(doc, "Xanathar's Guide to Everything Spells.pdf");
+	}
+
+	// Create a spellbook with every spell from the tasha's cauldron of everything source book
+	#[test]
+	fn tashas_cauldron_of_everything()
+	{
+		// Spellbook's name
+		let spellbook_name = "Every Sepll in the Dungeons & Dragons 5th Edition Source Material Book \"Tasha's Cauldron of Everything\"";
+		// List of every spell in this folder
+		let spell_list = get_all_spells_in_folder("spells/tashas_cauldron_of_everything").unwrap();
+		// File paths to the fonts needed
+		let font_paths = FontPaths
+		{
+			regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
+			bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
+			italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
+			bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
+		};
+		// Parameters for determining font sizes
+		let font_sizes = FontSizes::new(32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0).unwrap();
+		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
+		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
+		// Parameters for determining tab and newline sizes
+		let spacing_options = SpacingOptions::new(7.5, 12.0, 8.0, 5.0).unwrap();
+		// Colors for each type of text
+		let text_colors = TextColors
+		{
+			title_color: (0, 0, 0),
+			header_color: (115, 26, 26),
+			body_color: (0, 0, 0)
+		};
+		// Parameters for determining the size of the page and the text margins on the page
+		let page_size_options = PageSizeOptions::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
+		// Parameters for determining page number behavior
+		let page_number_options = PageNumberOptions::new(HSide::Left, false, 1, 5.0, 4.0).unwrap();
+		// Parameters for table margins / padding and off-row color / scaling
+		let table_options = TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
+		// File path to the background image
+		let background_path = "img/parchment.jpg";
+		// Image transform data for the background image
+		let background_transform = ImageTransform
+		{
+			translate_x: Some(Mm(0.0)),
+			translate_y: Some(Mm(0.0)),
+			scale_x: Some(1.95),
+			scale_y: Some(2.125),
+			..Default::default()
+		};
+		// Creates the spellbook
+		let doc = generate_spellbook
+		(
+			spellbook_name, &spell_list, &font_paths, &font_sizes, &font_scalars, &spacing_options, &text_colors,
+			&page_size_options, &Some(page_number_options), &Some((background_path, &background_transform)),
+			&table_options
+		).unwrap();
+		// Saves the spellbook to a pdf document
+		let _ = save_spellbook(doc, "Tasha's Cauldron of Everything Spells.pdf");
+	}
+
+	// Create a spellbook with every spell from the strixhaven: a curriculum of chaos source book
+	#[test]
+	fn strixhaven()
+	{
+		// Spellbook's name
+		let spellbook_name =
+		"Every Sepll in the Dungeons & Dragons 5th Edition Source Material Book \"Strixhaven: A Curriculum of Chaos\"";
+		// List of every spell in this folder
+		let spell_list = get_all_spells_in_folder("spells/strixhaven").unwrap();
+		// File paths to the fonts needed
+		let font_paths = FontPaths
+		{
+			regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
+			bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
+			italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
+			bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
+		};
+		// Parameters for determining font sizes
+		let font_sizes = FontSizes::new(32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0).unwrap();
+		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
+		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
+		// Parameters for determining tab and newline sizes
+		let spacing_options = SpacingOptions::new(7.5, 12.0, 8.0, 5.0).unwrap();
+		// Colors for each type of text
+		let text_colors = TextColors
+		{
+			title_color: (0, 0, 0),
+			header_color: (115, 26, 26),
+			body_color: (0, 0, 0)
+		};
+		// Parameters for determining the size of the page and the text margins on the page
+		let page_size_options = PageSizeOptions::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
+		// Parameters for determining page number behavior
+		let page_number_options = PageNumberOptions::new(HSide::Left, false, 1, 5.0, 4.0).unwrap();
+		// Parameters for table margins / padding and off-row color / scaling
+		let table_options = TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
+		// File path to the background image
+		let background_path = "img/parchment.jpg";
+		// Image transform data for the background image
+		let background_transform = ImageTransform
+		{
+			translate_x: Some(Mm(0.0)),
+			translate_y: Some(Mm(0.0)),
+			scale_x: Some(1.95),
+			scale_y: Some(2.125),
+			..Default::default()
+		};
+		// Creates the spellbook
+		let doc = generate_spellbook
+		(
+			spellbook_name, &spell_list, &font_paths, &font_sizes, &font_scalars, &spacing_options, &text_colors,
+			&page_size_options, &Some(page_number_options), &Some((background_path, &background_transform)),
+			&table_options
+		).unwrap();
+		// Saves the spellbook to a pdf document
+		let _ = save_spellbook(doc, "Strixhaven A Curriculum of Chaos Spells.pdf");
+	}
+
 	// Stress testing the text formatting
 	#[test]
 	fn necronomicon()
@@ -1227,12 +1563,12 @@ Creatures that succeed the saving throw take 20d4 scrunching damage."),
 			italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
 			bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
 		};
-		// Parameters for determining the size of the page and the text margins on the page
-		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
-		// Parameters for determining page number behavior
-		let page_number_data = PageNumberData::new(true, true, 1, 5.0, 4.0).unwrap();
-		// Parameters for determining font sizes, the tab amount, and newline amounts
-		let font_size_data = FontSizes::new(32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0).unwrap();
+		// Parameters for determining font sizes
+		let font_sizes = FontSizes::new(32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0).unwrap();
+		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
+		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
+		// Parameters for determining tab and newline sizes
+		let spacing_options = SpacingOptions::new(7.5, 12.0, 8.0, 5.0).unwrap();
 		// Colors for each type of text
 		let text_colors = TextColors
 		{
@@ -1240,19 +1576,103 @@ Creatures that succeed the saving throw take 20d4 scrunching damage."),
 			header_color: (115, 26, 26),
 			body_color: (0, 0, 0)
 		};
-		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
-		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
+		// Parameters for determining the size of the page and the text margins on the page
+		let page_size_options = PageSizeOptions::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
+		// Parameters for determining page number behavior
+		let page_number_options = PageNumberOptions::new(HSide::Left, true, 1, 5.0, 4.0).unwrap();
 		// Parameters for table margins / padding and off-row color / scaling
 		let table_options = TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
 		// Creates the spellbook
 		let doc = generate_spellbook
 		(
-			spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
-			&font_size_data, &text_colors, &font_scalars, &table_options, &None
+			spellbook_name, &spell_list, &font_paths, &font_sizes, &font_scalars, &spacing_options, &text_colors,
+			&page_size_options, &Some(page_number_options), None, &table_options
 		).unwrap();
 		// Saves the spellbook to a pdf document
 		let _ = save_spellbook(doc, "NECRONOMICON.pdf");
 	}
+
+	// For creating spellbooks for myself and friends while I work on creating a ui to use this library
+	// #[test]
+	// fn create_spellbook()
+	// {
+	// 	// Spellbook's name
+	// 	let spellbook_name = "A Spellcaster's Spellbook";
+	// 	// Vec of spells that will be added to spellbook
+	// 	let mut spell_list = Vec::new();
+	// 	// Vec of paths to spell files that will be read from
+	// 	let spell_paths = vec!
+	// 	[
+	// 		"spells/players_handbook_2014/prestidigitation.spell",
+	// 		"spells/players_handbook_2014/mending.spell",
+	// 		"spells/players_handbook_2014/mage_hand.spell",
+	// 		"spells/players_handbook_2014/fire_bolt.spell",
+	// 		"spells/strixhaven/silvery_barbs.spell",
+	// 		"spells/players_handbook_2014/color_spray.spell",
+	// 		"spells/players_handbook_2014/magic_missile.spell",
+	// 		"spells/xanathars_guide_to_everything/ice_knife.spell",
+	// 		"spells/players_handbook_2014/mage_armor.spell",
+	// 		"spells/players_handbook_2014/unseen_servant.spell",
+	// 		"spells/players_handbook_2014/detect_magic.spell",
+	// 		"spells/players_handbook_2014/alarm.spell",
+	// 		"spells/players_handbook_2014/cloud_of_daggers.spell",
+	// 		"spells/players_handbook_2014/scorching_ray.spell"
+	// 	];
+	// 	// Attempt to loop through each spell file and convert it into a spell struct
+	// 	for path in spell_paths
+	// 	{
+	// 		println!("{}", path);
+	// 		// Convert spell file into spell struct and add it to spell_list vec
+	// 		spell_list.push(spells::Spell::from_file(path).unwrap());
+	// 	}
+	// 	// File paths to the fonts needed
+	// 	let font_paths = FontPaths
+	// 	{
+	// 		regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
+	// 		bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
+	// 		italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
+	// 		bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
+	// 	};
+	// 	// Parameters for determining font sizes
+	// 	let font_sizes = FontSizes::new(32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0).unwrap();
+	// 	// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
+	// 	let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
+	// 	// Parameters for determining tab and newline sizes
+	// 	let spacing_options = SpacingOptions::new(7.5, 12.0, 8.0, 5.0).unwrap();
+	// 	// Colors for each type of text
+	// 	let text_colors = TextColors
+	// 	{
+	// 		title_color: (0, 0, 0),
+	// 		header_color: (115, 26, 26),
+	// 		body_color: (0, 0, 0)
+	// 	};
+	// 	// Parameters for determining the size of the page and the text margins on the page
+	// 	let page_size_options = PageSizeOptions::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
+	// 	// Parameters for determining page number behavior
+	// 	let page_number_options = PageNumberOptions::new(HSide::Left, false, 1, 5.0, 4.0).unwrap();
+	// 	// Parameters for table margins / padding and off-row color / scaling
+	// 	let table_options = TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
+	// 	// File path to the background image
+	// 	let background_path = "img/parchment.jpg";
+	// 	// Image transform data for the background image
+	// 	let background_transform = ImageTransform
+	// 	{
+	// 		translate_x: Some(Mm(0.0)),
+	// 		translate_y: Some(Mm(0.0)),
+	// 		scale_x: Some(1.95),
+	// 		scale_y: Some(2.125),
+	// 		..Default::default()
+	// 	};
+	// 	// Creates the spellbook
+	// 	let doc = generate_spellbook
+	// 	(
+	// 		spellbook_name, &spell_list, &font_paths, &font_sizes, &font_scalars, &spacing_options, &text_colors,
+	// 		&page_size_options, &Some(page_number_options), &Some((background_path, &background_transform)),
+	// 		&table_options
+	// 	).unwrap();
+	// 	// Saves the spellbook to a pdf document
+	// 	let _ = save_spellbook(doc, "Spellbook.pdf");
+	// }
 
 	// #[test]
 	// // Creates json files for every existing spell file except the spells in the necronomicon and test folders
@@ -1281,84 +1701,4 @@ Creatures that succeed the saving throw take 20d4 scrunching damage."),
 	// 		}
 	// 	}
 	// }
-
-	// For creating spellbooks for myself and friends while I work on creating a ui to use this library
-	/*#[test]
-	fn create_spellbook()
-	{
-		// Spellbook's name
-		let spellbook_name = "A Spellcaster's Spellbook";
-		// Vec of spells that will be added to spellbook
-		let mut spell_list = Vec::new();
-		// Vec of paths to spell files that will be read from
-		let spell_paths = vec!
-		[
-			"spells/players_handbook_2014/prestidigitation.spell",
-			"spells/players_handbook_2014/mending.spell",
-			"spells/players_handbook_2014/mage_hand.spell",
-			"spells/players_handbook_2014/fire_bolt.spell",
-			"spells/strixhaven/silvery_barbs.spell",
-			"spells/players_handbook_2014/color_spray.spell",
-			"spells/players_handbook_2014/magic_missile.spell",
-			"spells/xanathars_guide_to_everything/ice_knife.spell",
-			"spells/players_handbook_2014/mage_armor.spell",
-			"spells/players_handbook_2014/unseen_servant.spell",
-			"spells/players_handbook_2014/detect_magic.spell",
-			"spells/players_handbook_2014/alarm.spell",
-			"spells/players_handbook_2014/cloud_of_daggers.spell",
-			"spells/players_handbook_2014/scorching_ray.spell"
-		];
-		// Attempt to loop through each spell file and convert it into a spell struct
-		for path in spell_paths
-		{
-			println!("{}", path);
-			// Convert spell file into spell struct and add it to spell_list vec
-			spell_list.push(spells::Spell::from_file(path).unwrap());
-		}
-		// File paths to the fonts needed
-		let font_paths = FontPaths
-		{
-			regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
-			bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
-			italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
-			bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
-		};
-		// Parameters for determining the size of the page and the text margins on the page
-		let page_size_data = PageSizeData::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0).unwrap();
-		// Parameters for determining page number behavior
-		let page_number_data = PageNumberData::new(true, false, 1, 5.0, 4.0).unwrap();
-		// Parameters for determining font sizes, the tab amount, and newline amounts
-		let font_size_data = FontSizes::new(32.0, 24.0, 12.0, 7.5, 12.0, 8.0, 5.0).unwrap();
-		// Colors for each type of text
-		let text_colors = TextColors
-		{
-			title_color: (0, 0, 0),
-			header_color: (115, 26, 26),
-			body_color: (0, 0, 0)
-		};
-		// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
-		let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
-		// Parameters for table margins / padding and off-row color / scaling
-		let table_options = TableOptions::new(16.0, 10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
-		// File path to the background image
-		let background_path = "img/parchment.jpg";
-		// Image transform data for the background image
-		let background_transform = ImageTransform
-		{
-			translate_x: Some(Mm(0.0)),
-			translate_y: Some(Mm(0.0)),
-			scale_x: Some(1.95),
-			scale_y: Some(2.125),
-			..Default::default()
-		};
-		// Creates the spellbook
-		let doc = generate_spellbook
-		(
-			spellbook_name, &spell_list, &font_paths, &page_size_data, &Some(page_number_data),
-			&font_size_data, &text_colors, &font_scalars, &table_options,
-			&Some((background_path, &background_transform))
-		).unwrap();
-		// Saves the spellbook to a pdf document
-		let _ = save_spellbook(doc, "Spellbook.pdf");
-	}*/
 }
