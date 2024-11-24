@@ -94,8 +94,16 @@ impl <'a> FontData<'a>
 	/// - `font_scalars` Scalar values for each font variant so their sizes can be calculated correctly.
 	/// - `spacing_options` Tab sizes and newline sizes for each type of text.
 	/// - `text_colors` RGB color values for each type of text.
-	pub fn new(doc: &PdfDocumentReference, font_paths: FontPaths, font_sizes: FontSizes, font_scalars: FontScalars,
-	spacing_options: SpacingOptions, text_colors: TextColors) -> Result<Self, Box<dyn std::error::Error>>
+	pub fn new
+	(
+		doc: &PdfDocumentReference,
+		font_paths: FontPaths,
+		font_sizes: FontSizes,
+		font_scalars: FontScalars,
+		spacing_options: SpacingOptions,
+		text_colors: TextColors
+	)
+	-> Result<Self, Box<dyn std::error::Error>>
 	{
 		// Read the data from the font files
 		let regular_font_bytes = fs::read(&font_paths.regular)?;

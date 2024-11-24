@@ -5,6 +5,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 use std::fs;
+use std::error::Error;
 
 // use rusttype::point;
 use printpdf::{PdfDocumentReference, PdfDocument, PdfLayerReference, IndirectFontRef, Color, Rgb, Point, Line, PdfPageIndex, Image};
@@ -14,7 +15,7 @@ use crate::spells;
 
 /// All data needed to write spells to a pdf document.
 // Can't derive clone or debug unfortunately.
-struct SpellbookWriter<'a>
+pub struct SpellbookWriter<'a>
 {
 	document: PdfDocumentReference,
 	layers: Vec<PdfLayerReference>,
@@ -45,10 +46,26 @@ impl <'a> SpellbookWriter<'a>
 	/// - `page_size_options` Page width, height, and margin values.
 	/// - `page_number_options` Settings for how page numbers look (`None` for no page numbers).
 	/// - `table_options` Sizing and color options for tables in spell descriptions.
-	pub fn from_options(font_paths: FontPaths, font_sizes: FontSizes, font_scalars: FontScalars,
-	spacing_options: SpacingOptions, text_colors: TextColors, page_size_options: PageSizeOptions,
-	page_number_options: Option<PageNumberOptions>, background: Option<BackgroundImage<'a>>,
-	table_options: TableOptions) -> Self
+	pub fn new
+	(
+		title: &str,
+		font_paths: FontPaths,
+		font_sizes: FontSizes,
+		font_scalars: FontScalars,
+		spacing_options: SpacingOptions,
+		text_colors: TextColors,
+		page_size_options: PageSizeOptions,
+		page_number_options: Option<PageNumberOptions>,
+		background: Option<(&str, ImageTransform)>,
+		table_options: TableOptions
+	)
+	-> Self
+	{
+		todo!()
+	}
+
+	pub fn create_spellbook(&mut self, spell_list: &Vec<spells::Spell>)
+	-> Result<(PdfDocumentReference, Vec<PdfLayerReference>), Box<dyn Error>>
 	{
 		todo!()
 	}
@@ -291,7 +308,8 @@ impl <'a> SpellbookWriter<'a>
 	pub fn table_off_row_color_lines_y_adjust_scalar(&self) -> f32
 	{ self.table_options.off_row_color_lines_y_adjust_scalar() }
 	/// Scalar value to determine the height of off-row color lines.
-	pub fn table_off_row_color_lines_height_scalar(&self) -> f32 { self.table_options.off_row_color_lines_height_scalar() }
+	pub fn table_off_row_color_lines_height_scalar(&self) -> f32
+	{ self.table_options.off_row_color_lines_height_scalar() }
 	// RGB value of the color of the off-row color lines.
 	pub fn table_off_row_color(&self) -> (u8, u8, u8) { self.table_options.off_row_color() }
 

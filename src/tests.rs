@@ -265,7 +265,8 @@ fn players_handbook()
 fn xanathars_guide_to_everything()
 {
 	// Spellbook's name
-	let spellbook_name = "Every Sepll in the Dungeons & Dragons 5th Edition Source Material Book \"Xanathar's Guide to Everything\"";
+	let spellbook_name =
+	"Every Sepll in the Dungeons & Dragons 5th Edition Source Material Book \"Xanathar's Guide to Everything\"";
 	// List of every spell in this folder
 	let spell_list = get_all_spells_in_folder("spells/xanathars_guide_to_everything").unwrap();
 	// File paths to the fonts needed
@@ -325,7 +326,8 @@ fn xanathars_guide_to_everything()
 fn tashas_cauldron_of_everything()
 {
 	// Spellbook's name
-	let spellbook_name = "Every Sepll in the Dungeons & Dragons 5th Edition Source Material Book \"Tasha's Cauldron of Everything\"";
+	let spellbook_name =
+	"Every Sepll in the Dungeons & Dragons 5th Edition Source Material Book \"Tasha's Cauldron of Everything\"";
 	// List of every spell in this folder
 	let spell_list = get_all_spells_in_folder("spells/tashas_cauldron_of_everything").unwrap();
 	// File paths to the fonts needed
@@ -590,7 +592,13 @@ fn necronomicon()
 // // Creates json files for every existing spell file except the spells in the necronomicon and test folders
 // fn convert_to_json()
 // {
-// 	let spell_folders = ["spells/players_handbook_2014", "spells/strixhaven", "spells/tashas_cauldron_of_everything", "spells/xanathars_guide_to_everything"];
+// 	let spell_folders =
+//	[
+//		"spells/players_handbook_2014",
+//		"spells/strixhaven",
+//		"spells/tashas_cauldron_of_everything",
+//		"spells/xanathars_guide_to_everything"
+//	];
 // 	for folder in spell_folders
 // 	{
 // 		// Gets a list of every file in the folder

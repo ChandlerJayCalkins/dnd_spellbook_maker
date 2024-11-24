@@ -53,8 +53,15 @@ impl FontSizes
 	///
 	/// - `Ok` A `FontSizes` object.
 	/// - `Err` An error message saying which parameter was invalid. Occurs for negative values.
-	pub fn new(title_font_size: f32, header_font_size: f32, body_font_size: f32, table_title_font_size: f32,
-	table_body_font_size: f32) -> Result<Self, String>
+	pub fn new
+	(
+		title_font_size: f32,
+		header_font_size: f32,
+		body_font_size: f32, 
+		table_title_font_size: f32,
+		table_body_font_size: f32
+	)
+	-> Result<Self, String>
 	{
 		// Makes sure no values are below 0
 		if title_font_size < 0.0 { Err(String::from("Invalid title_font_size.")) }
@@ -164,8 +171,15 @@ impl SpacingOptions
 	///
 	/// - `Ok` A `SpacingOptions` object.
 	/// - `Err` An error message saying which parameter was invalid. Occurs for negative values.
-	pub fn new(tab_amount: f32, title_newline_amount: f32, header_newline_amount: f32, body_newline_amount: f32,
-	table_title_newline_amount: f32, table_body_newline_amount: f32)
+	pub fn new
+	(
+		tab_amount: f32,
+		title_newline_amount: f32,
+		header_newline_amount: f32,
+		body_newline_amount: f32,
+		table_title_newline_amount: f32,
+		table_body_newline_amount: f32
+	)
 	-> Result<Self, String>
 	{
 		// Makes sure no values are below 0
@@ -244,8 +258,16 @@ impl PageSizeOptions
 	///
 	/// - `Ok` A PageSizeOptions object.
 	/// - `Err` An error message saying which parameter(s) was / were invalid. Occurs for negative or overlapping values.
-	pub fn new(width: f32, height: f32, left_margin: f32, right_margin: f32, top_margin: f32,
-	bottom_margin: f32) -> Result<Self, String>
+	pub fn new
+	(
+		width: f32,
+		height: f32,
+		left_margin: f32,
+		right_margin: f32,
+		top_margin: f32,
+		bottom_margin: f32
+	)
+	-> Result<Self, String>
 	{
 		// Determines the minimum page dimension between width and height
 		let min_dim = width.min(height);
@@ -362,8 +384,19 @@ impl PageNumberOptions
 	///
 	/// - `Ok` A PageNumberOptions object.
 	/// - `Err` An error message saying which parameter was invalid. Occurs for negative margin values.
-	pub fn new(starting_side: HSide, flips_sides: bool, starting_num: i32, font_variant: FontVariant, font_size: f32,
-	newline_amount: f32, color: (u8, u8, u8), side_margin: f32, bottom_margin: f32) -> Result<Self, String>
+	pub fn new
+	(
+		starting_side: HSide,
+		flips_sides: bool,
+		starting_num: i32,
+		font_variant: FontVariant,
+		font_size: f32,
+		newline_amount: f32,
+		color: (u8, u8, u8),
+		side_margin: f32,
+		bottom_margin: f32
+	)
+	-> Result<Self, String>
 	{
 		if font_size < 0.0
 		{
@@ -445,9 +478,17 @@ impl TableOptions
 	///
 	/// - `Ok` A TableOptions object.
 	/// - `Err` An error message saying which parameter was invalid. Occurs for negative values.
-	pub fn new(horizontal_cell_margin: f32, vertical_cell_margin: f32, outer_horizontal_margin: f32,
-	outer_vertical_margin: f32, off_row_color_lines_y_adjust_scalar: f32, off_row_color_lines_height_scalar: f32,
-	off_row_color: (u8, u8, u8)) -> Result<Self, String>
+	pub fn new
+	(
+		horizontal_cell_margin: f32,
+		vertical_cell_margin: f32,
+		outer_horizontal_margin: f32,
+		outer_vertical_margin: f32,
+		off_row_color_lines_y_adjust_scalar: f32,
+		off_row_color_lines_height_scalar: f32,
+		off_row_color: (u8, u8, u8)
+	)
+	-> Result<Self, String>
 	{
 		// Makes sure none of the float values are below 0
 		if horizontal_cell_margin < 0.0 { Err(String::from("Invalid horizontal_cell_margin.")) }

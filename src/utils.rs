@@ -14,13 +14,28 @@ use crate::spellbook_writer::*;
 pub use crate::spells;
 pub use crate::spellbook_options::*;
 
-pub fn generate_spellbook(spellbook_name: &str, spell_list: &Vec<spells::Spell>, font_paths: FontPaths,
-font_sizes: FontSizes, font_scalars: FontScalars, spacing_options: SpacingOptions, text_colors: TextColors,
-page_size_options: PageSizeOptions, page_number_options: Option<PageNumberOptions>,
-background: Option<(&str, ImageTransform)>, table_options: TableOptions)
+pub fn generate_spellbook
+(
+	spellbook_name: &str,
+	spell_list: &Vec<spells::Spell>,
+	font_paths: FontPaths,
+	font_sizes: FontSizes,
+	font_scalars: FontScalars,
+	spacing_options: SpacingOptions,
+	text_colors: TextColors,
+	page_size_options: PageSizeOptions,
+	page_number_options: Option<PageNumberOptions>,
+	background: Option<(&str, ImageTransform)>,
+	table_options: TableOptions
+)
 -> Result<(PdfDocumentReference, Vec<PdfLayerReference>), Box<dyn Error>>
 {
-	todo!()
+	let mut writer = SpellbookWriter::new
+	(
+		spellbook_name, font_paths, font_sizes, font_scalars, spacing_options, text_colors, page_size_options,
+		page_number_options, background, table_options
+	);
+	writer.create_spellbook(spell_list)
 }
 
 /// Saves spellbooks to a file as a pdf document.
@@ -69,7 +84,8 @@ pub fn get_all_spells_in_folder(folder_path: &str) -> Result<Vec<spells::Spell>,
 {
 	// Gets a list of every file in the folder
 	let file_paths = fs::read_dir(folder_path)?;
-	// Create a list of the spells that will be returned (can't figure out how to count the number of files in file_paths to build vec with exact capacity)
+	// Create a list of the spells that will be returned
+	// Can't figure out how to count the number of files in file_paths to build vec with exact capacity
 	let mut spell_list = Vec::new();
 	// Loop through each file in the folder
 	for file_path in file_paths
@@ -110,7 +126,8 @@ pub fn get_all_json_spells_in_folder(folder_path: &str) -> Result<Vec<spells::Sp
 {
 	// Gets a list of every file in the folder
 	let file_paths = fs::read_dir(folder_path)?;
-	// Create a list of the spells that will be returned (can't figure out how to count the number of files in file_paths to build vec with exact capacity)
+	// Create a list of the spells that will be returned
+	// Can't figure out how to count the number of files in file_paths to build vec with exact capacity
 	let mut spell_list = Vec::new();
 	// Loop through each file in the folder
 	for file_path in file_paths
