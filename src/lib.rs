@@ -447,8 +447,8 @@ impl TableOptions
 	///
 	/// - `horizontal_cell_margin` Space between columns in printpdf Mm.
 	/// - `vertical_cell_margin` Space between rows in printpdf Mm.
-	/// - `outer_horizontal_margin` Minimum space between sides of table and edge of pages.
-	/// - `outer_horizontal_margin` Space above and below table from other text / tables.
+	/// - `outer_horizontal_margin` Minimum space between sides of table and sides of pages.
+	/// - `outer_vertical_margin` Space above and below table from other text / tables.
 	/// - `off_row_color_lines_y_adjust_scalar` Scalar value to adjust off-row color lines to line up with the rows vertically.
 	/// - `off_row_color_lines_height_scalar` Scalar value to determine the height of off-row color lines.
 	/// - `off_row_color` RGB value of the color of the off-row color lines.
@@ -486,6 +486,7 @@ impl TableOptions
 	}
 
 	// Getters
+
 	pub fn horizontal_cell_margin(&self) -> f32 { self.horizontal_cell_margin }
 	pub fn vertical_cell_margin(&self) -> f32 { self.vertical_cell_margin }
 	pub fn outer_horizontal_margin(&self) -> f32 { self.outer_horizontal_margin }
@@ -952,7 +953,6 @@ struct SpellbookWriter<'a>
 	page_number_data: Option<PageNumberData<'a>>,
 	background: Option<BackgroundImage<'a>>,
 	table_options: TableOptions,
-	table_title_font_scale: Scale,
 	// Current x position of text
 	x: f32,
 	// Current y position of text
@@ -990,7 +990,6 @@ impl <'a> SpellbookWriter<'a>
 	pub fn page_size_data(&self) -> &PageSizeData { &self.page_size_data }
 	pub fn page_number_data(&self) -> &Option<PageNumberData> { &self.page_number_data }
 	pub fn table_options(&self) -> &TableOptions { &self.table_options }
-	pub fn table_title_font_scale(&self) -> &Scale { &self.table_title_font_scale }
 	/// Current x position of the text
 	pub fn x(&self) -> &f32 { &self.x }
 	/// Current y position of the text
@@ -1204,6 +1203,24 @@ impl <'a> SpellbookWriter<'a>
 			None => None
 		}
 	}
+
+	// Table Getters
+
+	/// Space between columns in printpdf Mm.
+	pub fn table_horizontal_cell_margin(&self) -> f32 { self.table_options.horizontal_cell_margin() }
+	/// Space between rows in printpdf Mm.
+	pub fn table_vertical_cell_margin(&self) -> f32 { self.table_options.vertical_cell_margin() }
+	/// Minimum space between sides of table and sides of pages in printpdf Mm.
+	pub fn table_outer_horizontal_margin(&self) -> f32 { self.table_options.outer_horizontal_margin() }
+	/// Space above and below table from other text / tables in printpdf Mm.
+	pub fn table_outer_vertical_margin(&self) -> f32 { self.table_options.outer_vertical_margin() }
+	/// Scalar value to adjust off-row color lines to line up with the rows vertically.
+	pub fn table_off_row_color_lines_y_adjust_scalar(&self) -> f32
+	{ self.table_options.off_row_color_lines_y_adjust_scalar() }
+	/// Scalar value to determine the height of off-row color lines.
+	pub fn table_off_row_color_lines_height_scalar(&self) -> f32 { self.table_options.off_row_color_lines_height_scalar() }
+	// RGB value of the color of the off-row color lines.
+	pub fn table_off_row_color(&self) -> (u8, u8, u8) { self.table_options.off_row_color() }
 
 	// Font Setters
 
