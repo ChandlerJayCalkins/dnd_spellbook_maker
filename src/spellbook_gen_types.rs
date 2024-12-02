@@ -23,6 +23,16 @@ pub enum TextType
 	TableBody
 }
 
+/// Holds the bytes from inputted font files.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FontBytes
+{
+	pub regular: Vec<u8>,
+	pub bold: Vec<u8>,
+	pub italic: Vec<u8>,
+	pub bold_italic: Vec<u8>
+}
+
 /// Holds references to each font type of a font.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FontRefs
@@ -60,6 +70,7 @@ pub struct FontData<'a>
 {
 	current_font_variant: FontVariant,
 	current_text_type: TextType,
+	font_bytes: FontBytes,
 	font_refs: FontRefs,
 	font_sizes: FontSizes,
 	scalars: FontScalars,
@@ -110,6 +121,15 @@ impl <'a> FontData<'a>
 		let bold_font_bytes = fs::read(&font_paths.bold)?;
 		let italic_font_bytes = fs::read(&font_paths.italic)?;
 		let bold_italic_font_bytes = fs::read(&font_paths.bold_italic)?;
+
+		/// Put the bytes into a struct to reuse them if new font refs need to be created when a new pdf document is created.
+		let font_bytes = FontBytes
+		{
+			regular: regular_font_bytes.clone(),
+			bold: bold_font_bytes.clone(),
+			italic: italic_font_bytes.clone(),
+			bold_italic: bold_italic_font_bytes.clone()
+		};
 
 		// Create font size data for each font variant
 		let regular_font_size_data = match Font::try_from_vec(regular_font_bytes.clone())
@@ -184,6 +204,7 @@ impl <'a> FontData<'a>
 			// Use these defaults for the first two fields since the cover page is what gets created first
 			current_font_variant: FontVariant::Regular,
 			current_text_type: TextType::Title,
+			font_bytes: font_bytes,
 			font_refs: font_refs,
 			font_sizes: font_sizes,
 			scalars: font_scalars,
@@ -198,6 +219,7 @@ impl <'a> FontData<'a>
 
 	pub fn current_font_variant(&self) -> &FontVariant { &self.current_font_variant }
 	pub fn current_text_type(&self) -> &TextType { &self.current_text_type }
+	pub fn bytes(&self) -> &FontBytes { &self.font_bytes }
 	pub fn all_font_refs(&self) -> &FontRefs { &self.font_refs }
 	pub fn all_font_sizes(&self) -> &FontSizes { &self.font_sizes }
 	pub fn all_scalars(&self) -> &FontScalars { &self.scalars }
