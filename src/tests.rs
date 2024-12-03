@@ -8,7 +8,6 @@ use std::fs;
 use std::path::Path;
 
 use crate::utils::*;
-
 // Makes sure that creating valid spell files works
 #[test]
 fn create_spell_files()
@@ -258,6 +257,76 @@ fn players_handbook()
 	// Saves the spellbooks as pdf documents
 	let _ = save_spellbook(doc_1, "Player's Handbook 2014 Spells 1.pdf").unwrap();
 	let _ = save_spellbook(doc_2, "Player's Handbook 2014 Spells 2.pdf").unwrap();
+}
+
+#[test]
+fn idk()
+{
+	use crate::spellbook_gen_types::*;
+	use printpdf::PdfDocument;
+
+	// File paths to the fonts needed
+	let font_paths = FontPaths
+	{
+		regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
+		bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
+		italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
+		bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
+	};
+	// Parameters for determining font sizes
+	let font_sizes = FontSizes::new(32.0, 24.0, 12.0, 16.0, 12.0).unwrap();
+	// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
+	let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
+	// Parameters for determining tab and newline sizes
+	let spacing_options = SpacingOptions::new(7.5, 12.0, 8.0, 5.0, 6.4, 5.0).unwrap();
+	// Colors for each type of text
+	let text_colors = TextColors
+	{
+		title_color: (0, 0, 0),
+		header_color: (115, 26, 26),
+		body_color: (0, 0, 0),
+		table_title_color: (0, 0, 0),
+		table_body_color: (0, 0, 0)
+	};
+
+	// Parameters for determining page number behavior
+	let page_number_options = PageNumberOptions::new
+	(HSide::Left, false, 1, FontVariant::Regular, 12.0, 5.0, (0, 0, 0), 5.0, 4.0).unwrap();
+
+	// Create PDF documents
+    let (doc_1, _, _) = PdfDocument::new
+	(
+		"idk",
+		Mm(210.0),
+		Mm(297.0),
+		"Cover Layer"
+	);
+
+	// Create PDF document
+    let (doc_2, _, _) = PdfDocument::new
+	(
+		"idk",
+		Mm(210.0),
+		Mm(297.0),
+		"Cover Layer"
+	);
+
+	// Combined data for all font options along with font references to the pdf doc
+	let mut font_data = FontData::new
+	(
+		&doc_1,
+		font_paths,
+		font_sizes,
+		font_scalars,
+		spacing_options,
+		text_colors
+	).unwrap();
+	
+	// Page number options combined into all data needed along with font reference to the pdf doc
+	let mut page_number_data = PageNumberData::new(page_number_options, &font_data);
+
+	// Test if font references in font data and page number data are the same
+	assert_eq!(*font_data.get_font_ref_for(FontVariant::Regular), *page_number_data.font_ref());
 }
 
 // Create a spellbook with every spell from the xanathar's guide to everything source book

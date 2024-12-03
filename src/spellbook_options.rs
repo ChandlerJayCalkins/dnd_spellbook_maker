@@ -354,7 +354,7 @@ pub struct PageNumberOptions
 {
 	starting_side: HSide,
 	flips_sides: bool,
-	starting_num: i32,
+	starting_num: i64,
 	font_variant: FontVariant,
 	font_size: f32,
 	newline_amount: f32,
@@ -388,7 +388,7 @@ impl PageNumberOptions
 	(
 		starting_side: HSide,
 		flips_sides: bool,
-		starting_num: i32,
+		starting_num: i64,
 		font_variant: FontVariant,
 		font_size: f32,
 		newline_amount: f32,
@@ -437,7 +437,7 @@ impl PageNumberOptions
 	// Getters
 	pub fn starting_side(&self) -> HSide { self.starting_side }
 	pub fn flips_sides(&self) -> bool { self.flips_sides }
-	pub fn starting_num(&self) -> i32 { self.starting_num }
+	pub fn starting_num(&self) -> i64 { self.starting_num }
 	pub fn font_variant(self) -> FontVariant { self.font_variant }
 	pub fn font_size(&self) -> f32 { self.font_size }
 	pub fn newline_amount(&self) -> f32 { self.newline_amount }

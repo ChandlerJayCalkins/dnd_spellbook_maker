@@ -14,30 +14,6 @@ use crate::spellbook_writer::*;
 pub use crate::spells;
 pub use crate::spellbook_options::*;
 
-pub fn generate_spellbook
-(
-	spellbook_name: &str,
-	spell_list: &Vec<spells::Spell>,
-	font_paths: FontPaths,
-	font_sizes: FontSizes,
-	font_scalars: FontScalars,
-	spacing_options: SpacingOptions,
-	text_colors: TextColors,
-	page_size_options: PageSizeOptions,
-	page_number_options: Option<PageNumberOptions>,
-	background: Option<(&str, ImageTransform)>,
-	table_options: TableOptions
-)
--> Result<(PdfDocumentReference, Vec<PdfLayerReference>), Box<dyn Error>>
-{
-	let mut writer = SpellbookWriter::new
-	(
-		spellbook_name, font_paths, font_sizes, font_scalars, spacing_options, text_colors, page_size_options,
-		page_number_options, background, table_options
-	);
-	writer.create_spellbook(spell_list)
-}
-
 /// Saves spellbooks to a file as a pdf document.
 ///
 /// #### Parameters

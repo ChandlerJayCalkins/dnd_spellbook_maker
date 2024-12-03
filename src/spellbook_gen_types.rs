@@ -5,6 +5,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 use std::fs;
+use std::{rc::Rc, cell::{RefCell, Ref}};
 
 pub use image::DynamicImage;
 pub use rusttype::{Font, Scale};
@@ -229,6 +230,18 @@ impl <'a> FontData<'a>
 	pub fn all_text_colors(&self) -> &TextColors { &self.text_colors }
 	pub fn tab_amount(&self) -> f32 { self.spacing_options.tab_amount() }
 
+	/// Returns the font ref for a specific font variant.
+	pub fn get_font_ref_for(&self, font_variant: FontVariant) -> &IndirectFontRef
+	{
+		match font_variant
+		{
+			FontVariant::Regular => &self.font_refs.regular,
+			FontVariant::Bold => &self.font_refs.bold,
+			FontVariant::Italic => &self.font_refs.italic,
+			FontVariant::BoldItalic => &self.font_refs.bold_italic
+		}
+	}
+
 	/// Returns the font ref to the current font variant bring used.
 	pub fn current_font_ref(&self) -> &IndirectFontRef
 	{
@@ -263,6 +276,18 @@ impl <'a> FontData<'a>
 			FontVariant::Bold => self.scalars.bold_scalar(),
 			FontVariant::Italic => self.scalars.italic_scalar(),
 			FontVariant::BoldItalic => self.scalars.bold_italic_scalar()
+		}
+	}
+
+	/// Returns size data for a specific font variant.
+	pub fn get_size_data_for(&self, font_variant: FontVariant) -> &Font
+	{
+		match font_variant
+		{
+			FontVariant::Regular => &self.size_data.regular,
+			FontVariant::Bold => &self.size_data.bold,
+			FontVariant::Italic => &self.size_data.italic,
+			FontVariant::BoldItalic => &self.size_data.bold_italic
 		}
 	}
 
@@ -381,9 +406,9 @@ pub struct PageNumberData<'a>
 {
 	options: PageNumberOptions,
 	current_side: HSide,
-	font_ref: &'a IndirectFontRef,
+	font_ref: IndirectFontRef,
 	font_scalar: f32,
-	font_size_data: &'a Font<'a>,
+	font_size_data: Font<'a>,
 	font_scale: Scale
 }
 
@@ -395,34 +420,63 @@ impl <'a> PageNumberData<'a>
 	///
 	/// - `options` Options for how the page numbers should be displayed.
 	/// - `font_data` Data for how fonts are displayed in the spellbook.
-	fn new(options: PageNumberOptions, font_data: &'a FontData<'_>) -> Self
+	pub fn new(options: PageNumberOptions, font_data: &FontData<'_>)
+	-> Result<Self, Box<dyn std::error::Error>>
 	{
 		// Gets copies of all of the font data the page numbers need based on the font variant they will use.
 		let (font_ref, font_scalar, font_size_data) = match options.font_variant()
 		{
 			FontVariant::Regular =>
 			(
-				&font_data.all_font_refs().regular,
+				font_data.all_font_refs().regular.clone(),
 				font_data.all_scalars().regular_scalar(),
-				&font_data.all_size_data().regular
+				// Create new font size data for this struct since it has problems with holding references
+				// to font_data's fields
+				match Font::try_from_vec(font_data.bytes().regular.clone())
+				{
+					Some(d) => d,
+					None => return Err(Box::new(BytesToFontSizeDataConversionError(String::from
+						("Could not convert regular font size data from bytes."))))
+				}
 			),
 			FontVariant::Bold =>
 			(
-				&font_data.all_font_refs().bold,
+				font_data.all_font_refs().bold.clone(),
 				font_data.all_scalars().bold_scalar(),
-				&font_data.all_size_data().bold
+				// Create new font size data for this struct since it has problems with holding references
+				// to font_data's fields
+				match Font::try_from_vec(font_data.bytes().bold.clone())
+				{
+					Some(d) => d,
+					None => return Err(Box::new(BytesToFontSizeDataConversionError(String::from
+						("Could not convert bold font size data from bytes."))))
+				}
 			),
 			FontVariant::Italic =>
 			(
-				&font_data.all_font_refs().italic,
+				font_data.all_font_refs().italic.clone(),
 				font_data.all_scalars().italic_scalar(),
-				&font_data.all_size_data().italic
+				// Create new font size data for this struct since it has problems with holding references
+				// to font_data's fields
+				match Font::try_from_vec(font_data.bytes().italic.clone())
+				{
+					Some(d) => d,
+					None => return Err(Box::new(BytesToFontSizeDataConversionError(String::from
+						("Could not convert italic font size data from bytes."))))
+				}
 			),
 			FontVariant::BoldItalic =>
 			(
-				&font_data.all_font_refs().bold_italic,
+				font_data.all_font_refs().bold_italic.clone(),
 				font_data.all_scalars().bold_italic_scalar(),
-				&font_data.all_size_data().bold_italic
+				// Create new font size data for this struct since it has problems with holding references
+				// to font_data's fields
+				match Font::try_from_vec(font_data.bytes().bold_italic.clone())
+				{
+					Some(d) => d,
+					None => return Err(Box::new(BytesToFontSizeDataConversionError(String::from
+						("Could not convert bold_italic font size data from bytes."))))
+				}
 			)
 		};
 
@@ -430,7 +484,7 @@ impl <'a> PageNumberData<'a>
 		let font_scale = Scale::uniform(options.font_size());
 		
 		// Construct and return
-		Self
+		Ok(Self
 		{
 			options: options,
 			current_side: options.starting_side(),
@@ -438,14 +492,14 @@ impl <'a> PageNumberData<'a>
 			font_scalar: font_scalar,
 			font_size_data: font_size_data,
 			font_scale: font_scale
-		}
+		})
 	}
 
 	// Getters
 
 	pub fn starting_side(&self) -> HSide { self.options.starting_side() }
 	pub fn flips_sides(&self) -> bool { self.options.flips_sides() }
-	pub fn starting_num(&self) -> i32 { self.options.starting_num() }
+	pub fn starting_num(&self) -> i64 { self.options.starting_num() }
 	pub fn font_variant(&self) -> FontVariant { self.options.font_variant() }
 	pub fn font_size(&self) -> f32 { self.options.font_size() }
 	pub fn newline_amount(&self) -> f32 { self.options.newline_amount() }
@@ -454,9 +508,9 @@ impl <'a> PageNumberData<'a>
 	pub fn bottom_margin(&self) -> f32 { self.options.bottom_margin() }
 	pub fn options(&self) -> &PageNumberOptions { &self.options }
 	pub fn current_side(&self) -> HSide { self.current_side }
-	pub fn font_ref(&self) -> &IndirectFontRef { self.font_ref }
+	pub fn font_ref(&self) -> &IndirectFontRef { &self.font_ref }
 	pub fn font_scalar(&self) -> f32 { self.font_scalar }
-	pub fn font_size_data(&self) -> &Font { self.font_size_data }
+	pub fn font_size_data(&self) -> &Font { &self.font_size_data }
 	pub fn font_scale(&self) -> &Scale { &self.font_scale }
 
 	// Setters
@@ -466,9 +520,9 @@ impl <'a> PageNumberData<'a>
 }
 
 /// Holds the background image and the transform data for it (positioning, size, rotation, etc.)
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct BackgroundImage<'a>
+#[derive(Clone, Debug, PartialEq)]
+pub struct BackgroundImage
 {
-	pub image: &'a DynamicImage,
-	pub transform: &'a ImageTransform
+	pub image: DynamicImage,
+	pub transform: ImageTransform
 }
