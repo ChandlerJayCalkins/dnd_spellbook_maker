@@ -35,6 +35,53 @@ pub struct SpellbookWriter<'a>
 
 impl <'a> SpellbookWriter<'a>
 {
+	/// # Parameters
+	///
+	/// - `title` The title of the first spellbook written by this writer.
+	/// - `font_paths` File paths to all of the font variants (regular, bold, italic, bold-italic).
+	/// - `font_sizes` Font sizes for each type of text in the spellbook (except page numbers).
+	/// - `font_scalars` Scalar values to make sure text width can be calculated correctly for each font variant.
+	/// - `spacing_options` Tab size and newline sizes for each type of text (except page numbers).
+	/// - `text_colors` The RGB color values for each type of text (except page numbers).
+	/// - `page_size_options` Page width, height, and margin values.
+	/// - `page_number_options` Settings for how page numbers look (`None` for no page numbers).
+	/// - `background` An image filepath to use as backgrounds for each page and transform data to make it fit on
+	/// the page the way you want.
+	/// - `table_options` Sizing and color options for tables in spell descriptions.
+	pub fn create_spellbook
+	(
+		title: &str,
+		spells: Vec<spells::Spell>,
+		font_paths: FontPaths,
+		font_sizes: FontSizes,
+		font_scalars: FontScalars,
+		spacing_options: SpacingOptions,
+		text_colors: TextColors,
+		page_size_options: PageSizeOptions,
+		page_number_options: Option<PageNumberOptions>,
+		background: Option<(&str, ImageTransform)>,
+		table_options: TableOptions
+	)
+	-> Result<(PdfDocumentReference, Vec<PdfLayerReference>), Box<dyn Error>>
+	{
+		// Construct a spellbook writer
+		let mut spellbook_writer = SpellbookWriter::new
+		(
+			title,
+			font_paths,
+			font_sizes,
+			font_scalars,
+			spacing_options,
+			text_colors,
+			page_size_options,
+			page_number_options,
+			background,
+			table_options
+		)?;
+
+		Ok((spellbook_writer.document, spellbook_writer.layers))
+	}
+
 	/// Constructor
 	///
 	/// # Parameters
@@ -50,7 +97,7 @@ impl <'a> SpellbookWriter<'a>
 	/// - `background` An image filepath to use as backgrounds for each page and transform data to make it fit on
 	/// the page the way you want.
 	/// - `table_options` Sizing and color options for tables in spell descriptions.
-	pub fn new
+	fn new
 	(
 		title: &str,
 		font_paths: FontPaths,
@@ -118,38 +165,6 @@ impl <'a> SpellbookWriter<'a>
 			x: page_size_data.x_min(),
 			y: page_size_data.y_max()
 		})
-	}
-
-	/// Resets the spellbook writer to be empty and prepared to write a new spellbook with the given title.
-	pub fn new_book(&mut self, title: &str)
-	{
-		// Gets a new document and title page.
-		let (doc, cover_layer_ref) = Self::create_new_doc(title, self.page_width(), self.page_height());
-
-		// Assign starting values to pdf document fields
-		// (don't need to reset fonts because of their implementation)
-		self.document = doc;
-		self.layers = vec![cover_layer_ref];
-		self.current_layer_index = 1;
-	}
-
-	/// Adds a spell to the end of the current spellbook.
-	pub fn add_spell(&mut self, spell: &spells::Spell) -> Result<(), Box<dyn Error>>
-	{
-		todo!()
-	}
-
-	/// Adds spells to the end of the current spellbook in the order they're given.
-	pub fn add_spells(&mut self, spell_list: &Vec<spells::Spell>) -> Result<(), Box<dyn Error>>
-	{
-		todo!()
-	}
-
-	/// Returns a `printpdf::PdfDocumentReference` and a vec of `printpdf::PdfLayerReference`s containing the
-	/// spellbook.
-	pub fn get_spellbook(&self) -> (PdfDocumentReference, Vec<PdfLayerReference>)
-	{
-		todo!()
 	}
 
 	/// Creates a new pdf document with a given title and width / height dimensions and returns the reference to

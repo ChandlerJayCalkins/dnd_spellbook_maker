@@ -14,6 +14,51 @@ use crate::spellbook_writer::*;
 pub use crate::spells;
 pub use crate::spellbook_options::*;
 
+/// # Parameters
+///
+/// - `title` The title of the first spellbook written by this writer.
+/// - `font_paths` File paths to all of the font variants (regular, bold, italic, bold-italic).
+/// - `font_sizes` Font sizes for each type of text in the spellbook (except page numbers).
+/// - `font_scalars` Scalar values to make sure text width can be calculated correctly for each font variant.
+/// - `spacing_options` Tab size and newline sizes for each type of text (except page numbers).
+/// - `text_colors` The RGB color values for each type of text (except page numbers).
+/// - `page_size_options` Page width, height, and margin values.
+/// - `page_number_options` Settings for how page numbers look (`None` for no page numbers).
+/// - `background` An image filepath to use as backgrounds for each page and transform data to make it fit on
+/// the page the way you want.
+/// - `table_options` Sizing and color options for tables in spell descriptions.
+pub fn create_spellbook
+(
+	title: &str,
+	spells: Vec<spells::Spell>,
+	font_paths: FontPaths,
+	font_sizes: FontSizes,
+	font_scalars: FontScalars,
+	spacing_options: SpacingOptions,
+	text_colors: TextColors,
+	page_size_options: PageSizeOptions,
+	page_number_options: Option<PageNumberOptions>,
+	background: Option<(&str, ImageTransform)>,
+	table_options: TableOptions
+)
+-> Result<(PdfDocumentReference, Vec<PdfLayerReference>), Box<dyn Error>>
+{
+	SpellbookWriter::create_spellbook
+	(
+		title,
+		spells,
+		font_paths,
+		font_sizes,
+		font_scalars,
+		spacing_options,
+		text_colors,
+		page_size_options,
+		page_number_options,
+		background,
+		table_options
+	)
+}
+
 /// Saves spellbooks to a file as a pdf document.
 ///
 /// #### Parameters

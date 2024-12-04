@@ -8,6 +8,10 @@ use std::fs;
 use std::path::Path;
 
 use crate::utils::*;
+
+#[test]
+fn idk() {}
+
 // Makes sure that creating valid spell files works
 #[test]
 fn create_spell_files()
@@ -241,92 +245,40 @@ fn players_handbook()
 	};
 	// Parameters for table margins / padding and off-row color / scaling
 	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
-	// Creates the spellbooks
-	let (doc_1, _) = generate_spellbook
+	// Create a spellbook with the first half of the spells
+	let (doc_1, _) = create_spellbook
 	(
-		spellbook_name_1, &spell_list_1, font_paths.clone(), font_sizes, font_scalars, spacing_options, text_colors,
-		page_size_options, Some(page_number_options), Some((background_path, background_transform)),
+		spellbook_name_1,
+		spell_list_1,
+		font_paths.clone(),
+		font_sizes,
+		font_scalars,
+		spacing_options,
+		text_colors,
+		page_size_options,
+		Some(page_number_options),
+		Some((background_path, background_transform)),
 		table_options
 	).unwrap();
-	let (doc_2, _) = generate_spellbook
-	(
-		spellbook_name_2, &spell_list_2, font_paths, font_sizes, font_scalars, spacing_options, text_colors,
-		page_size_options, Some(page_number_options), Some((background_path, background_transform)),
-		table_options
-	).unwrap();
-	// Saves the spellbooks as pdf documents
+	// Save the first spellbook to a file
 	let _ = save_spellbook(doc_1, "Player's Handbook 2014 Spells 1.pdf").unwrap();
-	let _ = save_spellbook(doc_2, "Player's Handbook 2014 Spells 2.pdf").unwrap();
-}
-
-#[test]
-fn idk()
-{
-	use crate::spellbook_gen_types::*;
-	use printpdf::PdfDocument;
-
-	// File paths to the fonts needed
-	let font_paths = FontPaths
-	{
-		regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
-		bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
-		italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
-		bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
-	};
-	// Parameters for determining font sizes
-	let font_sizes = FontSizes::new(32.0, 24.0, 12.0, 16.0, 12.0).unwrap();
-	// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
-	let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515).unwrap();
-	// Parameters for determining tab and newline sizes
-	let spacing_options = SpacingOptions::new(7.5, 12.0, 8.0, 5.0, 6.4, 5.0).unwrap();
-	// Colors for each type of text
-	let text_colors = TextColors
-	{
-		title_color: (0, 0, 0),
-		header_color: (115, 26, 26),
-		body_color: (0, 0, 0),
-		table_title_color: (0, 0, 0),
-		table_body_color: (0, 0, 0)
-	};
-
-	// Parameters for determining page number behavior
-	let page_number_options = PageNumberOptions::new
-	(HSide::Left, false, 1, FontVariant::Regular, 12.0, 5.0, (0, 0, 0), 5.0, 4.0).unwrap();
-
-	// Create PDF documents
-    let (doc_1, _, _) = PdfDocument::new
+	// Create a spellbook with the second half of the spells
+	let (doc_2, _) = create_spellbook
 	(
-		"idk",
-		Mm(210.0),
-		Mm(297.0),
-		"Cover Layer"
-	);
-
-	// Create PDF document
-    let (doc_2, _, _) = PdfDocument::new
-	(
-		"idk",
-		Mm(210.0),
-		Mm(297.0),
-		"Cover Layer"
-	);
-
-	// Combined data for all font options along with font references to the pdf doc
-	let mut font_data = FontData::new
-	(
-		&doc_1,
+		spellbook_name_2,
+		spell_list_2,
 		font_paths,
 		font_sizes,
 		font_scalars,
 		spacing_options,
-		text_colors
+		text_colors,
+		page_size_options,
+		Some(page_number_options),
+		Some((background_path, background_transform)),
+		table_options
 	).unwrap();
-	
-	// Page number options combined into all data needed along with font reference to the pdf doc
-	let mut page_number_data = PageNumberData::new(page_number_options, &font_data);
-
-	// Test if font references in font data and page number data are the same
-	assert_eq!(*font_data.get_font_ref_for(FontVariant::Regular), *page_number_data.font_ref());
+	// Save the second spellbook to a file
+	let _ = save_spellbook(doc_2, "Player's Handbook 2014 Spells 2.pdf").unwrap();
 }
 
 // Create a spellbook with every spell from the xanathar's guide to everything source book
@@ -379,15 +331,23 @@ fn xanathars_guide_to_everything()
 	};
 	// Parameters for table margins / padding and off-row color / scaling
 	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
-	// Creates the spellbook
-	let (doc, _) = generate_spellbook
+	// Create the spellbook
+	let (doc, _) = create_spellbook
 	(
-		spellbook_name, &spell_list, font_paths, font_sizes, font_scalars, spacing_options, text_colors,
-		page_size_options, Some(page_number_options), Some((background_path, background_transform)),
+		spellbook_name,
+		spell_list,
+		font_paths,
+		font_sizes,
+		font_scalars,
+		spacing_options,
+		text_colors,
+		page_size_options,
+		Some(page_number_options),
+		Some((background_path, background_transform)),
 		table_options
 	).unwrap();
-	// Saves the spellbook to a pdf document
-	let _ = save_spellbook(doc, "Xanathar's Guide to Everything Spells.pdf");
+	// Save the spellbook to a file
+	let _ = save_spellbook(doc, "Xanathar's Guide to Everything Spells.pdf").unwrap();
 }
 
 // Create a spellbook with every spell from the tasha's cauldron of everything source book
@@ -440,15 +400,23 @@ fn tashas_cauldron_of_everything()
 	};
 	// Parameters for table margins / padding and off-row color / scaling
 	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
-	// Creates the spellbook
-	let (doc, _) = generate_spellbook
+	// Create the spellbook
+	let (doc, _) = create_spellbook
 	(
-		spellbook_name, &spell_list, font_paths, font_sizes, font_scalars, spacing_options, text_colors,
-		page_size_options, Some(page_number_options), Some((background_path, background_transform)),
+		spellbook_name,
+		spell_list,
+		font_paths,
+		font_sizes,
+		font_scalars,
+		spacing_options,
+		text_colors,
+		page_size_options,
+		Some(page_number_options),
+		Some((background_path, background_transform)),
 		table_options
 	).unwrap();
-	// Saves the spellbook to a pdf document
-	let _ = save_spellbook(doc, "Tasha's Cauldron of Everything Spells.pdf");
+	// Save the spellbook to a file
+	let _ = save_spellbook(doc, "Tasha's Cauldron of Everything Spells.pdf").unwrap();
 }
 
 // Create a spellbook with every spell from the strixhaven: a curriculum of chaos source book
@@ -501,15 +469,23 @@ fn strixhaven()
 	};
 	// Parameters for table margins / padding and off-row color / scaling
 	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
-	// Creates the spellbook
-	let (doc, _) = generate_spellbook
+	// Create the spellbook
+	let (doc, _) = create_spellbook
 	(
-		spellbook_name, &spell_list, font_paths, font_sizes, font_scalars, spacing_options, text_colors,
-		page_size_options, Some(page_number_options), Some((background_path, background_transform)),
+		spellbook_name,
+		spell_list,
+		font_paths,
+		font_sizes,
+		font_scalars,
+		spacing_options,
+		text_colors,
+		page_size_options,
+		Some(page_number_options),
+		Some((background_path, background_transform)),
 		table_options
 	).unwrap();
-	// Saves the spellbook to a pdf document
-	let _ = save_spellbook(doc, "Strixhaven A Curriculum of Chaos Spells.pdf");
+	// Save the spellbook to a file
+	let _ = save_spellbook(doc, "Strixhaven A Curriculum of Chaos Spells.pdf").unwrap();
 }
 
 // Stress testing the text formatting
@@ -562,19 +538,28 @@ fn necronomicon()
 	};
 	// Parameters for table margins / padding and off-row color / scaling
 	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
-	// Creates the spellbook
-	let (doc, _) = generate_spellbook
+	// Create the spellbook
+	let (doc, _) = create_spellbook
 	(
-		spellbook_name, &spell_list, font_paths, font_sizes, font_scalars, spacing_options, text_colors,
-		page_size_options, Some(page_number_options), None, table_options
+		spellbook_name,
+		spell_list,
+		font_paths,
+		font_sizes,
+		font_scalars,
+		spacing_options,
+		text_colors,
+		page_size_options,
+		Some(page_number_options),
+		Some((background_path, background_transform)),
+		table_options
 	).unwrap();
-	// Saves the spellbook to a pdf document
-	let _ = save_spellbook(doc, "NECRONOMICON.pdf");
+	// Save the spellbook to a file
+	let _ = save_spellbook(doc, "NECRONOMICON.pdf").unwrap();
 }
 
 // For creating spellbooks for myself and friends while I work on creating a ui to use this library
 // #[test]
-// fn create_spellbook()
+// fn personal_spellbook()
 // {
 // 	// Spellbook's name
 // 	let spellbook_name = "A Spellcaster's Spellbook";
@@ -646,15 +631,23 @@ fn necronomicon()
 //	};
 //	// Parameters for table margins / padding and off-row color / scaling
 //	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
-// 	// Creates the spellbook
-// 	let (doc, _) = generate_spellbook
-// 	(
-// 		spellbook_name, &spell_list, &font_paths, &font_sizes, &font_scalars, &spacing_options, &text_colors,
-// 		&page_size_options, &Some(page_number_options), &Some((background_path, &background_transform)),
-// 		&table_options
-// 	).unwrap();
-// 	// Saves the spellbook to a pdf document
-// 	let _ = save_spellbook(doc, "Spellbook.pdf");
+	// Create the spellbook
+//	let (doc, _) = create_spellbook
+//	(
+//		spellbook_name,
+//		spell_list,
+//		font_paths,
+//		font_sizes,
+//		font_scalars,
+//		spacing_options,
+//		text_colors,
+//		page_size_options,
+//		Some(page_number_options),
+//		Some((background_path, background_transform)),
+//		table_options
+//	).unwrap();
+//	// Save the spellbook to a file
+//	let _ = save_spellbook(doc, "Spellbook.pdf").unwrap();
 // }
 
 // #[test]

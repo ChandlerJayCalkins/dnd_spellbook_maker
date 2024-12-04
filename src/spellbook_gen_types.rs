@@ -6,6 +6,7 @@
 
 use std::fs;
 use std::{rc::Rc, cell::{RefCell, Ref}};
+use std::error::Error;
 
 pub use image::DynamicImage;
 pub use rusttype::{Font, Scale};
@@ -230,6 +231,30 @@ impl <'a> FontData<'a>
 	pub fn all_text_colors(&self) -> &TextColors { &self.text_colors }
 	pub fn tab_amount(&self) -> f32 { self.spacing_options.tab_amount() }
 
+	/// Returns a vec of bytes that were used to construct certain fields for a specific font variant.
+	pub fn get_bytes_for(&self, font_variant: FontVariant) -> &Vec<u8>
+	{
+		match font_variant
+		{
+			FontVariant::Regular => &self.font_bytes.regular,
+			FontVariant::Bold => &self.font_bytes.bold,
+			FontVariant::Italic => &self.font_bytes.italic,
+			FontVariant::BoldItalic => &self.font_bytes.bold_italic
+		}
+	}
+
+	/// Returns a vec of bytes that were used to construct certain fields for the current font variant.
+	pub fn current_bytes(&self) -> &Vec<u8>
+	{
+		match self.current_font_variant
+		{
+			FontVariant::Regular => &self.font_bytes.regular,
+			FontVariant::Bold => &self.font_bytes.bold,
+			FontVariant::Italic => &self.font_bytes.italic,
+			FontVariant::BoldItalic => &self.font_bytes.bold_italic
+		}
+	}
+
 	/// Returns the font ref for a specific font variant.
 	pub fn get_font_ref_for(&self, font_variant: FontVariant) -> &IndirectFontRef
 	{
@@ -254,6 +279,19 @@ impl <'a> FontData<'a>
 		}
 	}
 
+	/// Returns the font size of a specific text type.
+	pub fn get_font_size_for(&self, text_type: TextType) -> f32
+	{
+		match text_type
+		{
+			TextType::Title => self.font_sizes.title_font_size(),
+			TextType::Header => self.font_sizes.header_font_size(),
+			TextType::Body => self.font_sizes.body_font_size(),
+			TextType::TableTitle => self.font_sizes.table_title_font_size(),
+			TextType::TableBody => self.font_sizes.table_body_font_size()
+		}
+	}
+
 	/// Returns the font size of the current text type bring used.
 	pub fn current_font_size(&self) -> f32
 	{
@@ -264,6 +302,18 @@ impl <'a> FontData<'a>
 			TextType::Body => self.font_sizes.body_font_size(),
 			TextType::TableTitle => self.font_sizes.table_title_font_size(),
 			TextType::TableBody => self.font_sizes.table_body_font_size()
+		}
+	}
+
+	/// Returns the scalar value for a specific font variant.
+	pub fn get_scalar_for(&self, font_variant: FontVariant) -> f32
+	{
+		match font_variant
+		{
+			FontVariant::Regular => self.scalars.regular_scalar(),
+			FontVariant::Bold => self.scalars.bold_scalar(),
+			FontVariant::Italic => self.scalars.italic_scalar(),
+			FontVariant::BoldItalic => self.scalars.bold_italic_scalar()
 		}
 	}
 
@@ -303,6 +353,19 @@ impl <'a> FontData<'a>
 		}
 	}
 
+	/// Returns the font scale for a specific text type.
+	pub fn get_font_scale_for(&self, text_type: TextType) -> &Scale
+	{
+		match text_type
+		{
+			TextType::Title => &self.scales.title,
+			TextType::Header => &self.scales.header,
+			TextType::Body => &self.scales.body,
+			TextType::TableTitle => &self.scales.table_title,
+			TextType::TableBody => &self.scales.table_body
+		}
+	}
+
 	/// Returns the font scale of the current text type bring used.
 	pub fn current_font_scale(&self) -> &Scale
 	{
@@ -313,6 +376,19 @@ impl <'a> FontData<'a>
 			TextType::Body => &self.scales.body,
 			TextType::TableTitle => &self.scales.table_title,
 			TextType::TableBody => &self.scales.table_body
+		}
+	}
+
+	/// Returns the newline amount for a specific text type.
+	pub fn get_newline_amount_for(&self, text_type: TextType) -> f32
+	{
+		match text_type
+		{
+			TextType::Title => self.spacing_options.title_newline_amount(),
+			TextType::Header => self.spacing_options.header_newline_amount(),
+			TextType::Body => self.spacing_options.body_newline_amount(),
+			TextType::TableTitle => self.spacing_options.table_title_newline_amount(),
+			TextType::TableBody => self.spacing_options.table_body_newline_amount()
 		}
 	}
 
@@ -329,7 +405,20 @@ impl <'a> FontData<'a>
 		}
 	}
 
-	/// Returns the font color of the current text type being used.
+	/// Returns the font the RGB values for the font color of a specific text type.
+	pub fn get_text_color_for(&self, text_type: TextType) -> &(u8, u8, u8)
+	{
+		match text_type
+		{
+			TextType::Title => &self.text_colors.title_color,
+			TextType::Header => &self.text_colors.header_color,
+			TextType::Body => &self.text_colors.body_color,
+			TextType::TableTitle => &self.text_colors.table_title_color,
+			TextType::TableBody => &self.text_colors.table_body_color
+		}
+	}
+
+	/// Returns the RGB values for the font color of the current text type being used.
 	pub fn current_text_color(&self) -> &(u8, u8, u8)
 	{
 		match self.current_text_type
