@@ -20,11 +20,13 @@ trait SpellFileString: Sized
 	/// Tries to turn a string from a spell file into an object.
 	///
 	/// # Parameters
+	///
 	/// - `s` Str of a field value from a spell file to convert into an object.
 	/// - `file_name` The name of the file that `s` is from (for producing errors).
 	/// - `field` The field that s was a value of (for producing errors).
 	///
 	/// # Output
+	///
 	/// - `Ok` An instance of the object this trait was implemented for.
 	/// - `Err` Any errors that occurred while processing.
 	fn from_spell_file_string(s: &str, file_name: &str, field: &str) -> Result<Self, Box<SpellFileError>>;
@@ -1479,9 +1481,11 @@ impl Spell
 	/// Constructs a spell object from a json file.
 	///
 	/// # Parameters
+	///
 	/// - `file_path` The path to the json file to create the spell from.
 	///
 	/// # Output
+	///
 	/// - `Ok` A spell object.
 	/// - `Err` Any errors that occured.
 	pub fn from_json_file(file_path: &str) -> Result<Self, Box<dyn error::Error>>
@@ -1495,10 +1499,12 @@ impl Spell
 	/// Saves a spell to a json file.
 	///
 	/// # Parameters
+	///
 	/// - `file_path` The file path to save the spell to.
 	/// - `compress` True to put all the data onto one line, false to make the file more human readable.
 	///
 	/// # Output
+	///
 	/// - `Ok` Nothing if there were no errors.
 	/// - `Err` Any errors that occurred.
 	pub fn to_json_file(&self, file_path: &str, compress: bool) -> Result<(), Box<dyn error::Error>>
@@ -1512,9 +1518,11 @@ impl Spell
 	/// Constructs a spell object from a spell file.
 	///
 	/// # Parameters
+	///
 	/// - `file_path` The path to the spell file to create a spell from.
 	///
 	/// # Output
+	///
 	/// - `Ok` A Spell object.
 	/// - `Err` Any errors that occurred.
 	pub fn from_file(file_path: &str) -> Result<Self, Box<dyn error::Error>>
@@ -1828,11 +1836,13 @@ impl Spell
 	/// Saves a spell to a file.
 	///
 	/// # Parameters
+	///
 	/// - `file_path` The file path (including the file name) to save the spell to.
 	/// - `compress` Whether or not to write some of the optional fields to the the spell file.
 	/// Compressing can save file space, while not compressing can arguably make the spell file easier to read.
 	///
 	/// # Output
+	///
 	/// - `Ok` Nothing if there were no errors.
 	/// - `Err` Any errors that occurred.
 	pub fn to_file(&self, file_path: &str, compress: bool) -> Result<(), Box<dyn error::Error>>

@@ -37,7 +37,7 @@ impl <'a> SpellbookWriter<'a>
 {
 	/// # Parameters
 	///
-	/// - `title` The title of the first spellbook written by this writer.
+	/// - `title` The title of the spellbook.
 	/// - `font_paths` File paths to all of the font variants (regular, bold, italic, bold-italic).
 	/// - `font_sizes` Font sizes for each type of text in the spellbook (except page numbers).
 	/// - `font_scalars` Scalar values to make sure text width can be calculated correctly for each font variant.
@@ -86,7 +86,7 @@ impl <'a> SpellbookWriter<'a>
 	///
 	/// # Parameters
 	///
-	/// - `title` The title of the first spellbook written by this writer.
+	/// - `title` The title of the spellbook.
 	/// - `font_paths` File paths to all of the font variants (regular, bold, italic, bold-italic).
 	/// - `font_sizes` Font sizes for each type of text in the spellbook (except page numbers).
 	/// - `font_scalars` Scalar values to make sure text width can be calculated correctly for each font variant.

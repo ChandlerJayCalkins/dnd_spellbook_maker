@@ -16,7 +16,7 @@ pub use crate::spellbook_options::*;
 
 /// # Parameters
 ///
-/// - `title` The title of the first spellbook written by this writer.
+/// - `title` The title of the spellbook.
 /// - `font_paths` File paths to all of the font variants (regular, bold, italic, bold-italic).
 /// - `font_sizes` Font sizes for each type of text in the spellbook (except page numbers).
 /// - `font_scalars` Scalar values to make sure text width can be calculated correctly for each font variant.
@@ -27,6 +27,11 @@ pub use crate::spellbook_options::*;
 /// - `background` An image filepath to use as backgrounds for each page and transform data to make it fit on
 /// the page the way you want.
 /// - `table_options` Sizing and color options for tables in spell descriptions.
+///
+/// # Output
+///
+/// - `Ok` Returns a `printpdf` PDF document of a spellbook and a vec of the layers in the document.
+/// - `Err` Returns any errors that occured.
 pub fn create_spellbook
 (
 	title: &str,
@@ -61,12 +66,13 @@ pub fn create_spellbook
 
 /// Saves spellbooks to a file as a pdf document.
 ///
-/// #### Parameters
+/// # Parameters
+///
 /// - `doc` A spellbook that gets returned from `generate_spellbook()`.
 /// - `file_name` The name to give to the file that the spellbook will be saved to.
 /// 
-/// #### Output
-/// Returns a Result enum.
+/// # Output
+///
 /// - `Ok` Returns nothing.
 /// - `Err` Returns any errors that occurred.
 pub fn save_spellbook(doc: PdfDocumentReference, file_name: &str) -> Result<(), Box<dyn std::error::Error>>
@@ -94,11 +100,12 @@ impl Error for SpellFileNameReadError {}
 ///
 /// It only uses files that end in the `.spell` extension.
 /// 
-/// #### Parameters
+/// # Parameters
+///
 /// - `folder_path` The file path to the folder to extract every spell from.
 /// 
-/// #### Output
-/// Returns a Result enum.
+/// # Output
+///
 /// - `Ok` Returns a vec of spell objects that can be inputted into `generate_spellbook()`.
 /// - `Err` Returns any errors that occurred.
 pub fn get_all_spells_in_folder(folder_path: &str) -> Result<Vec<spells::Spell>, Box<dyn std::error::Error>>
@@ -136,11 +143,12 @@ pub fn get_all_spells_in_folder(folder_path: &str) -> Result<Vec<spells::Spell>,
 ///
 /// It only uses files that end in the `.json` extension.
 /// 
-/// #### Parameters
+/// # Parameters
+///
 /// - `folder_path` The file path to the folder to extract every spell from.
 /// 
-/// #### Output
-/// Returns a Result enum.
+/// # Output
+///
 /// - `Ok` Returns a vec of spell objects that can be inputted into `generate_spellbook()`.
 /// - `Err` Returns any errors that occurred.
 pub fn get_all_json_spells_in_folder(folder_path: &str) -> Result<Vec<spells::Spell>, Box<dyn std::error::Error>>
