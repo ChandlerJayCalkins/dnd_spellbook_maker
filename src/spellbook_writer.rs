@@ -48,6 +48,11 @@ impl <'a> SpellbookWriter<'a>
 	/// - `background` An image filepath to use as backgrounds for each page and transform data to make it fit on
 	/// the page the way you want.
 	/// - `table_options` Sizing and color options for tables in spell descriptions.
+	///
+	/// # Output
+	///
+	/// - `Ok` Returns a `printpdf` PDF document of a spellbook and a vec of the layers in the document.
+	/// - `Err` Returns any errors that occured.
 	pub fn create_spellbook
 	(
 		title: &str,
@@ -97,6 +102,11 @@ impl <'a> SpellbookWriter<'a>
 	/// - `background` An image filepath to use as backgrounds for each page and transform data to make it fit on
 	/// the page the way you want.
 	/// - `table_options` Sizing and color options for tables in spell descriptions.
+	///
+	/// # Output
+	///
+	/// - `Ok` A SpellbookWriter instance.
+	/// - `Err` Returns any errors that occured.
 	fn new
 	(
 		title: &str,
