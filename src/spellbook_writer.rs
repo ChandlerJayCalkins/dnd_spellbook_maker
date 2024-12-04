@@ -65,20 +65,9 @@ impl <'a> SpellbookWriter<'a>
 	)
 	-> Result<Self, Box<dyn Error>>
 	{
-		// Create PDF document
-		let (doc, cover_page, cover_layer_index) = PdfDocument::new
-		(
-			title,
-			Mm(page_size_options.width()),
-			Mm(page_size_options.height()),
-			"Cover Layer"
-		);
-
-		// Create bookmark for cover page
-		doc.add_bookmark("Cover", cover_page);
-
-		// Get PdfLayerReference (cover_layer_ref) from PdfLayerIndex (cover_layer_index)
-		let cover_layer_ref = doc.get_page(cover_page).get_layer(cover_layer_index);
+		// Gets a new document and title page.
+		let (doc, cover_layer_ref) =
+		Self::create_new_doc(title, page_size_options.width(), page_size_options.height());
 
 		// Combined data for all font options along with font references to the pdf doc
 		let mut font_data = FontData::new
@@ -131,13 +120,61 @@ impl <'a> SpellbookWriter<'a>
 		})
 	}
 
-	pub fn new_spellbook(&mut self, title: &str)
+	/// Resets the spellbook writer to be empty and prepared to write a new spellbook with the given title.
+	pub fn new_book(&mut self, title: &str)
+	{
+		// Gets a new document and title page.
+		let (doc, cover_layer_ref) = Self::create_new_doc(title, self.page_width(), self.page_height());
+
+		// Assign starting values to pdf document fields
+		// (don't need to reset fonts because of their implementation)
+		self.document = doc;
+		self.layers = vec![cover_layer_ref];
+		self.current_layer_index = 1;
+	}
+
+	/// Adds a spell to the end of the current spellbook.
+	pub fn add_spell(&mut self, spell: &spells::Spell) -> Result<(), Box<dyn Error>>
 	{
 		todo!()
 	}
 
-	pub fn create_spellbook(&mut self, spell_list: &Vec<spells::Spell>)
-	-> Result<(PdfDocumentReference, Vec<PdfLayerReference>), Box<dyn Error>>
+	/// Adds spells to the end of the current spellbook in the order they're given.
+	pub fn add_spells(&mut self, spell_list: &Vec<spells::Spell>) -> Result<(), Box<dyn Error>>
+	{
+		todo!()
+	}
+
+	/// Returns a `printpdf::PdfDocumentReference` and a vec of `printpdf::PdfLayerReference`s containing the
+	/// spellbook.
+	pub fn get_spellbook(&self) -> (PdfDocumentReference, Vec<PdfLayerReference>)
+	{
+		todo!()
+	}
+
+	/// Creates a new pdf document with a given title and returns the reference to it and layer for the title page.
+	fn create_new_doc(title: &str, width: f32, height: f32) -> (PdfDocumentReference, PdfLayerReference)
+	{
+		// Create PDF document
+		let (doc, cover_page, cover_layer_index) = PdfDocument::new
+		(
+			title,
+			Mm(width),
+			Mm(height),
+			"Title Layer"
+		);
+
+		// Create bookmark for cover page
+		doc.add_bookmark("Title Page", cover_page);
+
+		// Get PdfLayerReference (cover_layer_ref) from PdfLayerIndex (cover_layer_index)
+		let cover_layer_ref = doc.get_page(cover_page).get_layer(cover_layer_index);
+
+		(doc, cover_layer_ref)
+	}
+
+	/// Adds a title page to the current spellbook with the given title.
+	fn make_title_page(&mut self, title: &str)
 	{
 		todo!()
 	}
