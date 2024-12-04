@@ -152,7 +152,8 @@ impl <'a> SpellbookWriter<'a>
 		todo!()
 	}
 
-	/// Creates a new pdf document with a given title and returns the reference to it and layer for the title page.
+	/// Creates a new pdf document with a given title and width / height dimensions and returns the reference to
+	/// it and layer for the title page.
 	fn create_new_doc(title: &str, width: f32, height: f32) -> (PdfDocumentReference, PdfLayerReference)
 	{
 		// Create PDF document
