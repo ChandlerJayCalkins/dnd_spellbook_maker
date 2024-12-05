@@ -40,7 +40,7 @@ pub fn create_spellbook
 	font_sizes: FontSizes,
 	font_scalars: FontScalars,
 	spacing_options: SpacingOptions,
-	text_colors: TextColors,
+	text_colors: TextColorOptions,
 	page_size_options: PageSizeOptions,
 	page_number_options: Option<PageNumberOptions>,
 	background: Option<(&str, ImageTransform)>,

@@ -80,7 +80,7 @@ impl <'a> SpellbookWriter<'a>
 		font_sizes: FontSizes,
 		font_scalars: FontScalars,
 		spacing_options: SpacingOptions,
-		text_colors: TextColors,
+		text_colors: TextColorOptions,
 		page_size_options: PageSizeOptions,
 		page_number_options: Option<PageNumberOptions>,
 		background: Option<(&str, ImageTransform)>,
@@ -133,7 +133,7 @@ impl <'a> SpellbookWriter<'a>
 		font_sizes: FontSizes,
 		font_scalars: FontScalars,
 		spacing_options: SpacingOptions,
-		text_colors: TextColors,
+		text_colors: TextColorOptions,
 		page_size_options: PageSizeOptions,
 		page_number_options: Option<PageNumberOptions>,
 		background: Option<(&str, ImageTransform)>,
@@ -244,13 +244,38 @@ impl <'a> SpellbookWriter<'a>
 	}
 
 	/// Writes a line of text to a page.
-	fn apply_textbox_line(&mut self, text: &str)
+	fn apply_text_line(&mut self, text: &str)
 	{
-		todo!()
+		// If the y level is below the bottom of where text is allowed on the page
+		if self.y < self.y_min()
+		{
+			// Increase the current layer index to the layer for the next page
+			self.current_layer_index += 1;
+			// If the index is beyond the number of layers in the document
+			if self.current_layer_index >= self.layers.len()
+			{
+				// Create a new page
+				self.make_new_page();
+			}
+			// Move the y position of the text to the top of the page
+			self.y = self.y_max();
+		}
+		// Create a new text section on the page
+		self.layers[self.current_layer_index].begin_text_section();
+		// Set the text cursor to the current x and y position of the text
+		self.layers[self.current_layer_index].set_text_cursor(Mm(self.x), Mm(self.y));
+		// Set the font and font size of the text
+		self.layers[self.current_layer_index].set_font(self.current_font_ref(), self.current_font_size());
+		// Set the text color
+		self.layers[self.current_layer_index].set_fill_color(self.current_text_color().clone());
+		// Write the text to the page
+		self.layers[self.current_layer_index].write_text(text, self.current_font_ref());
+		// End the text section on the page
+		self.layers[self.current_layer_index].end_text_section();
 	}
 
 	/// Adds a new page to the pdf document, including the background image and page number if options for those were
-	/// given.
+	/// given. Sets `current_layer_index` to the new page.
 	fn make_new_page(&mut self)
 	{
 		// Create a new page
@@ -303,6 +328,8 @@ impl <'a> SpellbookWriter<'a>
 						self.page_width() - data.side_margin() - text_width
 					}
 				};
+				// Set the page fill color to the color of the page numbers
+				self.layers[self.current_layer_index].set_fill_color(data.color().clone());
 				// Apply the page number to the document
 				self.layers[self.current_layer_index].use_text
 				(
@@ -410,7 +437,7 @@ impl <'a> SpellbookWriter<'a>
 	/// Newline size in printpdf Mm of the current type of text being used.
 	fn current_newline_amount(&self) -> f32 { self.font_data.current_newline_amount() }
 	/// RGB color values for the current type of text being used.
-	fn current_text_color(&self) -> &(u8, u8, u8) { self.font_data.current_text_color() }
+	fn current_text_color(&self) -> &Color { self.font_data.current_text_color() }
 
 	// Page Size Getters
 
@@ -491,16 +518,6 @@ impl <'a> SpellbookWriter<'a>
 		}
 	}
 
-	/// RGB color values for page numbers.
-	fn page_number_color(&self) -> Option<(u8, u8, u8)>
-	{
-		match &self.page_number_data
-		{
-			Some(data) => Some(data.color()),
-			None => None
-		}
-	}
-
 	/// The amount of space between the side of the page and the page number in printpdf Mm.
 	fn page_number_side_margin(&self) -> Option<f32>
 	{
@@ -577,6 +594,16 @@ impl <'a> SpellbookWriter<'a>
 		match &self.page_number_data
 		{
 			Some(data) => Some(data.font_scale()),
+			None => None
+		}
+	}
+
+	// The text color of the page number.
+	fn page_number_color(&self) -> Option<&Color>
+	{
+		match &self.page_number_data
+		{
+			Some(data) => Some(data.color()),
 			None => None
 		}
 	}

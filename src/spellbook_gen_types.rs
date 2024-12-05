@@ -10,9 +10,22 @@ use std::error::Error;
 
 pub use image::DynamicImage;
 pub use rusttype::{Font, Scale};
-pub use printpdf::{PdfDocumentReference, IndirectFontRef};
+pub use printpdf::{PdfDocumentReference, IndirectFontRef, Color, Rgb};
 
 pub use crate::spellbook_options::*;
+
+/// Converts rgb byte values into a `printpdf::Color` struct.
+fn bytes_to_color(rgb: &(u8, u8, u8)) -> Color
+{
+	const BYTE_MAX: f32 = 255.0;
+	Color::Rgb(Rgb::new
+	(
+		rgb.0 as f32 / BYTE_MAX,
+		rgb.1 as f32 / BYTE_MAX,
+		rgb.2 as f32 / BYTE_MAX,
+		None
+	))
+}
 
 /// Conveys the type of text that is being used.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -66,6 +79,36 @@ pub struct FontScales
 	pub table_body: Scale
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct TextColors
+{
+	/// Cover page text.
+	pub title_color: Color,
+	/// Spell name text.
+	pub header_color: Color,
+	/// Spells fields and description.
+	pub body_color: Color,
+	/// Title labels above tables in spell descriptions.
+	pub table_title_color: Color,
+	/// Cell text in spell description tables.
+	pub table_body_color: Color
+}
+
+impl From<TextColorOptions> for TextColors
+{
+	fn from(colors: TextColorOptions) -> Self
+	{
+		Self
+		{
+			title_color: bytes_to_color(&colors.title_color),
+			header_color: bytes_to_color(&colors.header_color),
+			body_color: bytes_to_color(&colors.body_color),
+			table_title_color: bytes_to_color(&colors.table_title_color),
+			table_body_color: bytes_to_color(&colors.table_body_color)
+		}
+	}
+}
+
 /// Keeps track of the current font variant being used, the current type of text, and other data needed to use fonts.
 #[derive(Clone, Debug)]
 pub struct FontData<'a>
@@ -114,7 +157,7 @@ impl <'a> FontData<'a>
 		font_sizes: FontSizes,
 		font_scalars: FontScalars,
 		spacing_options: SpacingOptions,
-		text_colors: TextColors
+		text_colors: TextColorOptions
 	)
 	-> Result<Self, Box<dyn std::error::Error>>
 	{
@@ -213,7 +256,7 @@ impl <'a> FontData<'a>
 			size_data: size_data,
 			scales: scales,
 			spacing_options: spacing_options,
-			text_colors: text_colors
+			text_colors: TextColors::from(text_colors)
 		})
 	}
 
@@ -406,7 +449,7 @@ impl <'a> FontData<'a>
 	}
 
 	/// Returns the font the RGB values for the font color of a specific text type.
-	pub fn get_text_color_for(&self, text_type: TextType) -> &(u8, u8, u8)
+	pub fn get_text_color_for(&self, text_type: TextType) -> &Color
 	{
 		match text_type
 		{
@@ -419,7 +462,7 @@ impl <'a> FontData<'a>
 	}
 
 	/// Returns the RGB values for the font color of the current text type being used.
-	pub fn current_text_color(&self) -> &(u8, u8, u8)
+	pub fn current_text_color(&self) -> &Color
 	{
 		match self.current_text_type
 		{
@@ -508,7 +551,8 @@ pub struct PageNumberData<'a>
 	font_ref: IndirectFontRef,
 	font_scalar: f32,
 	font_size_data: Font<'a>,
-	font_scale: Scale
+	font_scale: Scale,
+	color: Color
 }
 
 impl <'a> PageNumberData<'a>
@@ -590,7 +634,8 @@ impl <'a> PageNumberData<'a>
 			font_ref: font_ref,
 			font_scalar: font_scalar,
 			font_size_data: font_size_data,
-			font_scale: font_scale
+			font_scale: font_scale,
+			color: bytes_to_color(&options.color())
 		})
 	}
 
@@ -602,7 +647,6 @@ impl <'a> PageNumberData<'a>
 	pub fn font_variant(&self) -> FontVariant { self.options.font_variant() }
 	pub fn font_size(&self) -> f32 { self.options.font_size() }
 	pub fn newline_amount(&self) -> f32 { self.options.newline_amount() }
-	pub fn color(&self) -> (u8, u8, u8) { self.options.color() }
 	pub fn side_margin(&self) -> f32 { self.options.side_margin() }
 	pub fn bottom_margin(&self) -> f32 { self.options.bottom_margin() }
 	pub fn options(&self) -> &PageNumberOptions { &self.options }
@@ -611,6 +655,7 @@ impl <'a> PageNumberData<'a>
 	pub fn font_scalar(&self) -> f32 { self.font_scalar }
 	pub fn font_size_data(&self) -> &Font { &self.font_size_data }
 	pub fn font_scale(&self) -> &Scale { &self.font_scale }
+	pub fn color(&self) -> &Color { &self.color }
 
 	// Setters
 

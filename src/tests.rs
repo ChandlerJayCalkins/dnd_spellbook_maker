@@ -219,7 +219,7 @@ fn players_handbook()
 	// Parameters for determining tab and newline sizes
 	let spacing_options = SpacingOptions::new(7.5, 12.0, 8.0, 5.0, 6.4, 5.0).unwrap();
 	// Colors for each type of text
-	let text_colors = TextColors
+	let text_colors = TextColorOptions
 	{
 		title_color: (0, 0, 0),
 		header_color: (115, 26, 26),
@@ -305,7 +305,7 @@ fn xanathars_guide_to_everything()
 	// Parameters for determining tab and newline sizes
 	let spacing_options = SpacingOptions::new(7.5, 12.0, 8.0, 5.0, 6.4, 5.0).unwrap();
 	// Colors for each type of text
-	let text_colors = TextColors
+	let text_colors = TextColorOptions
 	{
 		title_color: (0, 0, 0),
 		header_color: (115, 26, 26),
@@ -374,7 +374,7 @@ fn tashas_cauldron_of_everything()
 	// Parameters for determining tab and newline sizes
 	let spacing_options = SpacingOptions::new(7.5, 12.0, 8.0, 5.0, 6.4, 5.0).unwrap();
 	// Colors for each type of text
-	let text_colors = TextColors
+	let text_colors = TextColorOptions
 	{
 		title_color: (0, 0, 0),
 		header_color: (115, 26, 26),
@@ -443,7 +443,7 @@ fn strixhaven()
 	// Parameters for determining tab and newline sizes
 	let spacing_options = SpacingOptions::new(7.5, 12.0, 8.0, 5.0, 6.4, 5.0).unwrap();
 	// Colors for each type of text
-	let text_colors = TextColors
+	let text_colors = TextColorOptions
 	{
 		title_color: (0, 0, 0),
 		header_color: (115, 26, 26),
@@ -512,7 +512,7 @@ fn necronomicon()
 	// Parameters for determining tab and newline sizes
 	let spacing_options = SpacingOptions::new(7.5, 12.0, 8.0, 5.0, 6.4, 5.0).unwrap();
 	// Colors for each type of text
-	let text_colors = TextColors
+	let text_colors = TextColorOptions
 	{
 		title_color: (0, 0, 0),
 		header_color: (115, 26, 26),
@@ -605,7 +605,7 @@ fn necronomicon()
 //	// Parameters for determining tab and newline sizes
 //	let spacing_options = SpacingOptions::new(7.5, 12.0, 8.0, 5.0, 6.4, 5.0).unwrap();
 //	// Colors for each type of text
-//	let text_colors = TextColors
+//	let text_colors = TextColorOptions
 //	{
 //		title_color: (0, 0, 0),
 //		header_color: (115, 26, 26),

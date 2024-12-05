@@ -215,7 +215,7 @@ impl SpacingOptions
 
 /// RGB colors for types of text in the spellbook.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct TextColors
+pub struct TextColorOptions
 {
 	/// Cover page text.
 	pub title_color: (u8, u8, u8),
