@@ -243,9 +243,94 @@ impl <'a> SpellbookWriter<'a>
 		if title.is_empty() { let title = DEFAULT_SPELLBOOK_TITLE; }
 	}
 
+	fn write_textbox(&mut self, text: &str, x_min: f32, x_max: f32, y_min: f32, y_max: f32)
+	{
+		if self.x > x_max { self.x = x_min; self.y -= self.current_newline_amount(); }
+		let textbox_width = x_max - x_min;
+		let textbox_height = y_max - y_min;
+		// Keeps trakc of whether or not a bullet point list is currently being processed
+		let mut in_bullet_list = false;
+		// The x position to reset text to upon a newline (changes inside bullet lists)
+		let mut current_x_min = x_min;
+		let paragraphs = text.split('\n');
+		for paragraph in paragraphs
+		{
+			let mut tokens: Vec<_> = paragraph.split_whitespace().collect();
+			if tokens.is_empty() { continue; }
+			let mut line = String::new();
+			if (tokens[0] == "•" || tokens[0] == "-") && !in_bullet_list
+			{
+				in_bullet_list = true;
+				// Set the value that the x position resets to so it lines up after the bullet point
+				current_x_min = self.calc_text_width("• ") + x_min;
+				// Move the y position down an extra newline amount
+				self.y -= self.current_newline_amount();
+				if tokens[0] == "-" { tokens[0] = "•"; }
+			}
+			else if in_bullet_list
+			{
+				// Move the y position down an extra newline amount
+				self.y -= self.current_newline_amount();
+				// Set the value that the x position resets to so it lines up with the left margin again
+				current_x_min = x_min;
+				in_bullet_list = false;
+			}
+			for token in tokens
+			{
+				match token
+				{
+					// Apply line of text, switch to new font variant
+					"<r>" =>
+					{
+
+					},
+					"<b>" =>
+					{
+
+					},
+					"<i>" =>
+					{
+
+					},
+					"<ib>" | "<bi>" =>
+					{
+
+					},
+					_ =>
+					{
+						if token.starts_with("[table][") && token.ends_with("]")
+						{
+							let index_str = &token[7 .. token.len() - 1];
+							let table_index = match index_str.parse::<usize>()
+							{
+								Ok(index) => index,
+								Err(_) => continue
+							};
+							// TODO: Add code to put in a table
+						}
+						// TODO: Add code to measure width of line and apply it if it's too long
+					}
+				};
+			}
+		}
+	}
+
+	/// Writes vertically and horizontally centered text into a fixed sized textbox
+	fn write_centered_textbox(&mut self, text: &str, x_min: f32, x_max: f32, y_min: f32, y_max: f32)
+	{
+		if self.x > x_max { self.x = x_min; self.y -= self.current_newline_amount(); }
+		let textbox_width = x_max - x_min;
+		let textbox_height = y_max - y_min;
+		let tokens: Vec<_> = text.split_whitespace().collect();
+		if tokens.is_empty() { return; }
+		let mut line = String::new();
+	}
+
 	/// Writes a line of text to a page.
 	fn apply_text_line(&mut self, text: &str)
 	{
+		// If there is no text to apply, do nothing
+		if text.is_empty() { return; }
 		// If the y level is below the bottom of where text is allowed on the page
 		if self.y < self.y_min()
 		{
