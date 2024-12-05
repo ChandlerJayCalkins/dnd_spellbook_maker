@@ -443,8 +443,9 @@ impl <'a> FontData<'a>
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct PageSizeData
 {
-	width: f32,
-	height: f32,
+	// Entire page dimensions
+	page_width: f32,
+	page_height: f32,
 	// Left
 	x_min: f32,
 	// Right
@@ -452,7 +453,10 @@ pub struct PageSizeData
 	// Bottom
 	y_min: f32,
 	// Top
-	y_max: f32
+	y_max: f32,
+	// Dimensions that text can fit inside
+	text_width: f32,
+	text_height: f32
 }
 
 /// Allows page limit coordinates to be constructed from the `PageSizeOptions` user input type.
@@ -463,12 +467,14 @@ impl From<PageSizeOptions> for PageSizeData
 	{
 		Self
 		{
-			width: data.width(),
-			height: data.height(),
+			page_width: data.width(),
+			page_height: data.height(),
 			x_min: data.left_margin(),
 			x_max: data.width() - data.right_margin(),
 			y_min: data.bottom_margin(),
-			y_max: data.height() - data.top_margin()
+			y_max: data.height() - data.top_margin(),
+			text_width: data.width() - (data.left_margin() + data.right_margin()),
+			text_height: data.height() - (data.bottom_margin() + data.top_margin())
 		}
 	}
 }
@@ -477,8 +483,9 @@ impl PageSizeData
 {
 		// Getters
 
-		pub fn width(&self) -> f32 { self.width }
-		pub fn height(&self) -> f32 { self.height }
+		// Entire page dimensions
+		pub fn page_width(&self) -> f32 { self.page_width }
+		pub fn page_height(&self) -> f32 { self.page_height }
 		/// Left
 		pub fn x_min(&self) -> f32 { self.x_min }
 		/// Right
@@ -487,6 +494,9 @@ impl PageSizeData
 		pub fn y_min(&self) -> f32 { self.y_min }
 		/// Top
 		pub fn y_max(&self) -> f32 { self.y_max }
+		// Dimensions that text can fit inside
+		pub fn text_width(&self) -> f32 { self.text_width }
+		pub fn text_height(&self) -> f32 { self.text_height }
 }
 
 /// Holds all page number data needed for writing them into spellbooks.

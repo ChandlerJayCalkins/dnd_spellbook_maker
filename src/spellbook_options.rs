@@ -269,8 +269,6 @@ impl PageSizeOptions
 	)
 	-> Result<Self, String>
 	{
-		// Determines the minimum page dimension between width and height
-		let min_dim = width.min(height);
 		// If the width is below 0, return an error
 		if width <= 0.0
 		{
@@ -282,13 +280,13 @@ impl PageSizeOptions
 			Err(String::from("Invalid page height."))
 		}
 		// If either horizontal margin is below 0 or they are combined too big for there to be any text on the page
-		else if left_margin <= 0.0 || right_margin <= 0.0 || left_margin + right_margin >= min_dim
+		else if left_margin <= 0.0 || right_margin <= 0.0 || left_margin + right_margin >= width
 		{
 			// Return an error
 			Err(String::from("Invalid horizontal page margin."))
 		}
 		// If either vertical margin is below 0 or they are combined too big for there to be any text on the page
-		else if top_margin <= 0.0 || bottom_margin <= 0.0 || top_margin + bottom_margin >= min_dim
+		else if top_margin <= 0.0 || bottom_margin <= 0.0 || top_margin + bottom_margin >= height
 		{
 			// Return an error
 			Err(String::from("Invalid vertical page margin."))

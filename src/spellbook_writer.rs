@@ -266,8 +266,9 @@ impl <'a> SpellbookWriter<'a>
 
 	// Page Size Getters
 
-	fn page_width(&self) -> f32 { self.page_size_data.width() }
-	fn page_height(&self) -> f32 { self.page_size_data.height() }
+	// Entire page dimensions
+	fn page_width(&self) -> f32 { self.page_size_data.page_width() }
+	fn page_height(&self) -> f32 { self.page_size_data.page_height() }
 	/// Left
 	fn x_min(&self) -> f32 { self.page_size_data.x_min() }
 	/// Right
@@ -276,6 +277,9 @@ impl <'a> SpellbookWriter<'a>
 	fn y_min(&self) -> f32 { self.page_size_data.y_min() }
 	/// Top
 	fn y_max(&self) -> f32 { self.page_size_data.y_max() }
+	// Dimensions that text can fit inside
+	pub fn text_width(&self) -> f32 { self.page_size_data.text_width() }
+	pub fn text_height(&self) -> f32 { self.page_size_data.text_height() }
 
 	// Page Number Getters
 
