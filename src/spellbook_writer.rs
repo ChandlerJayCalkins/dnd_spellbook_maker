@@ -9,12 +9,25 @@ use std::cell::Ref;
 use std::error::Error;
 
 extern crate image;
-use printpdf::{PdfDocumentReference, PdfDocument, PdfLayerReference, IndirectFontRef, Color, Rgb, Point, Line, PdfPageIndex, Image};
+use rusttype::point;
+use printpdf::
+{
+	PdfDocumentReference,
+	PdfDocument,
+	PdfLayerReference,
+	IndirectFontRef,
+	Color,
+	Rgb,
+	Point,
+	Line,
+	PdfPageIndex,
+	Image
+};
 
 use crate::spellbook_gen_types::*;
 use crate::spells;
 
-const LAYER_NAME_PREFIX: &str = "Layer";
+const LAYER_NAME_PREFIX: &str = "Page";
 const DEFAULT_SPELLBOOK_TITLE: &str = "Spellbook";
 const TITLE_LAYER_NAME: &str = "Title Layer";
 const TITLE_PAGE_NAME: &str = "Title Page";
@@ -23,9 +36,11 @@ const TITLE_PAGE_NAME: &str = "Title Page";
 // Can't derive clone or debug unfortunately.
 pub struct SpellbookWriter<'a>
 {
-	document: PdfDocumentReference,
+	doc: PdfDocumentReference,
 	layers: Vec<PdfLayerReference>,
+	pages: Vec<PdfPageIndex>,
 	current_layer_index: usize,
+	current_page_num: i64,
 	font_data: FontData<'a>,
 	page_size_data: PageSizeData,
 	page_number_data: Option<PageNumberData<'a>>,
@@ -88,7 +103,7 @@ impl <'a> SpellbookWriter<'a>
 			table_options
 		)?;
 
-		Ok((spellbook_writer.document, spellbook_writer.layers))
+		Ok((spellbook_writer.doc, spellbook_writer.layers))
 	}
 
 	/// Constructor
@@ -127,7 +142,7 @@ impl <'a> SpellbookWriter<'a>
 	-> Result<Self, Box<dyn Error>>
 	{
 		// Gets a new document and title page.
-		let (doc, cover_layer_ref) =
+		let (doc, title_page, title_layer) =
 		Self::create_new_doc(title, page_size_options.width(), page_size_options.height());
 
 		// Combined data for all font options along with font references to the pdf doc
@@ -145,11 +160,11 @@ impl <'a> SpellbookWriter<'a>
 		let page_size_data = PageSizeData::from(page_size_options);
 
 		// Determine whether or not page numbers are desired
-		let page_number_data = match page_number_options
+		let (page_number_data, starting_page_num) = match page_number_options
 		{
 			// If they are, then construct page number data from the options given
-			Some(options) => Some(PageNumberData::new(options, &font_data)?),
-			None => None
+			Some(options) => (Some(PageNumberData::new(options, &font_data)?), options.starting_num()),
+			None => (None, 1)
 		};
 
 		// Determine whether or not a background image is desired
@@ -167,9 +182,11 @@ impl <'a> SpellbookWriter<'a>
 		// Construct instance of self and return
 		Ok(Self
 		{
-			document: doc,
-			layers: vec![cover_layer_ref],
+			doc: doc,
+			layers: vec![title_layer],
+			pages: vec![title_page],
 			current_layer_index: 1,
+			current_page_num: starting_page_num,
 			font_data: font_data,
 			page_size_data: page_size_data,
 			page_number_data: page_number_data,
@@ -182,10 +199,11 @@ impl <'a> SpellbookWriter<'a>
 
 	/// Creates a new pdf document with a given title and width / height dimensions and returns the reference to
 	/// it and layer for the title page. Returns the pdf document and the layer for the first page.
-	fn create_new_doc(title: &str, width: f32, height: f32) -> (PdfDocumentReference, PdfLayerReference)
+	fn create_new_doc(title: &str, width: f32, height: f32)
+	-> (PdfDocumentReference, PdfPageIndex, PdfLayerReference)
 	{
 		// Create the pdf document and the first page
-		let (doc, cover_page, cover_layer_index) =
+		let (doc, title_page, title_layer_index) =
 		// If no title was given for the spellbook (the given title string is empty)
 		if title.is_empty()
 		{
@@ -210,25 +228,136 @@ impl <'a> SpellbookWriter<'a>
 			)
 		};
 
-		// Create bookmark for cover page
-		doc.add_bookmark(TITLE_PAGE_NAME, cover_page);
+		// Create bookmark for title page
+		doc.add_bookmark(TITLE_PAGE_NAME, title_page);
 
-		// Get PdfLayerReference (cover_layer_ref) from PdfLayerIndex (cover_layer_index)
-		let cover_layer_ref = doc.get_page(cover_page).get_layer(cover_layer_index);
+		// Get PdfLayerReference (title_layer_ref) from PdfLayerIndex (title_layer_index)
+		let title_layer_ref = doc.get_page(title_page).get_layer(title_layer_index);
 
-		(doc, cover_layer_ref)
+		(doc, title_page, title_layer_ref)
 	}
 
 	/// Adds a title page to the current spellbook with the given title.
 	fn make_title_page(&mut self, title: &str)
 	{
+		if title.is_empty() { let title = DEFAULT_SPELLBOOK_TITLE; }
+	}
+
+	/// Writes a line of text to a page.
+	fn apply_textbox_line(&mut self, text: &str)
+	{
 		todo!()
+	}
+
+	/// Adds a new page to the pdf document, including the background image and page number if options for those were
+	/// given.
+	fn make_new_page(&mut self)
+	{
+		// Create a new page
+		let (page, layer) = self.doc.add_page
+		(
+			Mm(self.page_width()),
+			Mm(self.page_height()),
+			format!("{} {}", LAYER_NAME_PREFIX, self.layers.len())
+		);
+		// Get the layer for the new page
+		let layer_ref = self.doc.get_page(page).get_layer(layer);
+		// If there is a background image
+		if let Some(background) = &self.background
+		{
+			// Add it to the page
+			let image = Image::from_dynamic_image(&background.image.clone());
+			image.add_to_layer(layer_ref.clone(), background.transform);
+		}
+		// Add the new layer and page to the vecs holding them
+		self.layers.push(layer_ref);
+		self.pages.push(page);
+		// Adds a page number to the new page (if there are page numbers)
+		self.current_layer_index = self.layers.len() - 1;
+		self.add_page_number();
+		// Increases the page number count by 1
+		self.current_page_num += 1;
+	}
+
+	/// Adds the page number to the current layer (if page number options were given).
+	fn add_page_number(&mut self)
+	{
+		// Determine whether there are page numbers in this spellbook
+		match &self.page_number_data
+		{
+			// If there are page numbers
+			Some(data) =>
+			{
+				// Convert the current page number into a string
+				let text = self.current_page_num.to_string();
+				// Determine the x position of the page number based on if it will be on the left or right side of the
+				// page
+				let x = match data.current_side()
+				{
+					HSide::Left => data.side_margin(),
+					HSide::Right =>
+					{
+						// Calculate the width of the page number text
+						let text_width = self.calc_page_number_width(&text);
+						// Set the x value to be based on the width of the text and the page margin
+						self.page_width() - data.side_margin() - text_width
+					}
+				};
+				// Apply the page number to the document
+				self.layers[self.current_layer_index].use_text
+				(
+					&text,
+					data.font_size(),
+					Mm(x),
+					Mm(data.bottom_margin()),
+					data.font_ref()
+				);
+			},
+			// Do nothing if there are no page numbers
+			None => ()
+		};
+
+		// Have the page number for the next page flip sides if there are page numbers.
+		// Have to do this in a separate match statement because of mutable and immutable reference borrowing.
+		match &mut self.page_number_data
+		{
+			Some(data) => if data.flips_sides() { data.flip_side(); }
+			None => ()
+		};
+	}
+
+	/// Calculates the width of some text using the current state of this object's font data field.
+	fn calc_text_width(&self, text: &str) -> f32
+	{
+		let width = self.current_size_data().layout(text, *self.current_font_scale(), point(0.0, 0.0))
+			.map(|g| g.position().x + g.unpositioned().h_metrics().advance_width)
+			.last()
+			.unwrap_or(0.0);
+		width * self.current_scalar()
+	}
+
+	/// Calculates the text width of a page number.
+	fn calc_page_number_width(&self, page_number_text: &str) -> f32
+	{
+		let width = self.page_number_font_size_data().unwrap().layout
+		(
+			page_number_text,
+			*self.page_number_font_scale().unwrap(),
+			point(0.0, 0.0)
+		)
+		.map(|g| g.position().x + g.unpositioned().h_metrics().advance_width)
+		.last()
+		.unwrap_or(0.0);
+		width * self.page_number_font_scalar().unwrap()
 	}
 
 	// General Field Getters
 
-	fn document(&self) -> &PdfDocumentReference { &self.document }
+	fn document(&self) -> &PdfDocumentReference { &self.doc }
 	fn layers(&self) -> &Vec<PdfLayerReference> { &self.layers }
+	fn pages(&self) -> &Vec<PdfPageIndex> { &self.pages }
+	fn current_layer_index(&self) -> usize { self.current_layer_index }
+	fn current_page_num(&self) -> i64 { self.current_page_num }
 	fn font_data(&self) -> &FontData { &self.font_data }
 	fn page_size_data(&self) -> &PageSizeData { &self.page_size_data }
 	fn page_number_data(&self) -> &Option<PageNumberData> { &self.page_number_data }
@@ -243,7 +372,7 @@ impl <'a> SpellbookWriter<'a>
 
 	fn current_layer(&self) -> &PdfLayerReference
 	{
-		&self.layers.last().expect("Empty spellbook: no layers found. There should at least be a cover layer.")
+		&self.layers[self.current_layer_index]
 	}
 
 	// Font Getters
