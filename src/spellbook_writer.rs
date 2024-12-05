@@ -14,6 +14,11 @@ use printpdf::{PdfDocumentReference, PdfDocument, PdfLayerReference, IndirectFon
 use crate::spellbook_gen_types::*;
 use crate::spells;
 
+const LAYER_NAME_PREFIX: &str = "Layer";
+const DEFAULT_SPELLBOOK_TITLE: &str = "Spellbook";
+const TITLE_LAYER_NAME: &str = "Title Layer";
+const TITLE_PAGE_NAME: &str = "Title Page";
+
 /// All data needed to write spells to a pdf document.
 // Can't derive clone or debug unfortunately.
 pub struct SpellbookWriter<'a>
@@ -21,7 +26,6 @@ pub struct SpellbookWriter<'a>
 	document: PdfDocumentReference,
 	layers: Vec<PdfLayerReference>,
 	current_layer_index: usize,
-	layer_name_prefix: &'a str,
 	font_data: FontData<'a>,
 	page_size_data: PageSizeData,
 	page_number_data: Option<PageNumberData<'a>>,
@@ -166,7 +170,6 @@ impl <'a> SpellbookWriter<'a>
 			document: doc,
 			layers: vec![cover_layer_ref],
 			current_layer_index: 1,
-			layer_name_prefix: "Layer",
 			font_data: font_data,
 			page_size_data: page_size_data,
 			page_number_data: page_number_data,
@@ -178,20 +181,37 @@ impl <'a> SpellbookWriter<'a>
 	}
 
 	/// Creates a new pdf document with a given title and width / height dimensions and returns the reference to
-	/// it and layer for the title page.
+	/// it and layer for the title page. Returns the pdf document and the layer for the first page.
 	fn create_new_doc(title: &str, width: f32, height: f32) -> (PdfDocumentReference, PdfLayerReference)
 	{
-		// Create PDF document
-		let (doc, cover_page, cover_layer_index) = PdfDocument::new
-		(
-			title,
-			Mm(width),
-			Mm(height),
-			"Title Layer"
-		);
+		// Create the pdf document and the first page
+		let (doc, cover_page, cover_layer_index) =
+		// If no title was given for the spellbook (the given title string is empty)
+		if title.is_empty()
+		{
+			// Create pdf document with a default title
+			PdfDocument::new
+			(
+				DEFAULT_SPELLBOOK_TITLE,
+				Mm(width),
+				Mm(height),
+				TITLE_LAYER_NAME
+			)
+		}
+		else
+		{
+			// Create pdf document with the given title
+			PdfDocument::new
+			(
+				title,
+				Mm(width),
+				Mm(height),
+				TITLE_LAYER_NAME
+			)
+		};
 
 		// Create bookmark for cover page
-		doc.add_bookmark("Title Page", cover_page);
+		doc.add_bookmark(TITLE_PAGE_NAME, cover_page);
 
 		// Get PdfLayerReference (cover_layer_ref) from PdfLayerIndex (cover_layer_index)
 		let cover_layer_ref = doc.get_page(cover_page).get_layer(cover_layer_index);
@@ -209,7 +229,6 @@ impl <'a> SpellbookWriter<'a>
 
 	fn document(&self) -> &PdfDocumentReference { &self.document }
 	fn layers(&self) -> &Vec<PdfLayerReference> { &self.layers }
-	fn layer_name_prefix(&self) -> &str { self.layer_name_prefix }
 	fn font_data(&self) -> &FontData { &self.font_data }
 	fn page_size_data(&self) -> &PageSizeData { &self.page_size_data }
 	fn page_number_data(&self) -> &Option<PageNumberData> { &self.page_number_data }
