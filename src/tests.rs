@@ -10,7 +10,79 @@ use std::path::Path;
 use crate::utils::*;
 
 #[test]
-fn idk() {}
+fn idk()
+{
+	// Spellbook's name
+	let spellbook_name =
+	"Test Spellbook";
+	// List of every spell in this folder
+	let spell_list = get_all_spells_in_folder("spells/xanathars_guide_to_everything")
+		.expect("Failed to get spells from folder.");
+	// File paths to the fonts needed
+	let font_paths = FontPaths
+	{
+		regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
+		bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
+		italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Italic.otf"),
+		bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
+	};
+	// Parameters for determining font sizes
+	let font_sizes = FontSizes::new(32.0, 24.0, 12.0, 16.0, 12.0)
+		.expect("Failed to create font sizes.");
+	// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
+	let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515)
+		.expect("Failed to create font scalars.");
+	// Parameters for determining tab and newline sizes
+	let spacing_options = SpacingOptions::new(7.5, 12.0, 8.0, 5.0, 6.4, 5.0)
+		.expect("Failed to create spacing options.");
+	// Colors for each type of text
+	let text_colors = TextColorOptions
+	{
+		title_color: (0, 0, 0),
+		header_color: (115, 26, 26),
+		body_color: (0, 0, 0),
+		table_title_color: (0, 0, 0),
+		table_body_color: (0, 0, 0)
+	};
+	// Parameters for determining the size of the page and the text margins on the page
+	let page_size_options = PageSizeOptions::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0)
+		.expect("Failed to create page size options.");
+	// Parameters for determining page number behavior
+	let page_number_options = PageNumberOptions::new
+	(HSide::Left, false, 1, FontVariant::Regular, 12.0, 5.0, (0, 0, 0), 5.0, 4.0)
+		.expect("Failed to create page number options.");
+	// File path to the background image
+	let background_path = "img/parchment.jpg";
+	// Image transform data for the background image
+	let background_transform = ImageTransform
+	{
+		translate_x: Some(Mm(0.0)),
+		translate_y: Some(Mm(0.0)),
+		scale_x: Some(1.95),
+		scale_y: Some(2.125),
+		..Default::default()
+	};
+	// Parameters for table margins / padding and off-row color / scaling
+	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224))
+		.expect("Failed to create table options.");
+	// Create the spellbook
+	let (doc, _) = create_spellbook
+	(
+		spellbook_name,
+		spell_list,
+		font_paths,
+		font_sizes,
+		font_scalars,
+		spacing_options,
+		text_colors,
+		page_size_options,
+		Some(page_number_options),
+		Some((background_path, background_transform)),
+		table_options
+	).expect("Failed to create spellbook.");
+	// Save the spellbook to a file
+	let _ = save_spellbook(doc, "Test Spellbook.pdf").unwrap();
+}
 
 // Makes sure that creating valid spell files works
 #[test]

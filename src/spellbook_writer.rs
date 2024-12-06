@@ -89,7 +89,7 @@ impl <'a> SpellbookWriter<'a>
 	-> Result<(PdfDocumentReference, Vec<PdfLayerReference>), Box<dyn Error>>
 	{
 		// Construct a spellbook writer
-		let mut spellbook_writer = SpellbookWriter::new
+		let mut writer = SpellbookWriter::new
 		(
 			title,
 			font_paths,
@@ -103,7 +103,10 @@ impl <'a> SpellbookWriter<'a>
 			table_options
 		)?;
 
-		Ok((spellbook_writer.doc, spellbook_writer.layers))
+		let test_str = "This is a test description. I am writing a bunch of words to fill up a couple paragraphs. I don't really know what to write about at the moment so I'm just gonig to keep writing meta thoughts until I come up with something. I'm having a pretty good time working on this project right now, it's a good distraction and I'm still learning new things as I go on with it. It's starting kind of slow rewriting all of this code, but at least it's going faster than the start of the first time I wrote it. Coding projects are always way more fun once you get to the part where all of the foundational code has been written and you just start to use all these functions and structs you've created to interface with other code or hardware and you start to write more abstract code using that foundation that you worked so hard to build up.";
+		writer.make_title_page(test_str);
+
+		Ok((writer.doc, writer.layers))
 	}
 
 	/// Constructor
@@ -241,6 +244,18 @@ impl <'a> SpellbookWriter<'a>
 	fn make_title_page(&mut self, title: &str)
 	{
 		if title.is_empty() { let title = DEFAULT_SPELLBOOK_TITLE; }
+		let previous_layer_index = self.current_layer_index;
+		self.current_layer_index = 0;
+		// If there is a background image
+		if let Some(background) = &self.background
+		{
+			// Add it to the page
+			let image = Image::from_dynamic_image(&background.image.clone());
+			image.add_to_layer(self.current_layer().clone(), background.transform);
+		}
+		self.add_page_number();
+		self.write_textbox(title, self.x_min(), self.x_max(), self.y_min(), self.y_max());
+		self.current_layer_index = previous_layer_index;
 	}
 
 	fn write_textbox(&mut self, text: &str, x_min: f32, x_max: f32, y_min: f32, y_max: f32)
@@ -252,11 +267,20 @@ impl <'a> SpellbookWriter<'a>
 		let mut in_bullet_list = false;
 		// The x position to reset text to upon a newline (changes inside bullet lists)
 		let mut current_x_min = x_min;
+		// The number of newlines to go down by at the start of a paragraph
+		// Is 0.0 for the first paragraph
+		// Is 2.0 for all other paragraphs
+		let mut end_of_paragraph_newline_scalar = 0.0;
 		let paragraphs = text.split('\n');
 		for paragraph in paragraphs
 		{
+			// Move the y position down by 0 or 2 newline amounts
+			// 0 newlines for the first paragraph
+			// 2 newlines for all other paragraphs
+			self.y -= end_of_paragraph_newline_scalar * self.current_newline_amount();
 			let mut tokens: Vec<_> = paragraph.split_whitespace().collect();
 			if tokens.is_empty() { continue; }
+			else { end_of_paragraph_newline_scalar = 2.0; }
 			let mut line = String::new();
 			if (tokens[0] == "•" || tokens[0] == "-") && !in_bullet_list
 			{
@@ -267,39 +291,48 @@ impl <'a> SpellbookWriter<'a>
 				self.y -= self.current_newline_amount();
 				if tokens[0] == "-" { tokens[0] = "•"; }
 			}
-			else if in_bullet_list
+			else
 			{
-				// Move the y position down an extra newline amount
-				self.y -= self.current_newline_amount();
-				// Set the value that the x position resets to so it lines up with the left margin again
-				current_x_min = x_min;
-				in_bullet_list = false;
+				if in_bullet_list
+				{
+					// Move the y position down an extra newline amount
+					self.y -= self.current_newline_amount();
+					// Set the value that the x position resets to so it lines up with the left margin again
+					current_x_min = x_min;
+					in_bullet_list = false;
+				}
+				self.x = x_min + self.tab_amount();
 			}
-			for token in tokens
+			// TODO: Make it so single tokens that are too long to fit on a line get hyphenated
+			let mut line = tokens[0].to_string();
+			for token in &tokens[1 ..]
 			{
-				match token
+				match *token
 				{
 					// Apply line of text, switch to new font variant
 					"<r>" =>
 					{
-
+						self.switch_font_variant(&mut line, FontVariant::Regular);
 					},
 					"<b>" =>
 					{
-
+						self.switch_font_variant(&mut line, FontVariant::Bold);
 					},
 					"<i>" =>
 					{
-
+						self.switch_font_variant(&mut line, FontVariant::Italic);
 					},
 					"<ib>" | "<bi>" =>
 					{
-
+						self.switch_font_variant(&mut line, FontVariant::BoldItalic);
 					},
 					_ =>
 					{
 						if token.starts_with("[table][") && token.ends_with("]")
 						{
+							self.apply_text_line(&line);
+							self.x += self.calc_text_width(&line);
+							line = String::new();
 							let index_str = &token[7 .. token.len() - 1];
 							let table_index = match index_str.parse::<usize>()
 							{
@@ -308,10 +341,36 @@ impl <'a> SpellbookWriter<'a>
 							};
 							// TODO: Add code to put in a table
 						}
-						// TODO: Add code to measure width of line and apply it if it's too long
+						else
+						{
+							let new_line = format!("{} {}", line, token);
+							let new_line_end = self.x + self.calc_text_width(&new_line);
+							if new_line_end > x_max
+							{
+								// Remove whitespace at the ends of the line in case the line starts with a space from
+								// a front switch
+								line = line.trim().to_string();
+								self.apply_text_line(&line);
+								self.x = current_x_min;
+								self.y -= self.current_newline_amount();
+								line = token.to_string();
+							}
+							else { line = new_line; }
+						}
 					}
 				};
 			}
+			self.apply_text_line(&line);
+		}
+	}
+
+	fn switch_font_variant(&mut self, line: &mut String, font_variant: FontVariant)
+	{
+		if *self.current_font_variant() != font_variant
+		{
+			self.apply_text_line(&line);
+			*line = String::new();
+			self.set_current_font_variant(font_variant);
 		}
 	}
 
@@ -331,6 +390,28 @@ impl <'a> SpellbookWriter<'a>
 	{
 		// If there is no text to apply, do nothing
 		if text.is_empty() { return; }
+		// Checks to see if the text should be applied to the next page or if a new page should be created.
+		self.check_for_new_page();
+		// Create a new text section on the page
+		self.layers[self.current_layer_index].begin_text_section();
+		// Set the text cursor to the current x and y position of the text
+		self.layers[self.current_layer_index].set_text_cursor(Mm(self.x), Mm(self.y));
+		// Set the font and font size of the text
+		self.layers[self.current_layer_index].set_font(self.current_font_ref(), self.current_font_size());
+		// Set the text color
+		self.layers[self.current_layer_index].set_fill_color(self.current_text_color().clone());
+		// Write the text to the page
+		self.layers[self.current_layer_index].write_text(text, self.current_font_ref());
+		// End the text section on the page
+		self.layers[self.current_layer_index].end_text_section();
+		// Move the x position to be at the end of the newly applied line
+		self.x += self.calc_text_width(&text);
+	}
+
+	/// Checks if the current layer should move to a new page based on the text y position.
+	/// Creates a new page if the layer index goes beyond the number of layers that exist.
+	fn check_for_new_page(&mut self)
+	{
 		// If the y level is below the bottom of where text is allowed on the page
 		if self.y < self.y_min()
 		{
@@ -345,18 +426,6 @@ impl <'a> SpellbookWriter<'a>
 			// Move the y position of the text to the top of the page
 			self.y = self.y_max();
 		}
-		// Create a new text section on the page
-		self.layers[self.current_layer_index].begin_text_section();
-		// Set the text cursor to the current x and y position of the text
-		self.layers[self.current_layer_index].set_text_cursor(Mm(self.x), Mm(self.y));
-		// Set the font and font size of the text
-		self.layers[self.current_layer_index].set_font(self.current_font_ref(), self.current_font_size());
-		// Set the text color
-		self.layers[self.current_layer_index].set_fill_color(self.current_text_color().clone());
-		// Write the text to the page
-		self.layers[self.current_layer_index].write_text(text, self.current_font_ref());
-		// End the text section on the page
-		self.layers[self.current_layer_index].end_text_section();
 	}
 
 	/// Adds a new page to the pdf document, including the background image and page number if options for those were
