@@ -241,7 +241,7 @@ impl <'a> SpellbookWriter<'a>
 		let page_number_data = self.page_number_data.clone();
 		self.page_number_data = None;
 		// Write the title to the page
-		self.write_textbox(title, self.x_min(), self.x_max(), self.y_min(), self.y_max());
+		self.write_textbox(title, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
 		// Reset the page number data to what it was before
 		self.page_number_data = page_number_data;
 	}
@@ -251,42 +251,64 @@ impl <'a> SpellbookWriter<'a>
 	{
 		self.make_new_page();
 		self.doc.add_bookmark(spell.name.clone(), self.pages[self.current_page_index]);
+
 		self.x = self.x_min();
 		self.y = self.y_max();
 		self.set_current_text_type(TextType::Header);
 		self.set_current_font_variant(FontVariant::Regular);
-		self.write_textbox(&spell.name, self.x_min(), self.x_max(), self.y_min(), self.y_max());
+		self.write_textbox(&spell.name, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
+
 		self.y -= self.current_newline_amount();
 		self.x = self.x_min();
 		self.set_current_text_type(TextType::Body);
 		self.set_current_font_variant(FontVariant::Italic);
-		self.write_textbox(&spell.get_level_school_text(), self.x_min(), self.x_max(), self.y_min(), self.y_max());
+		self.write_textbox
+		(&spell.get_level_school_text(), self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
+
 		self.y -= self.font_data.get_newline_amount_for(TextType::Header);
 		self.x = self.x_min();
 		self.set_current_font_variant(FontVariant::Bold);
 		let casting_time = format!("Casting Time: <r> {}", spell.casting_time.to_string());
-		self.write_textbox(&casting_time, self.x_min(), self.x_max(), self.y_min(), self.y_max());
+		self.write_textbox(&casting_time, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
+
 		self.y -= self.font_data.current_newline_amount();
 		self.x = self.x_min();
 		self.set_current_font_variant(FontVariant::Bold);
 		let range = format!("Range: <r> {}", spell.range.to_string());
-		self.write_textbox(&range, self.x_min(), self.x_max(), self.y_min(), self.y_max());
+		self.write_textbox(&range, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
+
 		self.y -= self.font_data.current_newline_amount();
 		self.x = self.x_min();
 		self.set_current_font_variant(FontVariant::Bold);
 		let components = format!("Components: <r> {}", spell.get_component_string());
-		self.write_textbox(&components, self.x_min(), self.x_max(), self.y_min(), self.y_max());
+		self.write_textbox(&components, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
+
 		self.y -= self.font_data.current_newline_amount();
 		self.x = self.x_min();
 		self.set_current_font_variant(FontVariant::Bold);
 		let duration = format!("Duration: <r> {}", &spell.duration.to_string());
-		self.write_textbox(&duration, self.x_min(), self.x_max(), self.y_min(), self.y_max());
+		self.write_textbox(&duration, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
+		
+		self.y -= self.font_data.get_newline_amount_for(TextType::Header);
+		self.x = self.x_min();
+		self.set_current_font_variant(FontVariant::Regular);
+		self.write_textbox(&spell.description, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
+
+		if let Some(upcast_description) = &spell.upcast_description
+		{
+			self.y -= self.font_data.current_newline_amount();
+			self.x = self.x_min() + self.tab_amount();
+			self.set_current_font_variant(FontVariant::BoldItalic);
+			let upcast_description = format!("Using a Higher-Level Spell Slot. <r> {}", &upcast_description);
+			self.write_textbox(&upcast_description, self.x_min(), self.x_max(), self.y_min(), self.y_max(), true);
+		}
 	}
 
 	/// Writes text to the current page inside the given dimensions, starting at the x_min value and current y value.
 	/// The text is left-aligned and if it goes below the y_min, it continues writing onto the next page (or a new
 	/// page), continuing to stay within the given dimensions on the new page.
-	fn write_textbox(&mut self, text: &str, x_min: f32, x_max: f32, y_min: f32, y_max: f32)
+	/// `starting_tab` determines whether or not the first paragraph gets tabbed in on the first line or not.
+	fn write_textbox(&mut self, text: &str, x_min: f32, x_max: f32, y_min: f32, y_max: f32, starting_tab: bool)
 	{
 		// Keeps track of whether or not a bullet point list is currently being processed
 		let mut in_bullet_list = false;
@@ -297,9 +319,14 @@ impl <'a> SpellbookWriter<'a>
 		// Is 1.0 for all other paragraphs
 		let mut end_of_paragraph_newline_scalar = 0.0;
 		// The amount to tab the text in by at the start of a paragraph
-		// Is 0.0 for the first non-bullet-point paragraph (to match the Player's Handbook formatting)
+		// Is 0.0 for the first non-bullet-point paragraph if `starting_tab` is false 
+		// (to match the Player's Handbook formatting)
 		// Is equal to `self.tab_amount()` for all other paragraphs
-		let mut current_tab_amount = 0.0;
+		let mut current_tab_amount = match starting_tab
+		{
+			true => self.tab_amount(),
+			false => 0.0
+		};
 		// Split the text into paragraphs by newlines
 		// Collects it into a vec so the `is_empty` method can be used without having to clone a new iterator.
 		let paragraphs: Vec<_> = text.split('\n').collect();
@@ -381,16 +408,12 @@ impl <'a> SpellbookWriter<'a>
 				// in on the first line
 				current_tab_amount = self.tab_amount();
 			}
-			// TODO: Add some kind of check to make sure the first token doesn't go beyond the x_max
-			// possibly due to the x position starting near the x_max
 			// TODO: Make it so single tokens that are too long to fit on a line get hyphenated
-			// Put the first token into the next line being processed / written
-			let mut line = tokens[0].to_string();
 			// Loop through each token after the first
-			for token in &tokens[1 ..]
+			for token in tokens
 			{
 				// Determine if the current token is a special token
-				match *token
+				match token
 				{
 					// If It's a regular font tag, write the current line to the page and switch the current font
 					// variant to regular
@@ -421,7 +444,7 @@ impl <'a> SpellbookWriter<'a>
 					{
 						// Create a new line with the token at the end to see where the end of this line would be
 						// Remove whitespace at the ends in case there is a space at the start of the line from a
-						// font switch
+						// font switch or from being the first line in a paragraph
 						let new_line = format!("{} {}", line, token).trim().to_string();
 						// Calculate where the end of this new line would be
 						let new_line_end = self.x + self.calc_text_width(&new_line);

@@ -66,7 +66,7 @@ fn idk()
 	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224))
 		.expect("Failed to create table options.");
 	// Create the spellbook
-	let (doc, _) = create_spellbook
+	let (doc, _, _) = create_spellbook
 	(
 		spellbook_name,
 		&spell_list,
@@ -318,7 +318,7 @@ fn players_handbook()
 	// Parameters for table margins / padding and off-row color / scaling
 	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
 	// Create a spellbook with the first half of the spells
-	let (doc_1, _) = create_spellbook
+	let (doc_1, _, _) = create_spellbook
 	(
 		spellbook_name_1,
 		&spell_list_1,
@@ -335,7 +335,7 @@ fn players_handbook()
 	// Save the first spellbook to a file
 	let _ = save_spellbook(doc_1, "Player's Handbook 2014 Spells 1.pdf").unwrap();
 	// Create a spellbook with the second half of the spells
-	let (doc_2, _) = create_spellbook
+	let (doc_2, _, _) = create_spellbook
 	(
 		spellbook_name_2,
 		&spell_list_2,
@@ -404,7 +404,7 @@ fn xanathars_guide_to_everything()
 	// Parameters for table margins / padding and off-row color / scaling
 	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
 	// Create the spellbook
-	let (doc, _) = create_spellbook
+	let (doc, _, _) = create_spellbook
 	(
 		spellbook_name,
 		&spell_list,
@@ -473,7 +473,7 @@ fn tashas_cauldron_of_everything()
 	// Parameters for table margins / padding and off-row color / scaling
 	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
 	// Create the spellbook
-	let (doc, _) = create_spellbook
+	let (doc, _, _) = create_spellbook
 	(
 		spellbook_name,
 		&spell_list,
@@ -542,7 +542,7 @@ fn strixhaven()
 	// Parameters for table margins / padding and off-row color / scaling
 	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
 	// Create the spellbook
-	let (doc, _) = create_spellbook
+	let (doc, _, _) = create_spellbook
 	(
 		spellbook_name,
 		&spell_list,
@@ -611,7 +611,7 @@ fn necronomicon()
 	// Parameters for table margins / padding and off-row color / scaling
 	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
 	// Create the spellbook
-	let (doc, _) = create_spellbook
+	let (doc, _, _) = create_spellbook
 	(
 		spellbook_name,
 		&spell_list,
@@ -704,7 +704,7 @@ fn necronomicon()
 //	// Parameters for table margins / padding and off-row color / scaling
 //	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.1075, 4.0, (213, 209, 224)).unwrap();
 	// Create the spellbook
-//	let (doc, _) = create_spellbook
+//	let (doc, _, _) = create_spellbook
 //	(
 //		spellbook_name,
 //		&spell_list,
