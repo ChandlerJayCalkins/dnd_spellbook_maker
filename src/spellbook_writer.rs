@@ -249,15 +249,19 @@ impl <'a> SpellbookWriter<'a>
 	/// Adds a page / pages about a spell into the spellbook.
 	fn add_spell(&mut self, spell: &spells::Spell)
 	{
+		// Make a new page for the spell
 		self.make_new_page();
+		// Add a bookmark for the first page of this spell
 		self.doc.add_bookmark(spell.name.clone(), self.pages[self.current_page_index]);
 
+		// Writes the spell name to the document
 		self.x = self.x_min();
 		self.y = self.y_max();
 		self.set_current_text_type(TextType::Header);
 		self.set_current_font_variant(FontVariant::Regular);
 		self.write_textbox(&spell.name, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
 
+		// Writes the level and school of the spell to the document
 		self.y -= self.current_newline_amount();
 		self.x = self.x_min();
 		self.set_current_text_type(TextType::Body);
@@ -265,35 +269,41 @@ impl <'a> SpellbookWriter<'a>
 		self.write_textbox
 		(&spell.get_level_school_text(), self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
 
+		// Writes the casting time to the document
 		self.y -= self.font_data.get_newline_amount_for(TextType::Header);
 		self.x = self.x_min();
 		self.set_current_font_variant(FontVariant::Bold);
 		let casting_time = format!("Casting Time: <r> {}", spell.casting_time.to_string());
 		self.write_textbox(&casting_time, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
 
+		// Writes the range to the document
 		self.y -= self.font_data.current_newline_amount();
 		self.x = self.x_min();
 		self.set_current_font_variant(FontVariant::Bold);
 		let range = format!("Range: <r> {}", spell.range.to_string());
 		self.write_textbox(&range, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
 
+		// Writes the components to the document
 		self.y -= self.font_data.current_newline_amount();
 		self.x = self.x_min();
 		self.set_current_font_variant(FontVariant::Bold);
 		let components = format!("Components: <r> {}", spell.get_component_string());
 		self.write_textbox(&components, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
 
+		// Writes the duration to the document
 		self.y -= self.font_data.current_newline_amount();
 		self.x = self.x_min();
 		self.set_current_font_variant(FontVariant::Bold);
 		let duration = format!("Duration: <r> {}", &spell.duration.to_string());
 		self.write_textbox(&duration, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
 		
+		// Writes the description to the document
 		self.y -= self.font_data.get_newline_amount_for(TextType::Header);
 		self.x = self.x_min();
 		self.set_current_font_variant(FontVariant::Regular);
 		self.write_textbox(&spell.description, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
 
+		// Writes the upcast description to the document if there is one
 		if let Some(upcast_description) = &spell.upcast_description
 		{
 			self.y -= self.font_data.current_newline_amount();
