@@ -35,7 +35,7 @@ pub use crate::spellbook_options::*;
 pub fn create_spellbook
 (
 	title: &str,
-	spells: Vec<spells::Spell>,
+	spells: &Vec<spells::Spell>,
 	font_paths: FontPaths,
 	font_sizes: FontSizes,
 	font_scalars: FontScalars,

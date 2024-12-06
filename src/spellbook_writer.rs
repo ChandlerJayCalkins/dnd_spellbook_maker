@@ -75,7 +75,7 @@ impl <'a> SpellbookWriter<'a>
 	pub fn create_spellbook
 	(
 		title: &str,
-		spells: Vec<spells::Spell>,
+		spells: &Vec<spells::Spell>,
 		font_paths: FontPaths,
 		font_sizes: FontSizes,
 		font_scalars: FontScalars,
@@ -102,9 +102,14 @@ impl <'a> SpellbookWriter<'a>
 			background,
 			table_options
 		)?;
+		// Turn the first page into the title page
+		writer.make_title_page(title);
 
-		let test_str = "This is a test description. I am writing a bunch of words to fill up a couple paragraphs. I don't really know what to write about at the moment so I'm just gonig to keep writing meta thoughts until I come up with something. I'm having a pretty good time working on this project right now, it's a good distraction and I'm still learning new things as I go on with it. It's starting kind of slow rewriting all of this code, but at least it's going faster than the start of the first time I wrote it. Coding projects are always way more fun once you get to the part where all of the foundational code has been written and you just start to use all these functions and structs you've created to interface with other code or hardware and you start to write more abstract code using that foundation that you worked so hard to build up.";
-		writer.make_title_page(test_str);
+		// Add each spell to the spellbook
+		for spell in spells
+		{
+			writer.add_spell(spell);
+		}
 
 		Ok((writer.doc, writer.layers))
 	}
@@ -167,6 +172,7 @@ impl <'a> SpellbookWriter<'a>
 		{
 			// If they are, then construct page number data from the options given
 			Some(options) => (Some(PageNumberData::new(options, &font_data)?), options.starting_num()),
+			// If no page number options were given, don't use page numbers
 			None => (None, 1)
 		};
 
@@ -174,11 +180,8 @@ impl <'a> SpellbookWriter<'a>
 		let background = match background 
 		{
 			// If it is, construct background image data from the options given
-			Some((file_path, transform)) => Some(BackgroundImage
-			{
-				image: image::open(file_path)?,
-				transform: transform
-			}),
+			Some((file_path, transform)) => Some(BackgroundImage::new(file_path, transform)?),
+			// If no background image was given, don't use a background
 			None => None
 		};
 
@@ -188,7 +191,7 @@ impl <'a> SpellbookWriter<'a>
 			doc: doc,
 			layers: vec![title_layer],
 			pages: vec![title_page],
-			current_layer_index: 1,
+			current_layer_index: 0,
 			current_page_num: starting_page_num,
 			font_data: font_data,
 			page_size_data: page_size_data,
@@ -211,28 +214,13 @@ impl <'a> SpellbookWriter<'a>
 		if title.is_empty()
 		{
 			// Create pdf document with a default title
-			PdfDocument::new
-			(
-				DEFAULT_SPELLBOOK_TITLE,
-				Mm(width),
-				Mm(height),
-				TITLE_LAYER_NAME
-			)
+			PdfDocument::new(DEFAULT_SPELLBOOK_TITLE, Mm(width), Mm(height), TITLE_LAYER_NAME)
 		}
 		else
 		{
 			// Create pdf document with the given title
-			PdfDocument::new
-			(
-				title,
-				Mm(width),
-				Mm(height),
-				TITLE_LAYER_NAME
-			)
+			PdfDocument::new(title, Mm(width), Mm(height), TITLE_LAYER_NAME)
 		};
-
-		// Create bookmark for title page
-		doc.add_bookmark(TITLE_PAGE_NAME, title_page);
 
 		// Get PdfLayerReference (title_layer_ref) from PdfLayerIndex (title_layer_index)
 		let title_layer_ref = doc.get_page(title_page).get_layer(title_layer_index);
@@ -240,136 +228,243 @@ impl <'a> SpellbookWriter<'a>
 		(doc, title_page, title_layer_ref)
 	}
 
-	/// Adds a title page to the current spellbook with the given title.
+	/// Turns the current page into a title page with the given title.
 	fn make_title_page(&mut self, title: &str)
 	{
+		// Use the default spellbook title if none was given
 		if title.is_empty() { let title = DEFAULT_SPELLBOOK_TITLE; }
-		let previous_layer_index = self.current_layer_index;
-		self.current_layer_index = 0;
-		// If there is a background image
-		if let Some(background) = &self.background
-		{
-			// Add it to the page
-			let image = Image::from_dynamic_image(&background.image.clone());
-			image.add_to_layer(self.current_layer().clone(), background.transform);
-		}
-		self.add_page_number();
+		// Create bookmark for title page
+		self.doc.add_bookmark(TITLE_PAGE_NAME, self.pages[self.current_layer_index]);
+		// Adds a background image to the page (if they are desired)
+		self.add_background();
+		// Store the page number data and set it to None so page numbers don't appear in any title pages created
+		let page_number_data = self.page_number_data.clone();
+		self.page_number_data = None;
+		// Write the title to the page
 		self.write_textbox(title, self.x_min(), self.x_max(), self.y_min(), self.y_max());
-		self.current_layer_index = previous_layer_index;
+		// Reset the page number data to what it was before
+		self.page_number_data = page_number_data;
 	}
 
+	/// Adds a page / pages about a spell into the spellbook.
+	fn add_spell(&mut self, spell: &spells::Spell)
+	{
+		self.make_new_page();
+		self.doc.add_bookmark(spell.name.clone(), self.pages[self.current_layer_index]);
+		self.x = self.x_min();
+		self.y = self.y_max();
+		self.set_current_text_type(TextType::Header);
+		self.set_current_font_variant(FontVariant::Regular);
+		self.write_textbox(&spell.name, self.x_min(), self.x_max(), self.y_min(), self.y_max());
+		self.y -= self.current_newline_amount();
+		self.x = self.x_min();
+		self.set_current_text_type(TextType::Body);
+		self.set_current_font_variant(FontVariant::Italic);
+		self.write_textbox(&spell.get_level_school_text(), self.x_min(), self.x_max(), self.y_min(), self.y_max());
+		self.y -= self.font_data.get_newline_amount_for(TextType::Header);
+		self.x = self.x_min();
+		self.set_current_font_variant(FontVariant::Bold);
+		let casting_time = format!("Casting Time: <r> {}", spell.casting_time.to_string());
+		self.write_textbox(&casting_time, self.x_min(), self.x_max(), self.y_min(), self.y_max());
+		self.y -= self.font_data.current_newline_amount();
+		self.x = self.x_min();
+		self.set_current_font_variant(FontVariant::Bold);
+		let range = format!("Range: <r> {}", spell.range.to_string());
+		self.write_textbox(&range, self.x_min(), self.x_max(), self.y_min(), self.y_max());
+		self.y -= self.font_data.current_newline_amount();
+		self.x = self.x_min();
+		self.set_current_font_variant(FontVariant::Bold);
+		let components = format!("Components: <r> {}", spell.get_component_string());
+		self.write_textbox(&components, self.x_min(), self.x_max(), self.y_min(), self.y_max());
+		self.y -= self.font_data.current_newline_amount();
+		self.x = self.x_min();
+		self.set_current_font_variant(FontVariant::Bold);
+		let duration = format!("Duration: <r> {}", &spell.duration.to_string());
+		self.write_textbox(&duration, self.x_min(), self.x_max(), self.y_min(), self.y_max());
+	}
+
+	/// Writes text to the current page inside the given dimensions, starting at the x_min value and current y value.
+	/// The text is left-aligned and if it goes below the y_min, it continues writing onto the next page (or a new
+	/// page), continuing to stay within the given dimensions on the new page.
 	fn write_textbox(&mut self, text: &str, x_min: f32, x_max: f32, y_min: f32, y_max: f32)
 	{
-		if self.x > x_max { self.x = x_min; self.y -= self.current_newline_amount(); }
-		let textbox_width = x_max - x_min;
-		let textbox_height = y_max - y_min;
-		// Keeps trakc of whether or not a bullet point list is currently being processed
+		// Keeps track of whether or not a bullet point list is currently being processed
 		let mut in_bullet_list = false;
-		// The x position to reset text to upon a newline (changes inside bullet lists)
+		// The x position to reset the text to upon a newline (changes inside bullet lists)
 		let mut current_x_min = x_min;
 		// The number of newlines to go down by at the start of a paragraph
 		// Is 0.0 for the first paragraph
-		// Is 2.0 for all other paragraphs
+		// Is 1.0 for all other paragraphs
 		let mut end_of_paragraph_newline_scalar = 0.0;
-		let paragraphs = text.split('\n');
+		// The amount to tab the text in by at the start of a paragraph
+		// Is 0.0 for the first non-bullet-point paragraph (to match the Player's Handbook formatting)
+		// Is equal to `self.tab_amount()` for all other paragraphs
+		let mut current_tab_amount = 0.0;
+		// Split the text into paragraphs by newlines
+		// Collects it into a vec so the `is_empty` method can be used without having to clone a new iterator.
+		let paragraphs: Vec<_> = text.split('\n').collect();
+		// If there is no text, do nothing
+		if paragraphs.is_empty() { return; }
+		// If there is text and the x position is beyond the x_max, reset the x position to x_min and go to a new line
+		else if self.x > x_max { self.x = x_min; self.y -= self.current_newline_amount(); }
+		// Loop through each paragraph
 		for paragraph in paragraphs
 		{
-			// Move the y position down by 0 or 2 newline amounts
+			// Move the y position down by 0 or 1 newline amounts
 			// 0 newlines for the first paragraph
-			// 2 newlines for all other paragraphs
+			// 1 newline for all other paragraphs
 			self.y -= end_of_paragraph_newline_scalar * self.current_newline_amount();
+			// Split the paragraph into tokens by whitespace
 			let mut tokens: Vec<_> = paragraph.split_whitespace().collect();
+			// If there is no text in this paragraph, skip to the next one
 			if tokens.is_empty() { continue; }
-			else { end_of_paragraph_newline_scalar = 2.0; }
+			// If there was text, make it so all following paragraphs will move down a newline before processing
+			else { end_of_paragraph_newline_scalar = 1.0; }
+			// The current line of text being processed
 			let mut line = String::new();
-			if (tokens[0] == "•" || tokens[0] == "-") && !in_bullet_list
+			// If the paragraph starts with a bullet point symbol
+			if tokens[0] == "•" || tokens[0] == "-"
 			{
-				in_bullet_list = true;
-				// Set the value that the x position resets to so it lines up after the bullet point
-				current_x_min = self.calc_text_width("• ") + x_min;
-				// Move the y position down an extra newline amount
-				self.y -= self.current_newline_amount();
+				// If this is the start of a bullet list (not currently in a bullet list and this is the first
+				// bullet point)
+				if !in_bullet_list
+				{
+					// Set the bullet point flag to signal that a bullet list is currently being processed
+					in_bullet_list = true;
+					// Set the value that the x position resets to so it lines up after the bullet point
+					current_x_min = self.calc_text_width("• ") + x_min;
+					// Move the y position down an extra newline amount to separate it more from normal paragraphs
+					// (to match the Player's Handbook formatting)
+					self.y -= self.current_newline_amount();
+				}
+				// If the bullet point symbol is a dash, make it a dot
 				if tokens[0] == "-" { tokens[0] = "•"; }
+				// Reset the x position to the left side of the text box
+				self.x = x_min;
 			}
+			// If this is a table marker (ex: "[table][5]", "[table][0]", etc.)
+			else if tokens[0].starts_with("[table][") && tokens[0].ends_with("]")
+			{
+				// Get a string slice of the table index
+				let index_str = &tokens[0][7 .. tokens[0].len() - 1];
+				// Convert the table index into a number
+				let table_index = match index_str.parse::<usize>()
+				{
+					Ok(index) => index,
+					// If the index wasn't a valid number, skip over this table
+					Err(_) => continue
+				};
+				// TODO: Add code to put in a table
+				// Skip the token loop below and move to the next paragraph
+				continue;
+			}
+			// If this is a normal text paragraph
 			else
 			{
+				// If this paragraph is right after a bullet list (bullet flag still set)
 				if in_bullet_list
 				{
-					// Move the y position down an extra newline amount
+					// Move the y position down an extra newline amount to separate the bullet list from this
+					// paragraph (to match the Player's Handbook formatting)
 					self.y -= self.current_newline_amount();
-					// Set the value that the x position resets to so it lines up with the left margin again
+					// Set the value that the x position resets to so that it lines up with the left side of the text
+					// box again
 					current_x_min = x_min;
+					// Zero the bullet flag to signal that a bullet list isn't being currently processed anymore
 					in_bullet_list = false;
 				}
-				self.x = x_min + self.tab_amount();
+				// Set the x position to be 0 or 1 tab amounts from the left side of the text box
+				// 0 tab amounts for the first paragraph (to match the Player's Handbook formatting)
+				// 1 tab amount for all other paragraphs
+				self.x = x_min + current_tab_amount;
+				// Set the current tab amount to be the normal tab amount so all paragraphs after the first are tabbed
+				// in on the first line
+				current_tab_amount = self.tab_amount();
 			}
+			// TODO: Add some kind of check to make sure the first token doesn't go beyond the x_max
+			// possibly due to the x position starting near the x_max
 			// TODO: Make it so single tokens that are too long to fit on a line get hyphenated
+			// Put the first token into the next line being processed / written
 			let mut line = tokens[0].to_string();
+			// Loop through each token after the first
 			for token in &tokens[1 ..]
 			{
+				// Determine if the current token is a special token
 				match *token
 				{
-					// Apply line of text, switch to new font variant
+					// If It's a regular font tag, write the current line to the page and switch the current font
+					// variant to regular
 					"<r>" =>
 					{
-						self.switch_font_variant(&mut line, FontVariant::Regular);
+						self.switch_font_variant(FontVariant::Regular, &mut line);
 					},
+					// If It's a bold font tag, write the current line to the page and switch the current font variant
+					// to bold
 					"<b>" =>
 					{
-						self.switch_font_variant(&mut line, FontVariant::Bold);
+						self.switch_font_variant(FontVariant::Bold, &mut line);
 					},
+					// If It's a italic font tag, write the current line to the page and switch the current font
+					// variant to italic
 					"<i>" =>
 					{
-						self.switch_font_variant(&mut line, FontVariant::Italic);
+						self.switch_font_variant(FontVariant::Italic, &mut line);
 					},
+					// If It's a bold-italic font tag, write the current line to the page and switch the current font
+					// variant to bold-italic
 					"<ib>" | "<bi>" =>
 					{
-						self.switch_font_variant(&mut line, FontVariant::BoldItalic);
+						self.switch_font_variant(FontVariant::BoldItalic, &mut line);
 					},
+					// If it's not a special token
 					_ =>
 					{
-						if token.starts_with("[table][") && token.ends_with("]")
+						// Create a new line with the token at the end to see where the end of this line would be
+						// Remove whitespace at the ends in case there is a space at the start of the line from a
+						// font switch
+						let new_line = format!("{} {}", line, token).trim().to_string();
+						// Calculate where the end of this new line would be
+						let new_line_end = self.x + self.calc_text_width(&new_line);
+						// If this new line would end outside the text box, apply the current line, empty is, and put
+						// the current token in there for the next line
+						if new_line_end > x_max
 						{
+							// Apply the current line
 							self.apply_text_line(&line);
-							self.x += self.calc_text_width(&line);
-							line = String::new();
-							let index_str = &token[7 .. token.len() - 1];
-							let table_index = match index_str.parse::<usize>()
-							{
-								Ok(index) => index,
-								Err(_) => continue
-							};
-							// TODO: Add code to put in a table
+							// Set the x position back to the new-line reset point
+							self.x = current_x_min;
+							// Move the y position down a line
+							self.y -= self.current_newline_amount();
+							// Empty the line and put the current token in it to be at the start of the next line
+							line = token.to_string();
 						}
-						else
-						{
-							let new_line = format!("{} {}", line, token);
-							let new_line_end = self.x + self.calc_text_width(&new_line);
-							if new_line_end > x_max
-							{
-								// Remove whitespace at the ends of the line in case the line starts with a space from
-								// a front switch
-								line = line.trim().to_string();
-								self.apply_text_line(&line);
-								self.x = current_x_min;
-								self.y -= self.current_newline_amount();
-								line = token.to_string();
-							}
-							else { line = new_line; }
-						}
+						// If the new line isn't too wide, make it the current line
+						else { line = new_line; }
 					}
 				};
 			}
+			// Write any remaining text to the page
 			self.apply_text_line(&line);
 		}
 	}
 
-	fn switch_font_variant(&mut self, line: &mut String, font_variant: FontVariant)
+	/// For use in `write_textbox` functions. If the given font variant is different than the current one being used,
+	/// it applies the current line of text being processed, empties it, and switches the current font variant to the
+	/// given one.
+	fn switch_font_variant(&mut self, font_variant: FontVariant, line: &mut String)
 	{
+		// If the current font variant different than the one to switch to
 		if *self.current_font_variant() != font_variant
 		{
+			// Applies the current line of text
 			self.apply_text_line(&line);
+			// Empties the line of text
 			*line = String::new();
+			// Move the cursor over by a space width of the current font type to prevent text of different font types
+			// being too close together.
+			let space_width = self.calc_text_width(" ");
+			self.x += space_width;
+			// Switches to the desired font variant
 			self.set_current_font_variant(font_variant);
 		}
 	}
@@ -441,21 +536,32 @@ impl <'a> SpellbookWriter<'a>
 		);
 		// Get the layer for the new page
 		let layer_ref = self.doc.get_page(page).get_layer(layer);
-		// If there is a background image
-		if let Some(background) = &self.background
-		{
-			// Add it to the page
-			let image = Image::from_dynamic_image(&background.image.clone());
-			image.add_to_layer(layer_ref.clone(), background.transform);
-		}
 		// Add the new layer and page to the vecs holding them
 		self.layers.push(layer_ref);
 		self.pages.push(page);
-		// Adds a page number to the new page (if there are page numbers)
+		// Update the current layer index to point to the new page
 		self.current_layer_index = self.layers.len() - 1;
+		// Add a background image (if there is a background to add)
+		self.add_background();
+		// Adds a page number to the new page (if there are page numbers)
 		self.add_page_number();
 		// Increases the page number count by 1
 		self.current_page_num += 1;
+	}
+
+	/// Adds the background image to the current layer (if a background image was given to use).
+	fn add_background(&mut self)
+	{
+		// If there is a background image
+		if let Some(background) = &self.background
+		{
+			// Construct a `printpdf::Image` from the `image::DynamicImage`
+			// Note: Cannot store a `printpdf::Image` in the background struct because of ownership issues and
+			// lacking implementations of the `printpdf::Image` struct from the `printpdf` crate.
+			let image = Image::from_dynamic_image(&background.image().clone());
+			// Add the image to the current layer with the given transform data
+			image.add_to_layer(self.current_layer().clone(), *background.transform());
+		}
 	}
 
 	/// Adds the page number to the current layer (if page number options were given).
@@ -529,7 +635,10 @@ impl <'a> SpellbookWriter<'a>
 		.map(|g| g.position().x + g.unpositioned().h_metrics().advance_width)
 		.last()
 		.unwrap_or(0.0);
-		width * self.page_number_font_scalar().unwrap()
+		width * self.page_number_font_scalar().expect
+		(
+			"Called `SpellbookWriter::calc_page_number_width()` with no page number data."
+		)
 	}
 
 	// General Field Getters

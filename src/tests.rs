@@ -69,7 +69,7 @@ fn idk()
 	let (doc, _) = create_spellbook
 	(
 		spellbook_name,
-		spell_list,
+		&spell_list,
 		font_paths,
 		font_sizes,
 		font_scalars,
@@ -321,7 +321,7 @@ fn players_handbook()
 	let (doc_1, _) = create_spellbook
 	(
 		spellbook_name_1,
-		spell_list_1,
+		&spell_list_1,
 		font_paths.clone(),
 		font_sizes,
 		font_scalars,
@@ -338,7 +338,7 @@ fn players_handbook()
 	let (doc_2, _) = create_spellbook
 	(
 		spellbook_name_2,
-		spell_list_2,
+		&spell_list_2,
 		font_paths,
 		font_sizes,
 		font_scalars,
@@ -407,7 +407,7 @@ fn xanathars_guide_to_everything()
 	let (doc, _) = create_spellbook
 	(
 		spellbook_name,
-		spell_list,
+		&spell_list,
 		font_paths,
 		font_sizes,
 		font_scalars,
@@ -476,7 +476,7 @@ fn tashas_cauldron_of_everything()
 	let (doc, _) = create_spellbook
 	(
 		spellbook_name,
-		spell_list,
+		&spell_list,
 		font_paths,
 		font_sizes,
 		font_scalars,
@@ -545,7 +545,7 @@ fn strixhaven()
 	let (doc, _) = create_spellbook
 	(
 		spellbook_name,
-		spell_list,
+		&spell_list,
 		font_paths,
 		font_sizes,
 		font_scalars,
@@ -614,7 +614,7 @@ fn necronomicon()
 	let (doc, _) = create_spellbook
 	(
 		spellbook_name,
-		spell_list,
+		&spell_list,
 		font_paths,
 		font_sizes,
 		font_scalars,
@@ -707,7 +707,7 @@ fn necronomicon()
 //	let (doc, _) = create_spellbook
 //	(
 //		spellbook_name,
-//		spell_list,
+//		&spell_list,
 //		font_paths,
 //		font_sizes,
 //		font_scalars,

@@ -664,9 +664,39 @@ impl <'a> PageNumberData<'a>
 }
 
 /// Holds the background image and the transform data for it (positioning, size, rotation, etc.)
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BackgroundImage
 {
-	pub image: DynamicImage,
-	pub transform: ImageTransform
+	image: DynamicImage,
+	transform: ImageTransform
+}
+
+impl BackgroundImage
+{
+	/// Constructor
+	///
+	/// # Parameters
+	///
+	/// - `image_path` A filepath to an image to use.
+	/// - `transform` Transform data for how the image should be placed on pages (positioning, size, rotation, etc.).
+	///
+	/// # Output
+	///
+	/// - `Ok` A `BackgroundImage` instance.
+	/// - `Err` Any errors that occured.
+	pub fn new(image_path: &str, transform: ImageTransform) -> Result<Self, Box<dyn Error>>
+	{
+		// Construct and return
+		Ok(Self
+		{
+			// Constructs a `image::DynamicImage` from the file at the given filepath
+			image: image::open(image_path)?,
+			transform: transform
+		})
+	}
+
+	// Getters
+
+	pub fn image(&self) -> &DynamicImage { &self.image }
+	pub fn transform(&self) -> &ImageTransform { &self.transform }
 }
