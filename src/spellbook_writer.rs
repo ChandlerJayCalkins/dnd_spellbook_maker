@@ -39,7 +39,7 @@ pub struct SpellbookWriter<'a>
 	doc: PdfDocumentReference,
 	layers: Vec<PdfLayerReference>,
 	pages: Vec<PdfPageIndex>,
-	current_layer_index: usize,
+	current_page_index: usize,
 	current_page_num: i64,
 	font_data: FontData<'a>,
 	page_size_data: PageSizeData,
@@ -86,7 +86,7 @@ impl <'a> SpellbookWriter<'a>
 		background: Option<(&str, ImageTransform)>,
 		table_options: TableOptions
 	)
-	-> Result<(PdfDocumentReference, Vec<PdfLayerReference>), Box<dyn Error>>
+	-> Result<(PdfDocumentReference, Vec<PdfLayerReference>, Vec<PdfPageIndex>), Box<dyn Error>>
 	{
 		// Construct a spellbook writer
 		let mut writer = SpellbookWriter::new
@@ -111,7 +111,7 @@ impl <'a> SpellbookWriter<'a>
 			writer.add_spell(spell);
 		}
 
-		Ok((writer.doc, writer.layers))
+		Ok((writer.doc, writer.layers, writer.pages))
 	}
 
 	/// Constructor
@@ -191,7 +191,7 @@ impl <'a> SpellbookWriter<'a>
 			doc: doc,
 			layers: vec![title_layer],
 			pages: vec![title_page],
-			current_layer_index: 0,
+			current_page_index: 0,
 			current_page_num: starting_page_num,
 			font_data: font_data,
 			page_size_data: page_size_data,
@@ -234,7 +234,7 @@ impl <'a> SpellbookWriter<'a>
 		// Use the default spellbook title if none was given
 		if title.is_empty() { let title = DEFAULT_SPELLBOOK_TITLE; }
 		// Create bookmark for title page
-		self.doc.add_bookmark(TITLE_PAGE_NAME, self.pages[self.current_layer_index]);
+		self.doc.add_bookmark(TITLE_PAGE_NAME, self.pages[self.current_page_index]);
 		// Adds a background image to the page (if they are desired)
 		self.add_background();
 		// Store the page number data and set it to None so page numbers don't appear in any title pages created
@@ -250,7 +250,7 @@ impl <'a> SpellbookWriter<'a>
 	fn add_spell(&mut self, spell: &spells::Spell)
 	{
 		self.make_new_page();
-		self.doc.add_bookmark(spell.name.clone(), self.pages[self.current_layer_index]);
+		self.doc.add_bookmark(spell.name.clone(), self.pages[self.current_page_index]);
 		self.x = self.x_min();
 		self.y = self.y_max();
 		self.set_current_text_type(TextType::Header);
@@ -488,32 +488,32 @@ impl <'a> SpellbookWriter<'a>
 		// Checks to see if the text should be applied to the next page or if a new page should be created.
 		self.check_for_new_page();
 		// Create a new text section on the page
-		self.layers[self.current_layer_index].begin_text_section();
+		self.layers[self.current_page_index].begin_text_section();
 		// Set the text cursor to the current x and y position of the text
-		self.layers[self.current_layer_index].set_text_cursor(Mm(self.x), Mm(self.y));
+		self.layers[self.current_page_index].set_text_cursor(Mm(self.x), Mm(self.y));
 		// Set the font and font size of the text
-		self.layers[self.current_layer_index].set_font(self.current_font_ref(), self.current_font_size());
+		self.layers[self.current_page_index].set_font(self.current_font_ref(), self.current_font_size());
 		// Set the text color
-		self.layers[self.current_layer_index].set_fill_color(self.current_text_color().clone());
+		self.layers[self.current_page_index].set_fill_color(self.current_text_color().clone());
 		// Write the text to the page
-		self.layers[self.current_layer_index].write_text(text, self.current_font_ref());
+		self.layers[self.current_page_index].write_text(text, self.current_font_ref());
 		// End the text section on the page
-		self.layers[self.current_layer_index].end_text_section();
+		self.layers[self.current_page_index].end_text_section();
 		// Move the x position to be at the end of the newly applied line
 		self.x += self.calc_text_width(&text);
 	}
 
 	/// Checks if the current layer should move to a new page based on the text y position.
-	/// Creates a new page if the layer index goes beyond the number of layers that exist.
+	/// Creates a new page if the page index goes beyond the number of layers that exist.
 	fn check_for_new_page(&mut self)
 	{
 		// If the y level is below the bottom of where text is allowed on the page
 		if self.y < self.y_min()
 		{
-			// Increase the current layer index to the layer for the next page
-			self.current_layer_index += 1;
+			// Increase the current page index to the layer for the next page
+			self.current_page_index += 1;
 			// If the index is beyond the number of layers in the document
-			if self.current_layer_index >= self.layers.len()
+			if self.current_page_index >= self.layers.len()
 			{
 				// Create a new page
 				self.make_new_page();
@@ -524,7 +524,7 @@ impl <'a> SpellbookWriter<'a>
 	}
 
 	/// Adds a new page to the pdf document, including the background image and page number if options for those were
-	/// given. Sets `current_layer_index` to the new page.
+	/// given. Sets `current_page_index` to the new page.
 	fn make_new_page(&mut self)
 	{
 		// Create a new page
@@ -539,8 +539,8 @@ impl <'a> SpellbookWriter<'a>
 		// Add the new layer and page to the vecs holding them
 		self.layers.push(layer_ref);
 		self.pages.push(page);
-		// Update the current layer index to point to the new page
-		self.current_layer_index = self.layers.len() - 1;
+		// Update the current page index to point to the new page
+		self.current_page_index = self.layers.len() - 1;
 		// Add a background image (if there is a background to add)
 		self.add_background();
 		// Adds a page number to the new page (if there are page numbers)
@@ -589,9 +589,9 @@ impl <'a> SpellbookWriter<'a>
 					}
 				};
 				// Set the page fill color to the color of the page numbers
-				self.layers[self.current_layer_index].set_fill_color(data.color().clone());
+				self.layers[self.current_page_index].set_fill_color(data.color().clone());
 				// Apply the page number to the document
-				self.layers[self.current_layer_index].use_text
+				self.layers[self.current_page_index].use_text
 				(
 					&text,
 					data.font_size(),
@@ -646,7 +646,7 @@ impl <'a> SpellbookWriter<'a>
 	fn document(&self) -> &PdfDocumentReference { &self.doc }
 	fn layers(&self) -> &Vec<PdfLayerReference> { &self.layers }
 	fn pages(&self) -> &Vec<PdfPageIndex> { &self.pages }
-	fn current_layer_index(&self) -> usize { self.current_layer_index }
+	fn current_page_index(&self) -> usize { self.current_page_index }
 	fn current_page_num(&self) -> i64 { self.current_page_num }
 	fn font_data(&self) -> &FontData { &self.font_data }
 	fn page_size_data(&self) -> &PageSizeData { &self.page_size_data }
@@ -662,7 +662,7 @@ impl <'a> SpellbookWriter<'a>
 
 	fn current_layer(&self) -> &PdfLayerReference
 	{
-		&self.layers[self.current_layer_index]
+		&self.layers[self.current_page_index]
 	}
 
 	// Font Getters

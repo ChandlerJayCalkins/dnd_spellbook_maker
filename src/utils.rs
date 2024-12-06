@@ -7,7 +7,7 @@
 use std::fs;
 use std::error::Error;
 
-pub use printpdf::{PdfDocumentReference, PdfLayerReference};
+pub use printpdf::{PdfDocumentReference, PdfLayerReference, PdfPageIndex};
 
 use crate::spellbook_writer::*;
 
@@ -46,7 +46,7 @@ pub fn create_spellbook
 	background: Option<(&str, ImageTransform)>,
 	table_options: TableOptions
 )
--> Result<(PdfDocumentReference, Vec<PdfLayerReference>), Box<dyn Error>>
+-> Result<(PdfDocumentReference, Vec<PdfLayerReference>, Vec<PdfPageIndex>), Box<dyn Error>>
 {
 	SpellbookWriter::create_spellbook
 	(
