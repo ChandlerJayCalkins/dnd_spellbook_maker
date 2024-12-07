@@ -27,5 +27,27 @@
   },
   "description": "Choose 1 target creature or object within range. That target gets scrunched.\n- Scrunching has these effects <table> <title> Scrunching Effects <title>\nTarget | Effect\n<row> Creature | Flesh Ball\n<row> Object | Ball of that object's material\n<row> Creature not made of flesh | Ball of that creature's material\n<table>\n- Scrunch balls (balls produced from scrunching) can be thrown and do 1d6 bludgeoning damage on hit.\nScrunch ball funny lol.",
   "upcast_description": null,
-  "tables": []
+  "tables": [
+    {
+      "title": "Scrunching Effects",
+      "column_labels": [
+        "Target",
+        "Effect"
+      ],
+      "cells": [
+        [
+          "Creature",
+          "Flesh Ball"
+        ],
+        [
+          "Object",
+          "Ball of that object's material"
+        ],
+        [
+          "Creature not made of flesh",
+          "Ball of that creature's material"
+        ]
+      ]
+    }
+  ]
 }

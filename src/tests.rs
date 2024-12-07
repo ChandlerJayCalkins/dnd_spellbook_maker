@@ -10,6 +10,32 @@ use std::path::Path;
 use crate::utils::*;
 
 #[test]
+fn idk_2()
+{
+	let mut power_word_scrunch = spells::Spell::from_json_file("spells/necronomicon/power_word_scrunch.json")
+		.expect("Couldn't read spell file.");
+	power_word_scrunch.tables = vec!
+	[
+		spells::Table
+		{
+			title: String::from("Scrunching Effects"),
+			column_labels: vec![String::from("Target"), String::from("Effect")],
+			cells: vec!
+			[
+				vec![String::from("Creature"), String::from("Flesh Ball")],
+				vec![String::from("Object"), String::from("Ball of that object's material")],
+				vec![String::from("Creature not made of flesh"), String::from("Ball of that creature's material")]
+			]
+		}
+	];
+	println!("{power_word_scrunch:?}");
+	power_word_scrunch.to_json_file("spells/tests/json/power_word_scrunch.json", false)
+		.expect("Could not write spell to json file.");
+	power_word_scrunch.to_json_file("spells/necronomicon/power_word_scrunch.json", false)
+		.expect("Could not write spell to json file.");
+}
+
+#[test]
 fn idk()
 {
 	// Spellbook's name
