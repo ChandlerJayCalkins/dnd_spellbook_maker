@@ -102,18 +102,6 @@ impl <'a> SpellbookWriter<'a>
 			background,
 			table_options
 		)?;
-
-		let test_str = "This is a test description. I am writing a bunch of words to fill up a couple paragraphs. I don't really know what to write about at the moment so I'm just gonig to keep writing meta thoughts until I come up with something. I'm having a pretty good time working on this project right now, it's a good distraction and I'm still learning new things as I go on with it. It's starting kind of slow rewriting all of this code, but at least it's going faster than the start of the first time I wrote it. Coding projects are always way more fun once you get to the part where all of the foundational code has been written and you just start to use all these functions and structs you've created to interface with other code or hardware and you start to write more abstract code using that foundation that you worked so hard to build up.
-	Now I'm doing a new paragraph and have to keep writing some more words. I could write something about alligators but I don't think I really have anything to say about them, that's just the first thing that came to mind for another topic to write about. I'm out of ideas for what to write for the satisfaction level of various stages of programming projects at the moment but if something else comes to mind about that I will type it out. I just looked at my powershell terminal and now I'm thinking about writing about my feelings about that. It feels pretty cool to use commandline interfaces. It feels really technical and to be honest it makes me feel smart since it's stereotypically something that smart people who know a lot about computers use.
-	I'm gonna move on to another paragraph again so I can test more paragraphs. I'm still having a hard time coming up with stuff to type about. I sometimes think about how I and other people say \"write it down\" even if they're talking about typing things into a computer. I'm going to try to be better about that and use \"type it out\" when I'm using a computer instead of \"write it down\".
-	Another similar thing that that I've noticed myself and others doing that's technically incorrect is saying \"I heard that somewhere\" when they actually saw it or read about it somewhere. I'm going to try to be better about that too and say \"I read about that\" or \"I saw that\" instead of \"I heard about that\".
-	I'm gonna test some bullet points now.
-	- Point 1
-	- Point 2
-	- Point 3 with some extra text so I can see if multi-line bullet points work and wrap to new lines properly without any issues.
-	- Point 4
-	Here is some more text to go after the bullet point. It's been about a couple hours since I last added to this string so I'm struggling with coming up with stuff to type in here again. Computers are pretty cool. I like them a lot. I like how logical they are and how much control you get to have over them. 99% of the times when you're working on software with a computer, if something goes wrong then it's your fault and that gives me a lot of comfort.
-	Here's another new paragraph to go after the bullet points.";
 		// Turn the first page into the title page
 		writer.make_title_page(title);
 
