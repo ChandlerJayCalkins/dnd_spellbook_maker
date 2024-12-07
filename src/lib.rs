@@ -14,7 +14,7 @@ mod tests;
 pub mod utils;
 
 // TODO
-// 1. Finish making the `write_centered_textbox` method
+// 1. Finish making the `write_centered_textbox` method and make it so titles on title pages are centered
 // 2. Add table parsing and writing
 // 3. Make it so single tokens that are too long get hyphenated
 // 4. Add all 2024 Player's Handbook spells
