@@ -320,6 +320,8 @@ impl <'a> SpellbookWriter<'a>
 	/// `starting_tab` determines whether or not the first paragraph gets tabbed in on the first line or not.
 	fn write_textbox(&mut self, text: &str, x_min: f32, x_max: f32, y_min: f32, y_max: f32, starting_tab: bool)
 	{
+		// If either dimensional bounds overlap with each other, do nothing
+		if x_min >= x_max || y_min >= y_max { return; }
 		// Keeps track of whether or not a bullet point list is currently being processed
 		let mut in_bullet_list = false;
 		// The x position to reset the text to upon a newline (changes inside bullet lists)
@@ -481,6 +483,19 @@ impl <'a> SpellbookWriter<'a>
 		}
 	}
 
+	/// Writes vertically and horizontally centered text into a fixed sized textbox.
+	/// If the text is too big to fit in the textbox, it continues into the next page from the top of the page going
+	/// to the bottom and staying within the same horizontal bounds.
+	fn write_centered_textbox(&mut self, text: &str, x_min: f32, x_max: f32, y_min: f32, y_max: f32)
+	{
+		if self.x > x_max { self.x = x_min; self.y -= self.current_newline_amount(); }
+		let textbox_width = x_max - x_min;
+		let textbox_height = y_max - y_min;
+		let tokens: Vec<_> = text.split_whitespace().collect();
+		if tokens.is_empty() { return; }
+		let mut line = String::new();
+	}
+
 	/// For use in `write_textbox` functions. If the given font variant is different than the current one being used,
 	/// it applies the current line of text being processed, empties it, and switches the current font variant to the
 	/// given one.
@@ -500,17 +515,6 @@ impl <'a> SpellbookWriter<'a>
 			// Switches to the desired font variant
 			self.set_current_font_variant(font_variant);
 		}
-	}
-
-	/// Writes vertically and horizontally centered text into a fixed sized textbox
-	fn write_centered_textbox(&mut self, text: &str, x_min: f32, x_max: f32, y_min: f32, y_max: f32)
-	{
-		if self.x > x_max { self.x = x_min; self.y -= self.current_newline_amount(); }
-		let textbox_width = x_max - x_min;
-		let textbox_height = y_max - y_min;
-		let tokens: Vec<_> = text.split_whitespace().collect();
-		if tokens.is_empty() { return; }
-		let mut line = String::new();
 	}
 
 	/// Writes a line of text to a page.
