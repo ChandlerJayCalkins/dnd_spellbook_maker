@@ -273,7 +273,7 @@ impl <'a> SpellbookWriter<'a>
 		self.y -= self.font_data.get_newline_amount_for(TextType::Header);
 		self.x = self.x_min();
 		self.set_current_font_variant(FontVariant::Bold);
-		let casting_time = format!("Casting Time: <r> {}", spell.casting_time.to_string());
+		let casting_time = format!("Casting Time: <r> {}", spell.get_casting_time_text());
 		self.write_textbox(&casting_time, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
 
 		// Writes the range to the document

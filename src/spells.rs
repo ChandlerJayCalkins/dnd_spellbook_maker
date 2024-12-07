@@ -2149,14 +2149,18 @@ impl Spell
 				format!("{} {}", &self.level, school_text)
 			}
 		};
-		// If the spell is a ritual
-		if self.is_ritual
-		{
-			// Add that information to the end of the string
-			text += " (ritual)";
-		}
 		// Return the string
 		text
+	}
+
+	/// Gets the casting time and ritual info from a spell and turns it into text that says something like
+	/// "1 action or Ritual", "1 bonus action", or "2 hours"
+	pub fn get_casting_time_text(&self) -> String
+	{
+		// If the spell is a ritual, return the casting time with "or Ritual" at the end of it
+		if self.is_ritual { format!("{} or Ritual", self.casting_time) }
+		// If the spell is not a ritual, just return the casting time
+		else { self.casting_time.to_string() }
 	}
 }
 
