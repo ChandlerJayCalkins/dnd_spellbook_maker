@@ -21,7 +21,73 @@
   "duration": {
     "Controlled": "Instant"
   },
-  "description": "You touch a dead humanoid or a piece of a dead humanoid. Provided that the creature has been dead no longer than 10 days, the spell forms a new adult body for it and then calls the soul to enter that body. If the target's soul isn't free or willing to do so, the spell fails.\nThe magic fashions a new body for the creature to inhabit, which likely causes the creature's race to change. The DM rolls a d100 and consults the following table to determine what form the creature takes when restored to life, or the DM chooses a form.\n<table>\nd100 | Race\n<row> 01—04 | Dragonborn\n<row> 05—13 | Dwarf, hill\n<row> 14—21 | Dward, mountain\n<row> 22—25 | Elf, dark\n<row> 26—34 | Elf, high\n<row> 35—42 | Elf, wood\n<row> 43—46 | Gnome, forest\n<row> 47—52 | Gnome, rock\n<row> 53—56 | Half-elf\n<row> 57—60 | Half-orc\n<row> 61—68 | Halfing, lightfoot\n<row> 69—76 | Halfling, stout\n<row> 77—96 | Human\n<row> 97—00 | Tiefling\n<table>\nThe reincarnated creature recalls its former life and experiences. It retains the capabilities it had in its original form, except it exchanges its original race for the new one and changes its racial traits accordingly.",
+  "description": "You touch a dead humanoid or a piece of a dead humanoid. Provided that the creature has been dead no longer than 10 days, the spell forms a new adult body for it and then calls the soul to enter that body. If the target's soul isn't free or willing to do so, the spell fails.\nThe magic fashions a new body for the creature to inhabit, which likely causes the creature's race to change. The DM rolls a d100 and consults the following table to determine what form the creature takes when restored to life, or the DM chooses a form.\n[table][0]\nThe reincarnated creature recalls its former life and experiences. It retains the capabilities it had in its original form, except it exchanges its original race for the new one and changes its racial traits accordingly.",
   "upcast_description": null,
-  "tables": []
+  "tables": [
+	{
+		"title": "",
+		"column_labels": [
+			"d100",
+			"Race"
+		],
+		"cells": [
+			[
+				"01-04",
+				"Dragonborn"
+			],
+			[
+				"05-13",
+				"Dwarf, hill"
+			],
+			[
+				"14-21",
+				"Dwarf, mountain"
+			],
+			[
+				"22-25",
+				"Elf, dark"
+			],
+			[
+				"26-34",
+				"Elf, high"
+			],
+			[
+				"35-42",
+				"Elf, wood"
+			],
+			[
+				"43-46",
+				"Gnome, forest"
+			],
+			[
+				"47-52",
+				"Gnome, rock"
+			],
+			[
+				"53-56",
+				"Half-elf"
+			],
+			[
+				"57-60",
+				"Half-orc"
+			],
+			[
+				"61-68",
+				"Halfling, lightfoot"
+			],
+			[
+				"69-76",
+				"Halfling, stout"
+			],
+			[
+				"77-96",
+				"Human"
+			],
+			[
+				"97-00",
+				"Tiefling"
+			]
+		]
+	}
+  ]
 }

@@ -27,7 +27,37 @@
       "Special": false
     }
   },
-  "description": "You pull wisps of shadow material from the Shadowfell to create a nonliving object of vegetable matter within range: soft goods, rope, wood, or something similar. You can also use this spell to create mineral objects such as stone, crystal, or metal. The object created must be no larger than a 5-foot cube, and the object must be of a form and material that you have seen before.\nThe duration depends on the object's material. If the object is composed of multiple materials, use the shortest duration.\n<table>\nMaterial | Duration\n<row> Vegetable matter | 1 day\n<row> Stone or crystal | 12 hours\n<row> Precious metals | 1 hour\n<row> Gems | 10 minutes\n<row> Adamentine or mithral | 1 minute\n<table>\nUsing any material created by this spell as another spell's material component causes that spell to fail.",
+  "description": "You pull wisps of shadow material from the Shadowfell to create a nonliving object of vegetable matter within range: soft goods, rope, wood, or something similar. You can also use this spell to create mineral objects such as stone, crystal, or metal. The object created must be no larger than a 5-foot cube, and the object must be of a form and material that you have seen before.\nThe duration depends on the object's material. If the object is composed of multiple materials, use the shortest duration.\n[table][0]\nUsing any material created by this spell as another spell's material component causes that spell to fail.",
   "upcast_description": "When you cast this spell using a spell slot of 6th level or higher, the cube increases by 5 feet for each slot level above 5th.",
-  "tables": []
+  "tables": [
+	{
+		"title": "",
+		"column_labels": [
+			"Material",
+			"Duration"
+		],
+		"cells": [
+			[
+				"Vegetable matter",
+				"1 day"
+			],
+			[
+				"Stone or crystal",
+				"12 hours"
+			],
+			[
+				"Precious metals",
+				"1 hour"
+			],
+			[
+				"Gems",
+				"10 minutes"
+			],
+			[
+				"Adamentine or mithral",
+				"1 minute"
+			]
+		]
+	}
+  ]
 }
