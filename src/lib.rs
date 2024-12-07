@@ -14,6 +14,8 @@ mod tests;
 pub mod utils;
 
 // TODO
-// 1. Make it so SpellbookWriters immediately create the title page when constructed or upon using a new pdf doc.
-// 2. Rewrite `write_spell_description` function to be combined with `write_textbox` so tokens get parsed and written
-// at the same time. Make it so text gets written when it either switches fonts or gets too long to fit on the page.
+// 1. Finish making the `write_centered_textbox` method
+// 2. Add table parsing and writing
+// 3. Make it so single tokens that are too long get hyphenated
+// 4. Add all 2024 Player's Handbook spells
+// 5. Make it so spells can have stat blocks in them
