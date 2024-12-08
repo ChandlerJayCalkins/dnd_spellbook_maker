@@ -394,7 +394,7 @@ impl <'a> SpellbookWriter<'a>
 		let escaped_font_tag_pattern = Regex::new(&escaped_font_tag_pattern)
 		.expect(format!
 		(
-			"Failed to build regex pattern \"{}\" in `SpellbookWriter::write_textbox`",
+			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::write_textbox`",
 			escaped_font_tag_pattern
 		).as_str());
 		// Create a regex pattern to find table tags
@@ -402,7 +402,7 @@ impl <'a> SpellbookWriter<'a>
 		let table_tag_pattern = Regex::new(table_tag_pattern)
 		.expect(format!
 		(
-			"Failed to build regex pattern \"{}\" in `SpellbookWriter::write_textbox`",
+			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::write_textbox`",
 			table_tag_pattern
 		).as_str());
 		// Create a regex pattern to find repeating backslashes
@@ -410,7 +410,7 @@ impl <'a> SpellbookWriter<'a>
 		let backslashes_pattern = Regex::new(backslashes_pattern)
 		.expect(format!
 		(
-			"Failed to build regex pattern \"{}\" in `SpellbookWriter::write_textbox`",
+			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::write_textbox`",
 			backslashes_pattern
 		).as_str());
 		// Loop through each paragraph
@@ -663,7 +663,8 @@ impl <'a> SpellbookWriter<'a>
 							}
 						}
 						// If the line width is less than 0, shouldn't be possible
-						else { panic!("Line width is less than 0.0 in `SpellbookWriter::write_textbox`"); }
+						else { panic!
+						("Line width is less than 0.0 in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::write_textbox`"); }
 					}
 				};
 			}
@@ -796,7 +797,8 @@ impl <'a> SpellbookWriter<'a>
 							line_width += width;
 						}
 					}
-					else { panic!("Line width is less than 0.0 in `SpellbookWriter::write_centered_textbox`"); }
+					else { panic!(
+					"Line width is less than 0.0 in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::write_centered_textbox`"); }
 				}
 			}
 		}
