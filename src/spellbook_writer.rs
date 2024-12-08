@@ -111,11 +111,8 @@ impl <'a> SpellbookWriter<'a>
 		// Turn the first page into the title page
 		writer.make_title_page(title);
 		// Add each spell to the spellbook
-		for spell in spells
-		{
-			writer.add_spell(spell);
-		}
-
+		for spell in spells { writer.add_spell(spell); }
+		// Return the document that was created, its layers, and its pages
 		Ok((writer.doc, writer.layers, writer.pages))
 	}
 
@@ -264,7 +261,8 @@ impl <'a> SpellbookWriter<'a>
 		self.y = self.y_max();
 		self.set_current_text_type(TextType::Header);
 		self.set_current_font_variant(FontVariant::Regular);
-		self.write_textbox(&spell.name, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
+		self.write_textbox
+		(&spell.name, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false, &spell.tables);
 
 		// Writes the level and school of the spell to the document
 		self.y -= self.current_newline_amount();
@@ -272,41 +270,54 @@ impl <'a> SpellbookWriter<'a>
 		self.set_current_text_type(TextType::Body);
 		self.set_current_font_variant(FontVariant::Italic);
 		self.write_textbox
-		(&spell.get_level_school_text(), self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
+		(
+			&spell.get_level_school_text(),
+			self.x_min(),
+			self.x_max(),
+			self.y_min(),
+			self.y_max(),
+			false,
+			&spell.tables
+		);
 
 		// Writes the casting time to the document
 		self.y -= self.font_data.get_newline_amount_for(TextType::Header);
 		self.x = self.x_min();
 		self.set_current_font_variant(FontVariant::Bold);
 		let casting_time = format!("Casting Time: <r> {}", spell.get_casting_time_text());
-		self.write_textbox(&casting_time, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
+		self.write_textbox
+		(&casting_time, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false, &spell.tables);
 
 		// Writes the range to the document
 		self.y -= self.font_data.current_newline_amount();
 		self.x = self.x_min();
 		self.set_current_font_variant(FontVariant::Bold);
 		let range = format!("Range: <r> {}", spell.range.to_string());
-		self.write_textbox(&range, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
+		self.write_textbox
+		(&range, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false, &spell.tables);
 
 		// Writes the components to the document
 		self.y -= self.font_data.current_newline_amount();
 		self.x = self.x_min();
 		self.set_current_font_variant(FontVariant::Bold);
 		let components = format!("Components: <r> {}", spell.get_component_string());
-		self.write_textbox(&components, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
+		self.write_textbox
+		(&components, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false, &spell.tables);
 
 		// Writes the duration to the document
 		self.y -= self.font_data.current_newline_amount();
 		self.x = self.x_min();
 		self.set_current_font_variant(FontVariant::Bold);
 		let duration = format!("Duration: <r> {}", &spell.duration.to_string());
-		self.write_textbox(&duration, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
+		self.write_textbox
+		(&duration, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false, &spell.tables);
 		
 		// Writes the description to the document
 		self.y -= self.font_data.get_newline_amount_for(TextType::Header);
 		self.x = self.x_min();
 		self.set_current_font_variant(FontVariant::Regular);
-		self.write_textbox(&spell.description, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
+		self.write_textbox
+		(&spell.description, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false, &spell.tables);
 
 		// Writes the upcast description to the document if there is one
 		if let Some(upcast_description) = &spell.upcast_description
@@ -315,7 +326,8 @@ impl <'a> SpellbookWriter<'a>
 			self.x = self.x_min() + self.tab_amount();
 			self.set_current_font_variant(FontVariant::BoldItalic);
 			let upcast_description = format!("Using a Higher-Level Spell Slot. <r> {}", &upcast_description);
-			self.write_textbox(&upcast_description, self.x_min(), self.x_max(), self.y_min(), self.y_max(), true);
+			self.write_textbox
+			(&upcast_description, self.x_min(), self.x_max(), self.y_min(), self.y_max(), true, &spell.tables);
 		}
 	}
 
@@ -324,12 +336,24 @@ impl <'a> SpellbookWriter<'a>
 	/// page), continuing to stay within the given dimensions on the new page.
 	/// `starting_tab` determines whether or not the first paragraph gets tabbed in on the first line or not.
 	/// This method can also process bullet points, tables, and font variant changes in the text.
-	fn write_textbox(&mut self, text: &str, x_min: f32, x_max: f32, y_min: f32, y_max: f32, starting_tab: bool)
+	fn write_textbox
+	(
+		&mut self,
+		text: &str,
+		x_min: f32,
+		x_max: f32,
+		y_min: f32,
+		y_max: f32,
+		starting_tab: bool,
+		tables: &Vec<spells::Table>
+	)
 	{
 		// If either dimensional bounds overlap with each other, do nothing
 		if x_min >= x_max || y_min >= y_max { return; }
 		// Keeps track of whether or not a bullet point list is currently being processed
 		let mut in_bullet_list = false;
+		// Keeps track of whether or not a table is currently being processed
+		let mut in_table = false;
 		// The x position to reset the text to upon a newline (changes inside bullet lists)
 		let mut current_x_min = x_min;
 		// The number of newlines to go down by at the start of a paragraph
@@ -359,12 +383,13 @@ impl <'a> SpellbookWriter<'a>
 			// 0 newlines for the first paragraph (so the entire textbox doesn't get moved down by an extra newline)
 			// 1 newline for all other paragraphs
 			self.y -= paragraph_newline_scalar * self.current_newline_amount();
+			// If a table was just being processed, move down an extra newline amount to keep the table separated
+			// (to match the Player's Handbook Formatting)
+			if in_table { self.y -= self.current_newline_amount(); }
 			// Split the paragraph into tokens by whitespace
 			let mut tokens: Vec<_> = paragraph.split_whitespace().collect();
 			// If there is no text in this paragraph, skip to the next one
 			if tokens.is_empty() { continue; }
-			// If there was text, make it so all following paragraphs will move down a newline before processing
-			else { paragraph_newline_scalar = 1.0; }
 			// The current line of text being processed
 			let mut line = String::new();
 			// The width of the current line being processed
@@ -380,9 +405,17 @@ impl <'a> SpellbookWriter<'a>
 					in_bullet_list = true;
 					// Set the value that the x position resets to so it lines up after the bullet point
 					current_x_min = self.calc_text_width("• ") + x_min;
-					// Move the y position down an extra newline amount to separate it more from normal paragraphs
-					// (to match the Player's Handbook formatting)
-					self.y -= self.current_newline_amount();
+					// If a table was being processed before, zero the table flag and don't go down annother extra
+					// newline since that was already done above
+					if in_table { in_table = false; }
+					// If a table was not being processed before, move the y position down an extra newline amount
+					else
+					{
+						// Move the y position down an extra newline amount to separate it from normal paragraphs
+						// (to match the Player's Handbook formatting)
+						// Moves the y position down 0 newlines on the first paragraph, 0 on all others.
+						self.y -= paragraph_newline_scalar * self.current_newline_amount();
+					}
 				}
 				// If the bullet point symbol is a dash, make it a dot
 				if tokens[0] == "-" { tokens[0] = "•"; }
@@ -392,16 +425,40 @@ impl <'a> SpellbookWriter<'a>
 			// If this is a table marker (ex: "[table][5]", "[table][0]", etc.)
 			else if tokens[0].starts_with("[table][") && tokens[0].ends_with("]")
 			{
-				// Get a string slice of the table index
-				let index_str = &tokens[0][7 .. tokens[0].len() - 1];
+				// Get a string slice of the table index (the 'x' in "[table][x]")
+				let index_str = &tokens[0][8 .. tokens[0].len() - 1];
 				// Convert the table index into a number
 				let table_index = match index_str.parse::<usize>()
 				{
 					Ok(index) => index,
-					// If the index wasn't a valid number, skip over this table
+					// If the index wasn't a valid number, skip over this table token
 					Err(_) => continue
 				};
+				// If the index is out of bounds of the tables vec, skip over this table token
+				if table_index >= tables.len() { continue; }
+				// If another table was not being processed before, move the y position down an extra newline amount
+				if !in_table
+				{
+					// Move the y position down an extra newline amount to separate it more from normal paragraphs
+					// (to match the Player's Handbook formatting)
+					// Moves the y position down 0 newlines on the first paragraph, 0 on all others.
+					self.y -= paragraph_newline_scalar * self.current_newline_amount();
+					// Set the table flag to signal that a table is being processed
+					in_table = true;
+				}
+				// If this table is right after a bullet list (bullet flag still set)
+				if in_bullet_list
+				{
+					// Set the value that the x position resets to so that it lines up with the left side of the text
+					// box again
+					current_x_min = x_min;
+					// Zero the bullet flag to signal that a bullet list isn't being currently processed anymore
+					in_bullet_list = false;
+				}
+				// Make it so all paragraphs after the first get moved down a newline amount before being processed
+				paragraph_newline_scalar = 1.0;
 				// TODO: Add code to put in a table
+				self.apply_text_line(tokens[0], y_min);
 				// Skip the token loop below and move to the next paragraph
 				continue;
 			}
@@ -420,6 +477,8 @@ impl <'a> SpellbookWriter<'a>
 					// Zero the bullet flag to signal that a bullet list isn't being currently processed anymore
 					in_bullet_list = false;
 				}
+				// If this paragraph is right after a table (table flag still set), zero the table flag
+				if in_table { in_table = false; }
 				// Set the x position to be 0 or 1 tab amounts from the left side of the text box
 				// 0 tab amounts for the first paragraph (to match the Player's Handbook formatting)
 				// 1 tab amount for all other paragraphs
@@ -428,6 +487,8 @@ impl <'a> SpellbookWriter<'a>
 				// in on the first line
 				current_tab_amount = self.tab_amount();
 			}
+			// Make it so all paragraphs after the first get moved down a newline amount before being processed
+			paragraph_newline_scalar = 1.0;
 			// TODO: Make it so single tokens that are too long to fit on a line get hyphenated
 			// Loop through each token after the first to check if it does something special, if it should be
 			// written to the current line, or cause the current line to be wrtten then add it to the next line.
@@ -534,6 +595,9 @@ impl <'a> SpellbookWriter<'a>
 			// Write any remaining text to the page
 			self.apply_text_line(&line, y_min);
 		}
+		// If a table was the last thing that was applied to the page, move down an extra newline amount to keep
+		// whatever comes next more separated from the table (to match the Player's Handbook formatting)
+		if in_table { self.y -= self.current_newline_amount(); }
 	}
 
 	/// Writes vertically and horizontally centered text into a fixed sized textbox.
