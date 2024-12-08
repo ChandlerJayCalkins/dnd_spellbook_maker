@@ -551,8 +551,8 @@ impl <'a> SpellbookWriter<'a>
 				// 0 tab amounts for the first paragraph (to match the Player's Handbook formatting)
 				// 1 tab amount for all other paragraphs
 				self.x = x_min + current_tab_amount;
-				// Set the current tab amount to be the normal tab amount so all paragraphs after the first are tabbed
-				// in on the first line
+				// Set the current tab amount to be the normal tab amount so all paragraphs after the first are
+				// tabbed in on the first line
 				current_tab_amount = self.tab_amount();
 			}
 			// Make it so all paragraphs after the first get moved down a newline amount before being processed
@@ -571,8 +571,8 @@ impl <'a> SpellbookWriter<'a>
 					{
 						self.switch_font_variant(FontVariant::Regular, &mut line, &mut line_width, y_min);
 					},
-					// If It's a bold font tag, write the current line to the page and switch the current font variant
-					// to bold
+					// If It's a bold font tag, write the current line to the page and switch the current font
+					// variant to bold
 					BOLD_FONT_TAG =>
 					{
 						self.switch_font_variant(FontVariant::Bold, &mut line, &mut line_width, y_min);
