@@ -7,6 +7,7 @@
 use std::fs;
 use std::cell::Ref;
 use std::error::Error;
+use std::ops::Range;
 
 extern crate image;
 use rusttype::point;
@@ -23,6 +24,7 @@ use printpdf::
 	PdfPageIndex,
 	Image
 };
+use regex::Regex;
 
 use crate::spellbook_gen_types::*;
 use crate::spells;
@@ -376,6 +378,41 @@ impl <'a> SpellbookWriter<'a>
 		if paragraphs.is_empty() { return; }
 		// If there is text and the x position is beyond the x_max, reset the x position to x_min and go to a new line
 		else if self.x > x_max { self.x = x_min; self.y -= self.current_newline_amount(); }
+		// Create a regex pattern for escaped font tags (font tags preceeded by backslashes)
+		// Ex: "\<r>", "\\\<bi>", "\\<i>", etc.
+		// Use this regex pattern to remove the first backslash from escaped font tags so that font tags are allowed
+		// to actually appear in spell text AND not affect the font at all
+		let escaped_font_tag_pattern = format!
+		(
+			"(\\\\)+({}|{}|{}|{}|{})",
+			REGULAR_FONT_TAG,
+			BOLD_FONT_TAG,
+			ITALIC_FONT_TAG,
+			BOLD_ITALIC_FONT_TAG,
+			ITALIC_BOLD_FONT_TAG
+		);
+		let escaped_font_tag_pattern = Regex::new(&escaped_font_tag_pattern)
+		.expect(format!
+		(
+			"Failed to build regex pattern \"{}\" in `SpellbookWriter::write_textbox`",
+			escaped_font_tag_pattern
+		).as_str());
+		// Create a regex pattern to find table tags
+		let table_tag_pattern = "\\[table\\]\\[[0-9]+\\]";
+		let table_tag_pattern = Regex::new(table_tag_pattern)
+		.expect(format!
+		(
+			"Failed to build regex pattern \"{}\" in `SpellbookWriter::write_textbox`",
+			table_tag_pattern
+		).as_str());
+		// Create a regex pattern to find repeating backslashes
+		let backslashes_pattern = "\\\\+";
+		let backslashes_pattern = Regex::new(backslashes_pattern)
+		.expect(format!
+		(
+			"Failed to build regex pattern \"{}\" in `SpellbookWriter::write_textbox`",
+			backslashes_pattern
+		).as_str());
 		// Loop through each paragraph
 		for paragraph in paragraphs
 		{
@@ -422,49 +459,80 @@ impl <'a> SpellbookWriter<'a>
 				// Reset the x position to the left side of the text box
 				self.x = x_min;
 			}
-			// If this is a table marker (ex: "[table][5]", "[table][0]", etc.)
-			else if tokens[0].starts_with("[table][") && tokens[0].ends_with("]")
-			{
-				// Get a string slice of the table index (the 'x' in "[table][x]")
-				let index_str = &tokens[0][8 .. tokens[0].len() - 1];
-				// Convert the table index into a number
-				let table_index = match index_str.parse::<usize>()
-				{
-					Ok(index) => index,
-					// If the index wasn't a valid number, skip over this table token
-					Err(_) => continue
-				};
-				// If the index is out of bounds of the tables vec, skip over this table token
-				if table_index >= tables.len() { continue; }
-				// If another table was not being processed before, move the y position down an extra newline amount
-				if !in_table
-				{
-					// Move the y position down an extra newline amount to separate it more from normal paragraphs
-					// (to match the Player's Handbook formatting)
-					// Moves the y position down 0 newlines on the first paragraph, 0 on all others.
-					self.y -= paragraph_newline_scalar * self.current_newline_amount();
-					// Set the table flag to signal that a table is being processed
-					in_table = true;
-				}
-				// If this table is right after a bullet list (bullet flag still set)
-				if in_bullet_list
-				{
-					// Set the value that the x position resets to so that it lines up with the left side of the text
-					// box again
-					current_x_min = x_min;
-					// Zero the bullet flag to signal that a bullet list isn't being currently processed anymore
-					in_bullet_list = false;
-				}
-				// Make it so all paragraphs after the first get moved down a newline amount before being processed
-				paragraph_newline_scalar = 1.0;
-				// TODO: Add code to put in a table
-				self.apply_text_line(tokens[0], y_min);
-				// Skip the token loop below and move to the next paragraph
-				continue;
-			}
-			// If this is a normal text paragraph
 			else
 			{
+				// If there is a table tag (ex: "[table][5]", "[table][0]", etc.) in the first token
+				if let Some(pat_match) = table_tag_pattern.find(tokens[0])
+				{
+					// Get the index range of the table tag pattern patch
+					let table_tag_range = pat_match.range();
+					// If the table tag is at the end of the first token
+					if table_tag_range.end == tokens[0].len()
+					{
+						// If the table tag is the whole first token, write a table to the document
+						if table_tag_range.start == 0
+						{
+							// Get a string slice of the table index (the 'x' in "[table][x]")
+							let index_str = &tokens[0][8 .. tokens[0].len() - 1];
+							// Convert the table index into a number
+							let table_index = match index_str.parse::<usize>()
+							{
+								Ok(index) => index,
+								// If the index wasn't a valid number, skip over this table token
+								Err(_) => continue
+							};
+							// If the index is out of bounds of the tables vec, skip over this table token
+							if table_index >= tables.len() { continue; }
+							// If another table was not being processed before, move the y position down an extra
+							// newline amount
+							if !in_table
+							{
+								// Move the y position down an extra newline amount to separate it more from normal
+								// paragraphs (to match the Player's Handbook formatting)
+								// Moves the y position down 0 newlines on the first paragraph, 0 on all others.
+								self.y -= paragraph_newline_scalar * self.current_newline_amount();
+								// Set the table flag to signal that a table is being processed
+								in_table = true;
+							}
+							// If this table is right after a bullet list (bullet flag still set)
+							if in_bullet_list
+							{
+								// Set the value that the x position resets to so that it lines up with the left side
+								// of the text box again
+								current_x_min = x_min;
+								// Zero the bullet flag to signal that a bullet list isn't being currently processed
+								// anymore
+								in_bullet_list = false;
+							}
+							// Make it so all paragraphs after the first get moved down a newline amount before being
+							// processed
+							paragraph_newline_scalar = 1.0;
+							// TODO: Add code to put in a table
+							self.x = x_min;
+							self.apply_text_line(tokens[0], y_min);
+							// Skip the token loop below and move to the next paragraph
+							continue;
+						}
+						// Check to see if this is an escaped table tag (a backslash or multiple backslashes before
+						// the table tag)
+						// If there is at least one backslash in the first token
+						else if let Some(backslashes_match) = backslashes_pattern.find(tokens[0])
+						{
+							// Get the index range of the backslash pattern match
+							let backslashes_range = backslashes_match.range();
+							// If the backslashes are at the start of the token and right before the table tag
+							// (if the entire token is backslashes followed by a table tag)
+							if backslashes_range.start == 0 && backslashes_range.end == table_tag_range.start
+							{
+								// Remove the first backslash from the token
+								tokens[0] = &tokens[0][1..];
+							}
+						}
+					}
+				}
+				// If this is a normal text paragraph
+				// ...
+
 				// If this paragraph is right after a bullet list (bullet flag still set)
 				if in_bullet_list
 				{
@@ -492,7 +560,7 @@ impl <'a> SpellbookWriter<'a>
 			// TODO: Make it so single tokens that are too long to fit on a line get hyphenated
 			// Loop through each token after the first to check if it does something special, if it should be
 			// written to the current line, or cause the current line to be wrtten then add it to the next line.
-			for token in tokens
+			for mut token in tokens
 			{
 				// Determine if the current token is a special token
 				match token
@@ -524,6 +592,13 @@ impl <'a> SpellbookWriter<'a>
 					// If it's not a special token
 					_ =>
 					{
+						// If the token is an escaped font tag, remove the first backslash from it so font tags can
+						// actually appear in spell text without affecting the font
+						if let Some(pat_match) = escaped_font_tag_pattern.find(token)
+						{
+							if pat_match.range() == (Range { start: 0, end: token.len() })
+							{ token = &token[1..]; }
+						}
 						// If the next line to be written is currently empty
 						if line_width == 0.0
 						{

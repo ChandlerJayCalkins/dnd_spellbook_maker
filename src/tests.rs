@@ -588,11 +588,15 @@ fn necronomicon()
 		spacing_options,
 		text_colors,
 		page_size_options,
-		page_number_options,
-		background_path,
-		background_transform,
+		_,
+		_,
+		_,
 		table_options
 	) = default_spellbook_options();
+	// Parameters for determining page number behavior
+	let page_number_options = PageNumberOptions::new
+	(HSide::Left, true, 1, FontVariant::Regular, 12.0, 5.0, (0, 0, 0), 5.0, 4.0)
+		.expect("Failed to create page number options.");
 	// Create the spellbook
 	let (doc, _, _) = create_spellbook
 	(
@@ -605,7 +609,7 @@ fn necronomicon()
 		text_colors,
 		page_size_options,
 		Some(page_number_options),
-		Some((&background_path, background_transform)),
+		None,
 		table_options
 	).unwrap();
 	// Save the spellbook to a file
