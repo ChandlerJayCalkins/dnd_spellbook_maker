@@ -352,6 +352,8 @@ impl <'a> SpellbookWriter<'a>
 	{
 		// If either dimensional bounds overlap with each other, do nothing
 		if x_min >= x_max || y_min >= y_max { return; }
+		// The horizontal width of the textbox (used for checking if tokens are wider than a line)
+		let textbox_width = x_max - x_min;
 		// Keeps track of whether or not a bullet point list is currently being processed
 		let mut in_bullet_list = false;
 		// Keeps track of whether or not a table is currently being processed
@@ -705,8 +707,27 @@ impl <'a> SpellbookWriter<'a>
 		let mut line = String::new();
 		// Width of the current line being measured
 		let mut line_width: f32 = 0.0;
+		// Create a regex pattern for escaped font tags (font tags preceeded by backslashes)
+		// Ex: "\<r>", "\\\<bi>", "\\<i>", etc.
+		// Use this regex pattern to remove the first backslash from escaped font tags so that font tags are allowed
+		// to actually appear in spell text AND not affect the font at all
+		let escaped_font_tag_pattern = format!
+		(
+			"(\\\\)+({}|{}|{}|{}|{})",
+			REGULAR_FONT_TAG,
+			BOLD_FONT_TAG,
+			ITALIC_FONT_TAG,
+			BOLD_ITALIC_FONT_TAG,
+			ITALIC_BOLD_FONT_TAG
+		);
+		let escaped_font_tag_pattern = Regex::new(&escaped_font_tag_pattern)
+		.expect(format!
+		(
+			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::write_textbox`",
+			escaped_font_tag_pattern
+		).as_str());
 		// Loop through each token to measure how many lines there will be and how long each line is
-		for token in tokens
+		for mut token in tokens
 		{
 			match token
 			{
@@ -735,6 +756,13 @@ impl <'a> SpellbookWriter<'a>
 				// If it's not a special token, calculate its width and determine what to do from there
 				_ =>
 				{
+					// If the token is an escaped font tag, remove the first backslash from it so font tags can
+					// actually appear in spell text without affecting the font
+					if let Some(pat_match) = escaped_font_tag_pattern.find(token)
+					{
+						if pat_match.range() == (Range { start: 0, end: token.len() })
+						{ token = &token[1..]; }
+					}
 					// If the line is currently empty
 					if line_width == 0.0
 					{
