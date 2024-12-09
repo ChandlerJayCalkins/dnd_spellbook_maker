@@ -8,6 +8,7 @@ use std::fs;
 use std::cell::Ref;
 use std::error::Error;
 use std::ops::Range;
+use std::cmp::min;
 
 extern crate image;
 use rusttype::point;
@@ -352,8 +353,6 @@ impl <'a> SpellbookWriter<'a>
 	{
 		// If either dimensional bounds overlap with each other, do nothing
 		if x_min >= x_max || y_min >= y_max { return; }
-		// The horizontal width of the textbox (used for checking if tokens are wider than a line)
-		let textbox_width = x_max - x_min;
 		// Keeps track of whether or not a bullet point list is currently being processed
 		let mut in_bullet_list = false;
 		// Keeps track of whether or not a table is currently being processed
@@ -429,6 +428,8 @@ impl <'a> SpellbookWriter<'a>
 			let mut tokens: Vec<_> = paragraph.split_whitespace().collect();
 			// If there is no text in this paragraph, skip to the next one
 			if tokens.is_empty() { continue; }
+			// Whether or not this is the first line in the paragraph
+			let mut first_line = true;
 			// The current line of text being processed
 			let mut line = String::new();
 			// The width of the current line being processed
@@ -601,51 +602,50 @@ impl <'a> SpellbookWriter<'a>
 							if pat_match.range() == (Range { start: 0, end: token.len() })
 							{ token = &token[1..]; }
 						}
-						// If the next line to be written is currently empty
-						if line_width == 0.0
+						// Calculate the width of the token
+						let width = self.calc_text_width(token);
+						// If the token does not fit on the line (could be from being too big to fit in textbox
+						// or being at the end of the line from a font change)
+						if self.x + width > x_max
 						{
-							let width = self.calc_text_width(token);
-							// If the token is too big to fit in the textbox
-							if self.x + width > x_max
-							{
-								// Single token is too long to fit on a line, must by hyphenated.
-								// Use binary search of string slice width to find where to hyphenate it
-								// TODO: Replace this code with code that hyphenates the current token
-								// Put this token at the start of the line
-								line = String::from(token);
-								// Assign this token's width to the width of the current line
-								line_width = width;
-							}
-							// If the token can fit in the textbox, set the current line to it
-							else
-							{
-								// Put this token at the start of the line
-								line = String::from(token);
-								// Assign this token's width to the width of the current line
-								line_width = width;
-							}
+							// Single token is too long to fit on a line, must by hyphenated.
+							// Use binary search of string slice width to find where to hyphenate it
+							// TODO: Replace this code with code that hyphenates the current token
+							// Put this token at the start of the line
+							line = String::from(token);
+							// Assign this token's width to the width of the current line
+							line_width = width;
+						}
+						// If the next line to be written is currently empty
+						else if line_width == 0.0
+						{
+							// Put this token at the start of the line
+							line = String::from(token);
+							// Assign this token's width to the width of the current line
+							line_width = width;
 						}
 						// If the current line is not empty
 						else if line_width > 0.0
 						{
 							
 							// Calculate the width of the current token with a space in front of it
-							// (which could be added to the line)
-							let padded_token = format!(" {}", token);
-							let width = self.calc_text_width(&padded_token);
+							// (which is how it would be added to the line)
+							let padded_width = self.calc_text_width(" ") + width;
 							// Calculate where the line would end if the token was added onto this line
-							let new_line_end = self.x + line_width + width;
+							let new_line_end = self.x + line_width + padded_width;
 							// If this token would make the line go past the right side boundry of the textbox,
 							// Apply the current line and reset it to just the current token
 							if new_line_end > x_max
 							{
 								// If the current token is too wide to fit in the textbox
-								if self.x + width > current_x_min
+								if self.x + padded_width > current_x_min
 								{
 									// TODO Add code here to hyphenate the current token
 								}
 								// Apply the current line
 								self.apply_text_line(&line, y_min);
+								// Zero the first line flag since at least one line has been applied now
+								first_line = false;
 								// Set the x position back to the new-line reset point
 								self.x = current_x_min;
 								// Move the y position down a line
@@ -659,9 +659,9 @@ impl <'a> SpellbookWriter<'a>
 							else
 							{
 								// Add the token to the line
-								line += &padded_token;
+								line += format!(" {}", token).as_str();
 								// Add the width of a space and this token to the line
-								line_width += width;
+								line_width += padded_width;
 							}
 						}
 						// If the line width is less than 0, shouldn't be possible
@@ -766,23 +766,37 @@ impl <'a> SpellbookWriter<'a>
 					// If the line is currently empty
 					if line_width == 0.0
 					{
+						// If the token is too large to fit on a single line, hyphenate it until it fits and get the
+						// width of the reamining token
 						// Calculate the width of the token
-						let width = self.calc_text_width(token);
+						let mut width = self.calc_text_width(token);
 						// If the current token is too big to fit in the textbox
-						if width > textbox_width
+						// Hyphenate the token, add it as a line, and remove the hyphenated part from the token until
+						// the remaining token can fit on a single line in the textbox
+						while width > textbox_width
 						{
-							// Single token is too long to fit on a line, must by hyphenated.
-							// Use binary search of string slice width to find where to hyphenate it
-							// TODO: Replace this code with code that hyphenates the current token
-							// Adds the current token to the start of the line
-							// (Adds a space before it in case there is a font tag / are font tags at the front and
-							// trim it to remove the space at the front if there are no font tags
-							line = String::from(format!("{} {}", line, token).trim());
-							// Sets the current line width to the width of this token
-							line_width = width;
+							// Get a hyphenated part of the token and the index for where the hyphen cuts off in the
+							// token
+							let (hyphenated_token, hyphen_token_width, index) =
+							self.get_hyphen_str(token, textbox_width);
+							// Add the hyphenated part of the token as a line
+							lines.push((hyphenated_token, hyphen_token_width));
+							// If the entire token has been handled already, empty the token, set the width to 0, and
+							// return (no need to worry about an unnecessary hyphen being added onto the pushed
+							// hyphen line since the get_hyphen_str method handles that)
+							if index == token.len()
+							{
+								token = "";
+								width = 0.0;
+								break;
+							}
+							// Take part of the token that was hyphenated off of it
+							token = &token[index..];
+							// Recalculate the width of the token
+							width = self.calc_text_width(token);
 						}
-						// If the token can fit in the textbox, set the current line to it
-						else
+						// If there's any token remaining after being hyphenated
+						if width > 0.0
 						{
 							// Adds the current token to the start of the line
 							// (Adds a space before it in case there is a font tag / are font tags at the front and
@@ -798,22 +812,81 @@ impl <'a> SpellbookWriter<'a>
 						// Calculate the width of the current token with a space in front of it
 						// (which could be added to the line)
 						let padded_token = format!(" {}", token);
-						let width = self.calc_text_width(&padded_token);
+						let padded_width = self.calc_text_width(&padded_token);
 						// If adding this token to the line would make it go outside the textbox,
 						// Apply the current line and reset it to just the current token
-						if line_width + width > textbox_width
+						if line_width + padded_width > textbox_width
 						{
+							// Calculate the width of the token
+							let mut width = self.calc_text_width(token);
 							// If the current token is too wide to fit in the textbox
 							if width > textbox_width
 							{
-								// TODO Add code here to hyphenate the current token
+								// Calculate the width of a space
+								let space_width = self.calc_text_width(" ");
+								// Hyphenate the first line of the token within the remaining space on the current
+								// line (calculate remaining line width by subtracting current line width and space
+								// width from the entire textbox width)
+								let (hyphenated_token, hyphen_token_width, index) =
+								self.get_hyphen_str(token, textbox_width - line_width - space_width);
+								// Add the hyphenated part of the token to the line with a space at the start
+								line += format!(" {}", hyphenated_token).as_str();
+								// Add the hyphenated token width and the width of the space to the total line width
+								line_width += space_width + hyphen_token_width;
+								// Push the current line to the lines vec
+								lines.push((line, line_width));
+								// No need for this code, it should be impossible to reach
+								// If that was the entire token, empty the current line and continue
+								// if index == token.len()
+								// {
+								// 	line = String::new();
+								// 	line_width = 0.0;
+								// 	continue;
+								// }
+								// Take the part of the token that was hyphenated out of it
+								token = &token[index..];
+								// Hyphenate the rest of the token
+								// Calculate the width of the token
+								let mut width = self.calc_text_width(token);
+								// If the current token is too big to fit in the textbox
+								// Hyphenate the token, add it as a line, and remove the hyphenated part from the
+								// token until the remaining token can fit on a single line in the textbox
+								while width > textbox_width
+								{
+									// Get a hyphenated part of the token and the index for where the hyphen cuts off
+									// in the token
+									let (hyphenated_token, hyphen_token_width, index) =
+									self.get_hyphen_str(token, textbox_width);
+									// Add the hyphenated part of the token as a line
+									lines.push((hyphenated_token, hyphen_token_width));
+									// If the entire token has been handled already, empty the token, set the width
+									// to 0, and return (no need to worry about an unnecessary hyphen being added
+									// onto the pushed hyphen line since the get_hyphen_str method handles that)
+									if index == token.len()
+									{
+										token = "";
+										width = 0.0;
+										break;
+									}
+									// Take part of the token that was hyphenated off of it
+									token = &token[index..];
+									// Recalculate the width of the token
+									width = self.calc_text_width(token);
+								}
+								// Set what's left of the token to the current line
+								line = String::from(token);
+								// Set the width of the token to the line width
+								line_width = width;
 							}
-							// Add the current line to the vec of lines
-							lines.push((line, line_width));
-							// Empties the current line and puts the current token at the start of the next one
-							line = String::from(token);
-							// Sets the new current line width to the width of the current token
-							line_width = self.calc_text_width(token);
+							else
+							{
+								// Add the current line to the vec of lines
+								lines.push((line, line_width));
+								// Empties the current line and puts the current token at the start of the next one
+								line = String::from(token);
+								// Sets the new current line width to the width of the current token
+								line_width = width;
+							}
 						}
 						// If this token can fit on the line, add it to the line and add the width of a space and
 						// this token to the width of the line
@@ -822,7 +895,7 @@ impl <'a> SpellbookWriter<'a>
 							// Add a space and this token to the end of this line
 							line += &padded_token;
 							// Add the width of a space and this token added to the width of the line
-							line_width += width;
+							line_width += padded_width;
 						}
 					}
 					else { panic!(
@@ -884,6 +957,77 @@ impl <'a> SpellbookWriter<'a>
 			self.set_current_font_variant(font_variant);
 			// Resets the line width to 0 since the line is empty now
 			*line_width = 0.0;
+		}
+	}
+
+	/// Takes a string that is too wide to fit on a single line in a textbox and finds the cutoff / delimiter index
+	/// so that `&text[0..index] + '-'` fits inside the textbox, along with that hyphenated string itself
+	fn get_hyphen_str(&self, text: &str, textbox_width: f32) -> (String, f32, usize)
+	{
+		// Keeps track of the last hyphenated part of the text that was measured
+		let mut hyphenated_string = String::new();
+		// Keeps track of the width of the hyphenated part of the text
+		let mut hyphen_str_width = self.calc_text_width(text);
+		// If the string can fit in the textbox, return itself and its length
+		if hyphen_str_width <= textbox_width { return (String::from(text), hyphen_str_width, text.len()) }
+		// Lower and upper possible bounds for what the index could be
+		let mut lower_bound = 0;
+		let mut upper_bound = text.len();
+		// The current index being tested
+		let mut index = upper_bound / 2;
+		let mut last_index = index;
+		// Whether or not the index had just gone down or up
+		let mut went_up = false;
+		// Do - While loop until index and last_index are equal
+		// Binary search for the index where the text plus a hyphen at the end is as long as possible without going
+		// outside the textbox
+		while
+		{
+			// Store index in last index
+			last_index = index;
+			// Get a string of the start of the text up to the index with a hyphen at the end
+			hyphenated_string = format!("{}-", &text[0..index]);
+			// Calculate the width of the hyphenated string
+			hyphen_str_width = self.calc_text_width(&hyphenated_string);
+			// If the width is exactly the width of the textbox, return the current hyphen string data
+			if hyphen_str_width == textbox_width { return (hyphenated_string, hyphen_str_width, index); }
+			// If the width is less than the width of the textbox
+			else if hyphen_str_width < textbox_width
+			{
+				// Increase the lower bound to the index
+				lower_bound = index;
+				// Increase the index to be between the lower bound and upper bound
+				index += (upper_bound - lower_bound) / 2;
+				// Zero the went up flag
+				went_up = true;
+			}
+			// If the width is greater than the width of the textbox
+			else
+			{
+				// Decrease the upper bound to the index
+				upper_bound = index;
+				// Decrease the index to be between the lower and upper bound
+				index -= (upper_bound - lower_bound) / 2;
+				// Set the went up flag
+				went_up = false;
+			}
+			// Do - While condition
+			index != last_index
+		}{}
+		// If the index is 0, return that irregardless of whether it went up or down to signal that it can't fit
+		// within the width of this textbox at all
+		if index == 0 { (String::new(), 0.0, index) }
+		else
+		{
+			// If the index tried to go up on the last iteration, increase the cutoff / delimiter index by 1 along
+			// and change the hyphenated string and its width to match the index change
+			if went_up
+			{
+				index += 1;
+				hyphenated_string = format!("{}-", &text[0..index]);
+				hyphen_str_width = self.calc_text_width(&hyphenated_string);
+			}
+			(hyphenated_string, hyphen_str_width, index)
 		}
 	}
 
