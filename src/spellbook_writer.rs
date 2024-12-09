@@ -785,8 +785,8 @@ impl <'a> SpellbookWriter<'a>
 		if in_table { self.y -= self.current_newline_amount(); }
 	}
 
-	/// Hyphenates a token, applies the hyphated part of the token to the spellbook, resets the x and y positions to
-	/// a new line, and returns the new starting index of the token along with its new width
+	/// Hyphenates a token, writes the hyphated part of the token to the spellbook, resets the x and y positions to
+	/// a new line, and returns the new starting index of the token along with its new width.
 	fn hyphenate_textbox_token(&mut self, token: &str, max_line_width: f32, y_min: f32, current_x_min: f32)
 	-> (usize, f32)
 	{
@@ -800,19 +800,20 @@ impl <'a> SpellbookWriter<'a>
 		self.x = current_x_min;
 		// Move the y position down a line
 		self.y -= self.current_newline_amount();
-		// If the entire token has been handled already, empty the token, set the
-		// width to 0, and return (no need to worry about an unnecessary hyphen being
-		// added onto the pushed hyphen line since the get_hyphen_str method handles
-		// that)
-		if index >= token.len() { (index, 0.0) }
-		else
+		// If there's still some characters left in the token
+		if index < token.len()
 		{
 			// Take off the part of the token that was hyphenated
 			let token = &token[index..];
 			// Calculate the width of the new shorter token
 			let width = self.calc_text_width(token);
+			// Return the new starting index and width
 			(index, width)
 		}
+		// If the entire token has been handled already, return the index at the end of the token and a width of 0
+		// (no need to worry about an unnecessary hyphen being added onto the pushed hyphen line since the
+		// get_hyphen_str method handles that)
+		else { (index, 0.0) }
 	}
 
 	/// Writes vertically and horizontally centered text into a fixed sized textbox.
@@ -912,25 +913,13 @@ impl <'a> SpellbookWriter<'a>
 						// the remaining token can fit on a single line in the textbox
 						while width > textbox_width
 						{
-							// Get a hyphenated part of the token and the index for where the hyphen cuts off in the
-							// token
-							let (hyphenated_token, hyphen_token_width, index) =
-							self.get_hyphen_str(token, textbox_width);
-							// Add the hyphenated part of the token as a line
-							lines.push((hyphenated_token, hyphen_token_width));
-							// If the entire token has been handled already, empty the token, set the width to 0, and
-							// return (no need to worry about an unnecessary hyphen being added onto the pushed
-							// hyphen line since the get_hyphen_str method handles that)
-							if index >= token.len()
-							{
-								token = "";
-								width = 0.0;
-								break;
-							}
-							// Take part of the token that was hyphenated off of it
+							// Hyphenate the token and get the new starting index and width
+							let (index, new_width) =
+							self.hyphenate_centered_textbox_token(token, textbox_width, &mut lines);
+							// Remove the part of the token that was hyphenated
 							token = &token[index..];
-							// Recalculate the width of the token
-							width = self.calc_text_width(token);
+							// Store the new width of this token
+							width = new_width;
 						}
 						// If there's any token remaining after being hyphenated
 						if width > 0.0
@@ -983,25 +972,13 @@ impl <'a> SpellbookWriter<'a>
 								// token until the remaining token can fit on a single line in the textbox
 								while width > textbox_width
 								{
-									// Get a hyphenated part of the token and the index for where the hyphen cuts off
-									// in the token
-									let (hyphenated_token, hyphen_token_width, index) =
-									self.get_hyphen_str(token, textbox_width);
-									// Add the hyphenated part of the token as a line
-									lines.push((hyphenated_token, hyphen_token_width));
-									// If the entire token has been handled already, empty the token, set the width
-									// to 0, and return (no need to worry about an unnecessary hyphen being added
-									// onto the pushed hyphen line since the get_hyphen_str method handles that)
-									if index >= token.len()
-									{
-										token = "";
-										width = 0.0;
-										break;
-									}
-									// Take part of the token that was hyphenated off of it
+									// Hyphenate the token and get the new starting index and width
+									let (index, new_width) =
+									self.hyphenate_centered_textbox_token(token, textbox_width, &mut lines);
+									// Remove the part of the token that was hyphenated
 									token = &token[index..];
-									// Recalculate the width of the token
-									width = self.calc_text_width(token);
+									// Store the new width of this token
+									width = new_width;
 								}
 								// Set what's left of the token to the current line
 								line = String::from(token);
@@ -1065,6 +1042,33 @@ impl <'a> SpellbookWriter<'a>
 			// Apply the line to the page
 			self.apply_text_line(&line, y_min);
 		}
+	}
+
+	/// Hyphenates a token, adds the hyphenated part of the token to the lines vec along with its width, and returns
+	/// the new starting index of the token along with its new width.
+	fn hyphenate_centered_textbox_token(&mut self, token: &str, textbox_width: f32, lines: &mut Vec<(String, f32)>)
+	-> (usize, f32)
+	{
+		// Get a hyphenated part of the token and the index for where the hyphen cuts off
+		// in the token
+		let (hyphenated_token, hyphen_token_width, index) =
+		self.get_hyphen_str(token, textbox_width);
+		// Add the hyphenated part of the token as a line
+		lines.push((hyphenated_token, hyphen_token_width));
+		// If there's still some characters left in the token
+		if index < token.len()
+		{
+			// Take part of the token that was hyphenated off of it
+			let token = &token[index..];
+			// Recalculate the width of the token
+			let width = self.calc_text_width(token);
+			// return the new starting index and width
+			(index, width)
+		}
+		// If the entire token has been handled already, return the index at the end of the token and a width of 0
+		// (no need to worry about an unnecessary hyphen being added onto the pushed hyphen line since the
+		// get_hyphen_str method handles that)
+		else { (index, 0.0) }
 	}
 
 	/// For use in `write_textbox` functions. If the given font variant is different than the current one being used,
