@@ -619,98 +619,61 @@ impl <'a> SpellbookWriter<'a>
 							// If the token is too wide to fit on a single line in the textbox
 							if current_x_min + width > x_max
 							{
-								// Get a hyphenated part of the token and the index for where the hyphen cuts off in
-								// the token
-								let (hyphenated_token, _, index) = self.get_hyphen_str(token, x_max - self.x);
-								// Apply the line to the spellbook
-								self.apply_text_line(&hyphenated_token, y_min);
-								// Set the x position back to the new-line reset point
-								self.x = current_x_min;
-								// Move the y position down a line
-								self.y -= self.current_newline_amount();
+								// Hyphenate the token and get the new starting index and width
+								let (index, new_width) =
+								self.hyphenate_textbox_token(token, x_max - self.x, y_min, current_x_min);
 								// Zero the first line flag since at least 1 line has been written
 								first_line = false;
-								// Take off the part of the token that was hyphenated
+								// Remove the part of the token that was hyphenated
 								token = &token[index..];
-								// Calculate the width of the new shorter token
-								width = self.calc_text_width(token);
+								// Store the new width of this token
+								width = new_width;
 								// Calculate the maximum line width based on where the text starts and ends
 								let max_line_width = x_max - current_x_min;
 								// Keep hyphenating the token until the only part that remains can fit on a single
 								// line
 								while width > max_line_width
 								{
-									// Get a hyphenated part of the token and the index for where the hyphen cuts off
-									// in the token
-									let (hyphenated_token, _, index) = self.get_hyphen_str(token, max_line_width);
-									self.apply_text_line(&hyphenated_token, y_min);
-									// Set the x position back to the new-line reset point
-									self.x = current_x_min;
-									// Move the y position down a line
-									self.y -= self.current_newline_amount();
-									// If the entire token has been handled already, empty the token, set the width
-									// to 0, and return (no need to worry about an unnecessary hyphen being added
-									// onto the pushed hyphen line since the get_hyphen_str method handles that)
-									if index >= token.len()
-									{
-										token = "";
-										width = 0.0;
-										break;
-									}
-									// Take off the part of the token that was hyphenated
+									// Hyphenate the token and get the new starting index and width
+									let (index, new_width) =
+									self.hyphenate_textbox_token(token, max_line_width, y_min, current_x_min);
+									// Remove the part of the token that was hyphenated
 									token = &token[index..];
-									// Calculate the width of the new shorter token
-									width = self.calc_text_width(token);
+									// Store the new width of this token
+									width = new_width;
 								}
 							}
 							// If it's the first token on the first line in a tabbed paragraph and it can't fit on
 							// that first line
 							else if self.x + width > x_max && self.x == x_min + current_tab_amount && first_line
 							{
-								// Get a hyphenated part of the token and the index for where the hyphen cuts off in
-								// the token
-								let (hyphenated_token, _, index) =
-								self.get_hyphen_str(token, x_max - x_min - current_tab_amount);
-								// Apply the line to the spellbook
-								self.apply_text_line(&hyphenated_token, y_min);
-								// Set the x position back to the new-line reset point
-								self.x = current_x_min;
-								// Move the y position down a line
-								self.y -= self.current_newline_amount();
+								// Hyphenate the token and get the new starting index and width
+								let (index, new_width) = self.hyphenate_textbox_token
+								(
+									token,
+									x_max - x_min - current_tab_amount,
+									y_min,
+									current_x_min
+								);
 								// Zero the first line flag since at least 1 line has been written
 								first_line = false;
-								// Take off the part of the token that was hyphenated
+								// Remove the part of the token that was hyphenated
 								token = &token[index..];
-								// Calculate the width of the new shorter token
-								width = self.calc_text_width(token);
+								// Store the new width of this token
+								width = new_width;
 								// Calculate the maximum line width based on where the text starts and ends
 								let max_line_width = x_max - current_x_min;
 								// Keep hyphenating the token until the only part that remains can fit on a single
 								// line
 								while width > max_line_width
 								{
-									// Get a hyphenated part of the token and the index for where the hyphen cuts off
-									// in the token
-									let (hyphenated_token, _, index) = self.get_hyphen_str(token, max_line_width);
-									// Apply the line to the spellbook
-									self.apply_text_line(&hyphenated_token, y_min);
-									// Set the x position back to the new-line reset point
-									self.x = current_x_min;
-									// Move the y position down a line
-									self.y -= self.current_newline_amount();
-									// If the entire token has been handled already, empty the token, set the width
-									// to 0, and return (no need to worry about an unnecessary hyphen being added
-									// onto the pushed hyphen line since the get_hyphen_str method handles that)
-									if index >= token.len()
-									{
-										token = "";
-										width = 0.0;
-										break;
-									}
-									// Take off the part of the token that was hyphenated
+									// Hyphenate the token and get the new starting index and width
+									let (index, new_width) =
+									self.hyphenate_textbox_token(token, max_line_width, y_min, current_x_min);
+									// Remove the part of the token that was hyphenated
 									token = &token[index..];
-									// Calculate the width of the new shorter token
-									width = self.calc_text_width(token);
+									// Store the new width of this token
+									width = new_width;
 								}
 							}
 							else if self.x + width > x_max
@@ -751,6 +714,8 @@ impl <'a> SpellbookWriter<'a>
 									line += &hyphenated_token;
 									// Apply the line to the spellbook
 									self.apply_text_line(&line, y_min);
+									// Zero the first line flag since at least one ine has been applied now
+									first_line = false;
 									// Set the x position back to the new-line reset point
 									self.x = current_x_min;
 									// Move the y position down a line
@@ -763,32 +728,17 @@ impl <'a> SpellbookWriter<'a>
 									// single line
 									while width > max_line_width
 									{
-										// Get a hyphenated part of the token and the index for where the hyphen cuts
-										// off in the token
-										let (hyphenated_token, _, index) =
-										self.get_hyphen_str(token, max_line_width);
-										// Apply the line to the spellbook
-										self.apply_text_line(&hyphenated_token, y_min);
-										// Set the x position back to the new-line reset point
-										self.x = current_x_min;
-										// Move the y position down a line
-										self.y -= self.current_newline_amount();
-										// If the entire token has been handled already, empty the token, set the
-										// width to 0, and return (no need to worry about an unnecessary hyphen being
-										// added onto the pushed hyphen line since the get_hyphen_str method handles
-										// that)
-										if index >= token.len()
-										{
-											token = "";
-											width = 0.0;
-											break;
-										}
-										// Take off the part of the token that was hyphenated
+										// Hyphenate the token and get the new starting index and width
+										let (index, new_width) =
+										self.hyphenate_textbox_token(token, max_line_width, y_min, current_x_min);
+										// Remove the part of the token that was hyphenated
 										token = &token[index..];
-										// Calculate the width of the new shorter token
-										width = self.calc_text_width(token);
+										// Store the new width of this token
+										width = new_width;
 									}
+									// Set the line to whatever is left in the token
 									line = String::from(token);
+									// Store the width of the token as the width of the new line
 									line_width = width;
 								}
 								else
@@ -833,6 +783,36 @@ impl <'a> SpellbookWriter<'a>
 		// If a table was the last thing that was applied to the page, move down an extra newline amount to keep
 		// whatever comes next more separated from the table (to match the Player's Handbook formatting)
 		if in_table { self.y -= self.current_newline_amount(); }
+	}
+
+	/// Hyphenates a token, applies the hyphated part of the token to the spellbook, resets the x and y positions to
+	/// a new line, and returns the new starting index of the token along with its new width
+	fn hyphenate_textbox_token(&mut self, token: &str, max_line_width: f32, y_min: f32, current_x_min: f32)
+	-> (usize, f32)
+	{
+		// Get a hyphenated part of the token and the index for where the hyphen cuts
+		// off in the token
+		let (hyphenated_token, _, index) =
+		self.get_hyphen_str(token, max_line_width);
+		// Apply the line to the spellbook
+		self.apply_text_line(&hyphenated_token, y_min);
+		// Set the x position back to the new-line reset point
+		self.x = current_x_min;
+		// Move the y position down a line
+		self.y -= self.current_newline_amount();
+		// If the entire token has been handled already, empty the token, set the
+		// width to 0, and return (no need to worry about an unnecessary hyphen being
+		// added onto the pushed hyphen line since the get_hyphen_str method handles
+		// that)
+		if index >= token.len() { (index, 0.0) }
+		else
+		{
+			// Take off the part of the token that was hyphenated
+			let token = &token[index..];
+			// Calculate the width of the new shorter token
+			let width = self.calc_text_width(token);
+			(index, width)
+		}
 	}
 
 	/// Writes vertically and horizontally centered text into a fixed sized textbox.
