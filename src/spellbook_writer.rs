@@ -353,6 +353,8 @@ impl <'a> SpellbookWriter<'a>
 	{
 		// If either dimensional bounds overlap with each other, do nothing
 		if x_min >= x_max || y_min >= y_max { return; }
+		// Keeps track of whether or not a regular paragraph is currently being processed
+		let mut in_paragraph = false;
 		// Keeps track of whether or not a bullet point list is currently being processed
 		let mut in_bullet_list = false;
 		// Keeps track of whether or not a table is currently being processed
@@ -443,6 +445,8 @@ impl <'a> SpellbookWriter<'a>
 				{
 					// Set the bullet point flag to signal that a bullet list is currently being processed
 					in_bullet_list = true;
+					// Zero the paragraph flag
+					in_paragraph = false;
 					// Set the value that the x position resets to so it lines up after the bullet point
 					current_x_min = self.calc_text_width("• ") + x_min;
 					// If a table was being processed before, zero the table flag and don't go down annother extra
@@ -507,6 +511,8 @@ impl <'a> SpellbookWriter<'a>
 								// anymore
 								in_bullet_list = false;
 							}
+							// Zero the paragraph flag
+							in_paragraph = false;
 							// Make it so all paragraphs after the first get moved down a newline amount before being
 							// processed
 							paragraph_newline_scalar = 1.0;
@@ -554,9 +560,8 @@ impl <'a> SpellbookWriter<'a>
 				// 0 tab amounts for the first paragraph (to match the Player's Handbook formatting)
 				// 1 tab amount for all other paragraphs
 				self.x = x_min + current_tab_amount;
-				// Set the current tab amount to be the normal tab amount so all paragraphs after the first are
-				// tabbed in on the first line
-				current_tab_amount = self.tab_amount();
+				// Set the paragraph flag
+				in_paragraph = true;
 			}
 			// Make it so all paragraphs after the first get moved down a newline amount before being processed
 			paragraph_newline_scalar = 1.0;
@@ -595,6 +600,8 @@ impl <'a> SpellbookWriter<'a>
 					// If it's not a special token
 					_ =>
 					{
+						// Calculate the width of the token
+						let mut width = self.calc_text_width(token);
 						// If the token is an escaped font tag, remove the first backslash from it so font tags can
 						// actually appear in spell text without affecting the font
 						if let Some(pat_match) = escaped_font_tag_pattern.find(token)
@@ -602,23 +609,86 @@ impl <'a> SpellbookWriter<'a>
 							if pat_match.range() == (Range { start: 0, end: token.len() })
 							{ token = &token[1..]; }
 						}
-						// Calculate the width of the token
-						let width = self.calc_text_width(token);
-						// If the token does not fit on the line (could be from being too big to fit in textbox
-						// or being at the end of the line from a font change)
-						if self.x + width > x_max
-						{
-							// Single token is too long to fit on a line, must by hyphenated.
-							// Use binary search of string slice width to find where to hyphenate it
-							// TODO: Replace this code with code that hyphenates the current token
-							// Put this token at the start of the line
-							line = String::from(token);
-							// Assign this token's width to the width of the current line
-							line_width = width;
-						}
 						// If the next line to be written is currently empty
-						else if line_width == 0.0
+						if line_width == 0.0
 						{
+							// If the token is too wide to fit on a single line in the textbox
+							if current_x_min + width > x_max
+							{
+								// Get a hyphenated part of the token and the index for where the hyphen cuts off in
+								// the token
+								let (hyphenated_token, _, index) = self.get_hyphen_str(token, x_max - self.x);
+								self.apply_text_line(&hyphenated_token, y_min);
+								// Set the x position back to the new-line reset point
+								self.x = current_x_min;
+								// Move the y position down a line
+								self.y -= self.current_newline_amount();
+								first_line = false;
+								token = &token[index..];
+								width = self.calc_text_width(token);
+								let max_line_width = x_max - current_x_min;
+								while width > max_line_width
+								{
+									// Get a hyphenated part of the token and the index for where the hyphen cuts off
+									// in the token
+									let (hyphenated_token, _, index) = self.get_hyphen_str(token, max_line_width);
+									self.apply_text_line(&hyphenated_token, y_min);
+									// Set the x position back to the new-line reset point
+									self.x = current_x_min;
+									// Move the y position down a line
+									self.y -= self.current_newline_amount();
+									if index >= token.len()
+									{
+										token = "";
+										width = 0.0;
+										break;
+									}
+									token = &token[index..];
+									width = self.calc_text_width(token);
+								}
+							}
+							// If it's the first token on the first line in a tabbed paragraph and it can't fit on
+							// that first line
+							else if self.x + width > x_max && self.x == x_min + current_tab_amount && first_line
+							{
+								let (hyphenated_token, _, index) =
+								self.get_hyphen_str(token, x_max - x_min - current_tab_amount);
+								self.apply_text_line(&hyphenated_token, y_min);
+								// Set the x position back to the new-line reset point
+								self.x = current_x_min;
+								// Move the y position down a line
+								self.y -= self.current_newline_amount();
+								first_line = false;
+								token = &token[index..];
+								width = self.calc_text_width(token);
+								let max_line_width = x_max - current_x_min;
+								while width > max_line_width
+								{
+									// Get a hyphenated part of the token and the index for where the hyphen cuts off
+									// in the token
+									let (hyphenated_token, _, index) = self.get_hyphen_str(token, max_line_width);
+									self.apply_text_line(&hyphenated_token, y_min);
+									// Set the x position back to the new-line reset point
+									self.x = current_x_min;
+									// Move the y position down a line
+									self.y -= self.current_newline_amount();
+									if index >= token.len()
+									{
+										token = "";
+										width = 0.0;
+										break;
+									}
+									token = &token[index..];
+									width = self.calc_text_width(token);
+								}
+							}
+							else if self.x + width > x_max
+							{
+								// Set the x position back to the new-line reset point
+								self.x = current_x_min;
+								// Move the y position down a line
+								self.y -= self.current_newline_amount();
+							}
 							// Put this token at the start of the line
 							line = String::from(token);
 							// Assign this token's width to the width of the current line
@@ -627,7 +697,6 @@ impl <'a> SpellbookWriter<'a>
 						// If the current line is not empty
 						else if line_width > 0.0
 						{
-							
 							// Calculate the width of the current token with a space in front of it
 							// (which is how it would be added to the line)
 							let padded_width = self.calc_text_width(" ") + width;
@@ -637,23 +706,61 @@ impl <'a> SpellbookWriter<'a>
 							// Apply the current line and reset it to just the current token
 							if new_line_end > x_max
 							{
-								// If the current token is too wide to fit in the textbox
-								if self.x + padded_width > current_x_min
+								// If the current token is too wide to fit on a single line in the textbox
+								if current_x_min + width > x_max
 								{
-									// TODO Add code here to hyphenate the current token
+									let max_line_width = x_max - current_x_min;
+									// Get a hyphenated part of the token and the index for where the hyphen cuts off
+									// in the token
+									let (hyphenated_token, _, index) =
+									self.get_hyphen_str(token, max_line_width - self.x - line_width);
+									line += " ";
+									line += &hyphenated_token;
+									self.apply_text_line(&line, y_min);
+									// Set the x position back to the new-line reset point
+									self.x = current_x_min;
+									// Move the y position down a line
+									self.y -= self.current_newline_amount();
+									token = &token[index..];
+									width = self.calc_text_width(token);
+									while width > max_line_width
+									{
+										// Get a hyphenated part of the token and the index for where the hyphen cuts
+										// off in the token
+										let (hyphenated_token, _, index) =
+										self.get_hyphen_str(token, max_line_width);
+										self.apply_text_line(&hyphenated_token, y_min);
+										// Set the x position back to the new-line reset point
+										self.x = current_x_min;
+										// Move the y position down a line
+										self.y -= self.current_newline_amount();
+										if index >= token.len()
+										{
+											token = "";
+											width = 0.0;
+											break;
+										}
+										token = &token[index..];
+										width = self.calc_text_width(token);
+									}
+									line = String::from(token);
+									line_width = width;
 								}
-								// Apply the current line
-								self.apply_text_line(&line, y_min);
-								// Zero the first line flag since at least one line has been applied now
-								first_line = false;
-								// Set the x position back to the new-line reset point
-								self.x = current_x_min;
-								// Move the y position down a line
-								self.y -= self.current_newline_amount();
-								// Empty the line and put the current token in it to be at the start of the next line
-								line = String::from(token);
-								// Set the new line width to the width of the current line
-								line_width = width;
+								else
+								{
+									// Apply the current line
+									self.apply_text_line(&line, y_min);
+									// Zero the first line flag since at least one line has been applied now
+									first_line = false;
+									// Set the x position back to the new-line reset point
+									self.x = current_x_min;
+									// Move the y position down a line
+									self.y -= self.current_newline_amount();
+									// Empty the line and put the current token in it to be at the start of the next line
+									line = String::from(token);
+									// Set the new line width to the width of the current line
+									line_width = width;
+								}
 							}
 							// If the token doesn't make the line too wide, add the token to the line
 							else
@@ -670,8 +777,13 @@ impl <'a> SpellbookWriter<'a>
 					}
 				};
 			}
+			// If the current line is empty, move the y position back up a newline amount
+			if line_width <= 0.0 { self.y += self.current_newline_amount(); }
 			// Write any remaining text to the page
-			self.apply_text_line(&line, y_min);
+			else { self.apply_text_line(&line, y_min); }
+			// If this was a paragraph, set the current tab amount to be the normal tab amount so all paragraphs
+			// after the first are tabbed in on the first line
+			if in_paragraph { current_tab_amount = self.tab_amount(); }
 		}
 		// If a table was the last thing that was applied to the page, move down an extra newline amount to keep
 		// whatever comes next more separated from the table (to match the Player's Handbook formatting)
@@ -784,7 +896,7 @@ impl <'a> SpellbookWriter<'a>
 							// If the entire token has been handled already, empty the token, set the width to 0, and
 							// return (no need to worry about an unnecessary hyphen being added onto the pushed
 							// hyphen line since the get_hyphen_str method handles that)
-							if index == token.len()
+							if index >= token.len()
 							{
 								token = "";
 								width = 0.0;
@@ -830,24 +942,17 @@ impl <'a> SpellbookWriter<'a>
 								let (hyphenated_token, hyphen_token_width, index) =
 								self.get_hyphen_str(token, textbox_width - line_width - space_width);
 								// Add the hyphenated part of the token to the line with a space at the start
-								line += format!(" {}", hyphenated_token).as_str();
+								line += " ";
+								line += &hyphenated_token;
 								// Add the hyphenated token width and the width of the space to the total line width
 								line_width += space_width + hyphen_token_width;
 								// Push the current line to the lines vec
 								lines.push((line, line_width));
-								// No need for this code, it should be impossible to reach
-								// If that was the entire token, empty the current line and continue
-								// if index == token.len()
-								// {
-								// 	line = String::new();
-								// 	line_width = 0.0;
-								// 	continue;
-								// }
 								// Take the part of the token that was hyphenated out of it
 								token = &token[index..];
 								// Hyphenate the rest of the token
 								// Calculate the width of the token
-								let mut width = self.calc_text_width(token);
+								width = self.calc_text_width(token);
 								// If the current token is too big to fit in the textbox
 								// Hyphenate the token, add it as a line, and remove the hyphenated part from the
 								// token until the remaining token can fit on a single line in the textbox
@@ -862,7 +967,7 @@ impl <'a> SpellbookWriter<'a>
 									// If the entire token has been handled already, empty the token, set the width
 									// to 0, and return (no need to worry about an unnecessary hyphen being added
 									// onto the pushed hyphen line since the get_hyphen_str method handles that)
-									if index == token.len()
+									if index >= token.len()
 									{
 										token = "";
 										width = 0.0;
