@@ -8,7 +8,6 @@ use std::fs;
 use std::cell::Ref;
 use std::error::Error;
 use std::ops::Range;
-use std::cmp::min;
 
 extern crate image;
 use rusttype::point;
@@ -520,9 +519,16 @@ impl <'a> SpellbookWriter<'a>
 								// Make it so all paragraphs after the first get moved down a newline amount before
 								// being processed
 								paragraph_newline_scalar = 1.0;
-								// TODO: Add code to put in a table
+								// Reset the x position to the left side of the textbox
 								self.x = x_min;
+								// Store the current font variant being used so it can be set back to it after the
+								// table
+								let current_font_variant = *self.current_font_variant();
+								// TODO: Add code to put in a table
+								self.parse_table(&tables[table_index], x_min, x_max, y_min, y_max);
 								self.apply_text_line(tokens[0], y_min);
+								// Reset the font variant to what it was before the table
+								self.set_current_font_variant(current_font_variant);
 								// Skip the token loop below and move to the next paragraph
 								continue;
 							}
@@ -1028,20 +1034,84 @@ impl <'a> SpellbookWriter<'a>
 		};
 	}
 
-	fn get_table_lines(&mut self, cells: &Vec<Vec<String>>, textbox_width: f32) -> Vec<Vec<Vec<(String, f32)>>>
+	fn parse_table(&mut self, table: &spells::Table, x_min: f32, x_max: f32, y_min: f32, y_max: f32)
 	{
+
+	}
+
+	/// Gets the widths of the widest cells in each column and returns those widths along with the index of the
+	/// column that width belongs to (so the vec can be sorted later and still have identifiable widths).
+	fn get_max_column_widths(&mut self, column_labels: &Vec<String>, cells: &Vec<Vec<String>>) -> Vec<(usize, f32)>
+	{
+		// Set the font variant to bold for calculating the column label widths
+		self.set_current_font_variant(FontVariant::Bold);
+		// Create a vec to hold the column widths and their associated indexes
+		let mut column_widths = Vec::with_capacity(column_labels.len());
+		// Loop through each column label to use its width as a starter value for the max width of that column
+		for index in 0..column_labels.len()
+		{
+			// Calculate the width of that column label
+			let width = self.calc_text_width(&column_labels[index]);
+			// Add that width as a starter value for the max width of that column
+			column_widths.push((index, width));
+		}
+		// Loop through each cell in the table to calculate its width and have it replace the max width of its column
+		// if its bigger than the current max width of its column
+		for row_index in 0..cells.len()
+		{
+			for column_index in 0..cells[row_index].len()
+			{
+				// Set the font variant to regular for the start of each cell
+				self.set_current_font_variant(FontVariant::Regular);
+				// Calculate the width of the cell (font switches included)
+				let column_width = self.get_textbox_lines(&cells[row_index][column_index], f32::INFINITY)[0].1;
+				// If a max width for this column already exists
+				if column_index < column_widths.len()
+				{
+					// Replace the max width of this column with this cell's width if its bigger than the current max
+					// width of this column
+					column_widths[column_index].1 = column_widths[column_index].1.max(column_width);
+				}
+				// If this is a jagged table and a width hasn't been added for this column yet, push this width
+				else { column_widths.push((column_index, column_width)); }
+			}
+		}
+		// Return the column widths and their associated indexes
+		column_widths
+	}
+
+	/// Takes the widths of the widest cells in each column and the index of that column, returns a vec of the widths
+	/// that will be used for each column and a flag that tells whether or not each column is centered or left
+	/// aligned.
+	fn get_column_widths(max_column_widths: &Vec<(usize, f32)>) -> Vec<(f32, bool)>
+	{
+		todo!()
+	}
+
+	/// Takes a 2D vec of cells from a table and the widths of each column in the table, divides each cell into
+	/// lines, and returns a 3D vec of those lines for each cell.
+	fn get_table_lines(&mut self, cells: &Vec<Vec<String>>, column_data: &Vec<(f32, bool)>)
+	-> Vec<Vec<Vec<(String, f32)>>>
+	{
+		// Create the vec of lines to be returned
 		let mut lines: Vec<Vec<Vec<(String, f32)>>> = Vec::with_capacity(cells.len());
-		let mut width = 0.0;
-		let mut height = 0.0;
+		// Loop through each cell
 		for row_index in 0..cells.len()
 		{
 			lines.push(Vec::with_capacity(cells[row_index].len()));
 			for column_index in 0..cells[row_index].len()
 			{
-
-				lines[row_index].push(self.get_textbox_lines(&cells[row_index][column_index], textbox_width));
+				// Set the font variant to regular for the start of each cell
+				self.set_current_font_variant(FontVariant::Regular);
+				// Divide the cell into lines and add it to the return vec
+				lines[row_index].push(self.get_textbox_lines
+				(
+					&cells[row_index][column_index],
+					column_data[column_index].0
+				));
 			}
 		}
+		// Return the lines of each cell
 		lines
 	}
 
@@ -1053,7 +1123,7 @@ impl <'a> SpellbookWriter<'a>
 		// Collects it into a vec so the `is_empty` method can be used without having to clone a new iterator.
 		let tokens: Vec<_> = text.split_whitespace().collect();
 		// If there is no text, do nothing
-		if tokens.is_empty() { return Vec::new(); }
+		if tokens.is_empty() { return vec![(String::new(), 0.0)]; }
 		// Store the font variant at the start so the current font variant can be reset to it after constructing the
 		// lines of text since the current font variant will change while calculating line widths
 		let start_font_variant = *self.current_font_variant();
