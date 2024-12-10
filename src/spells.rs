@@ -1380,11 +1380,19 @@ impl fmt::Display for Duration
 	}
 }
 
+/// Holds a table that goes in a spellbook description.
+/// It does not need to be a perfect square, jagged tables are allowed.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Table
 {
+	/// The title text that goes above the table. Leave as empty string for no title.
 	pub title: String,
+	/// The labels above each column on the first row of the table.
+	/// Leave entire vec empty for no column labels and individual strings empty to skip over a column.
 	pub column_labels: Vec<String>,
+	/// Vec of the text that goes in each individual cell in the table. Outer vec is the row of the cell (up and
+	/// down placement), inner vec is the column of the cell (left to right placement). Lower row indexes mean higher
+	/// up vertically on the table, lower column indexes mean more to the left.
 	pub cells: Vec<Vec<String>>
 }
 

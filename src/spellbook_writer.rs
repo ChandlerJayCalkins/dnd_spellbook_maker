@@ -338,6 +338,7 @@ impl <'a> SpellbookWriter<'a>
 	/// The text is left-aligned and if it goes below the y_min, it continues writing onto the next page (or a new
 	/// page), continuing to stay within the given dimensions on the new page.
 	/// `starting_tab` determines whether or not the first paragraph gets tabbed in on the first line or not.
+	/// If `tables` is empty, table tags will be treated as normal tokens and parsed or skipped.
 	/// This method can also process bullet points, tables, and font variant changes in the text.
 	fn write_textbox
 	(
@@ -468,73 +469,77 @@ impl <'a> SpellbookWriter<'a>
 			}
 			else
 			{
-				// If there is a table tag (ex: "[table][5]", "[table][0]", etc.) in the first token
-				if let Some(pat_match) = table_tag_pattern.find(tokens[0])
+				// If there are any tables to parse
+				if tables.len() > 0
 				{
-					// Get the index range of the table tag pattern patch
-					let table_tag_range = pat_match.range();
-					// If the table tag is at the end of the first token
-					if table_tag_range.end == tokens[0].len()
+					// If there is a table tag in this first token (ex: "[table][5]", "[table][0]", etc.)
+					if let Some(pat_match) = table_tag_pattern.find(tokens[0])
 					{
-						// If the table tag is the whole first token, write a table to the document
-						if table_tag_range.start == 0
+						// Get the index range of the table tag pattern patch
+						let table_tag_range = pat_match.range();
+						// If the table tag is at the end of the first token
+						if table_tag_range.end == tokens[0].len()
 						{
-							// Get a string slice of the table index (the 'x' in "[table][x]")
-							let index_str = &tokens[0][8 .. tokens[0].len() - 1];
-							// Convert the table index into a number
-							let table_index = match index_str.parse::<usize>()
+							// If the table tag is the whole first token, write a table to the document
+							if table_tag_range.start == 0
 							{
-								Ok(index) => index,
-								// If the index wasn't a valid number, skip over this table token
-								Err(_) => continue
-							};
-							// If the index is out of bounds of the tables vec, skip over this table token
-							if table_index >= tables.len() { continue; }
-							// If another table was not being processed before, move the y position down an extra
-							// newline amount
-							if !in_table
-							{
-								// Move the y position down an extra newline amount to separate it more from normal
-								// paragraphs (to match the Player's Handbook formatting)
-								// Moves the y position down 0 newlines on the first paragraph, 0 on all others.
-								self.y -= paragraph_newline_scalar * self.current_newline_amount();
-								// Set the table flag to signal that a table is being processed
-								in_table = true;
+								// Get a string slice of the table index (the 'x' in "[table][x]")
+								let index_str = &tokens[0][8 .. tokens[0].len() - 1];
+								// Convert the table index into a number
+								let table_index = match index_str.parse::<usize>()
+								{
+									Ok(index) => index,
+									// If the index wasn't a valid number, skip over this table token
+									Err(_) => continue
+								};
+								// If the index is out of bounds of the tables vec, skip over this table token
+								if table_index >= tables.len() { continue; }
+								// If another table was not being processed before, move the y position down an extra
+								// newline amount
+								if !in_table
+								{
+									// Move the y position down an extra newline amount to separate it more from
+									// normal paragraphs (to match the Player's Handbook formatting)
+									// Moves the y position down 0 newlines on the first paragraph, 0 on all others.
+									self.y -= paragraph_newline_scalar * self.current_newline_amount();
+									// Set the table flag to signal that a table is being processed
+									in_table = true;
+								}
+								// If this table is right after a bullet list (bullet flag still set)
+								if in_bullet_list
+								{
+									// Set the value that the x position resets to so that it lines up with the left
+									// side of the text box again
+									current_x_min = x_min;
+									// Zero the bullet flag to signal that a bullet list isn't being currently
+									// processed anymore
+									in_bullet_list = false;
+								}
+								// Zero the paragraph flag
+								in_paragraph = false;
+								// Make it so all paragraphs after the first get moved down a newline amount before
+								// being processed
+								paragraph_newline_scalar = 1.0;
+								// TODO: Add code to put in a table
+								self.x = x_min;
+								self.apply_text_line(tokens[0], y_min);
+								// Skip the token loop below and move to the next paragraph
+								continue;
 							}
-							// If this table is right after a bullet list (bullet flag still set)
-							if in_bullet_list
+							// Check to see if this is an escaped table tag (a backslash or multiple backslashes
+							// before the table tag)
+							// If there is at least one backslash in the first token
+							else if let Some(backslashes_match) = backslashes_pattern.find(tokens[0])
 							{
-								// Set the value that the x position resets to so that it lines up with the left side
-								// of the text box again
-								current_x_min = x_min;
-								// Zero the bullet flag to signal that a bullet list isn't being currently processed
-								// anymore
-								in_bullet_list = false;
-							}
-							// Zero the paragraph flag
-							in_paragraph = false;
-							// Make it so all paragraphs after the first get moved down a newline amount before being
-							// processed
-							paragraph_newline_scalar = 1.0;
-							// TODO: Add code to put in a table
-							self.x = x_min;
-							self.apply_text_line(tokens[0], y_min);
-							// Skip the token loop below and move to the next paragraph
-							continue;
-						}
-						// Check to see if this is an escaped table tag (a backslash or multiple backslashes before
-						// the table tag)
-						// If there is at least one backslash in the first token
-						else if let Some(backslashes_match) = backslashes_pattern.find(tokens[0])
-						{
-							// Get the index range of the backslash pattern match
-							let backslashes_range = backslashes_match.range();
-							// If the backslashes are at the start of the token and right before the table tag
-							// (if the entire token is backslashes followed by a table tag)
-							if backslashes_range.start == 0 && backslashes_range.end == table_tag_range.start
-							{
-								// Remove the first backslash from the token
-								tokens[0] = &tokens[0][1..];
+								// Get the index range of the backslash pattern match
+								let backslashes_range = backslashes_match.range();
+								// If the backslashes are at the start of the token and right before the table tag
+								// (if the entire token is backslashes followed by a table tag)
+								if backslashes_range.start == 0 && backslashes_range.end == table_tag_range.start
+								{
+									// Remove the first backslash from the token
+									tokens[0] = &tokens[0][1..];
+								}
 							}
 						}
 					}
@@ -621,7 +626,7 @@ impl <'a> SpellbookWriter<'a>
 							{
 								// Hyphenate the token and get the new starting index and width
 								let (index, new_width) =
-								self.hyphenate_textbox_token(token, x_max - self.x, y_min, current_x_min);
+								self.hyphenate_and_apply_token(token, x_max - self.x, y_min, current_x_min);
 								// Zero the first line flag since at least 1 line has been written
 								first_line = false;
 								// Remove the part of the token that was hyphenated
@@ -636,7 +641,7 @@ impl <'a> SpellbookWriter<'a>
 								{
 									// Hyphenate the token and get the new starting index and width
 									let (index, new_width) =
-									self.hyphenate_textbox_token(token, max_line_width, y_min, current_x_min);
+									self.hyphenate_and_apply_token(token, max_line_width, y_min, current_x_min);
 									// Remove the part of the token that was hyphenated
 									token = &token[index..];
 									// Store the new width of this token
@@ -648,7 +653,7 @@ impl <'a> SpellbookWriter<'a>
 							else if self.x + width > x_max && self.x == x_min + current_tab_amount && first_line
 							{
 								// Hyphenate the token and get the new starting index and width
-								let (index, new_width) = self.hyphenate_textbox_token
+								let (index, new_width) = self.hyphenate_and_apply_token
 								(
 									token,
 									x_max - x_min - current_tab_amount,
@@ -669,7 +674,7 @@ impl <'a> SpellbookWriter<'a>
 								{
 									// Hyphenate the token and get the new starting index and width
 									let (index, new_width) =
-									self.hyphenate_textbox_token(token, max_line_width, y_min, current_x_min);
+									self.hyphenate_and_apply_token(token, max_line_width, y_min, current_x_min);
 									// Remove the part of the token that was hyphenated
 									token = &token[index..];
 									// Store the new width of this token
@@ -691,9 +696,13 @@ impl <'a> SpellbookWriter<'a>
 						// If the current line is not empty
 						else if line_width > 0.0
 						{
+							// Store a space string
+							let space = " ";
+							// Calculate the width of a space character
+							let space_width = self.calc_text_width(space);
 							// Calculate the width of the current token with a space in front of it
 							// (which is how it would be added to the line)
-							let padded_width = self.calc_text_width(" ") + width;
+							let padded_width = space_width + width;
 							// Calculate where the line would end if the token was added onto this line
 							let new_line_end = self.x + line_width + padded_width;
 							// If this token would make the line go past the right side boundry of the textbox,
@@ -707,10 +716,13 @@ impl <'a> SpellbookWriter<'a>
 									let max_line_width = x_max - current_x_min;
 									// Get a hyphenated part of the token and the index for where the hyphen cuts off
 									// in the token
-									let (hyphenated_token, _, index) =
-									self.get_hyphen_str(token, max_line_width - self.x - line_width);
+									let (hyphenated_token, _, index) = self.get_hyphen_str
+									(
+										token,
+										max_line_width - (self.x - current_x_min) - space_width - line_width
+									);
 									// Add a space and the hyphenated token to the end of the line
-									line += " ";
+									line += space;
 									line += &hyphenated_token;
 									// Apply the line to the spellbook
 									self.apply_text_line(&line, y_min);
@@ -730,7 +742,7 @@ impl <'a> SpellbookWriter<'a>
 									{
 										// Hyphenate the token and get the new starting index and width
 										let (index, new_width) =
-										self.hyphenate_textbox_token(token, max_line_width, y_min, current_x_min);
+										self.hyphenate_and_apply_token(token, max_line_width, y_min, current_x_min);
 										// Remove the part of the token that was hyphenated
 										token = &token[index..];
 										// Store the new width of this token
@@ -787,7 +799,7 @@ impl <'a> SpellbookWriter<'a>
 
 	/// Hyphenates a token, writes the hyphated part of the token to the spellbook, resets the x and y positions to
 	/// a new line, and returns the new starting index of the token along with its new width.
-	fn hyphenate_textbox_token(&mut self, token: &str, max_line_width: f32, y_min: f32, current_x_min: f32)
+	fn hyphenate_and_apply_token(&mut self, token: &str, max_line_width: f32, y_min: f32, current_x_min: f32)
 	-> (usize, f32)
 	{
 		// Get a hyphenated part of the token and the index for where the hyphen cuts
@@ -827,193 +839,7 @@ impl <'a> SpellbookWriter<'a>
 		// Calculates the actual sizes of the horizontal and vertical dimensions of the textbox
 		let textbox_width = x_max - x_min;
 		let textbox_height = y_max - y_min;
-		// The number of newlines to go down by at the start of each line
-		// Is 0.0 for the first line
-		// Is 1.0 for all other lines
-		let mut newline_scalar = 0.0;
-		// Get all tokens separated by whitespace
-		// Collects it into a vec so the `is_empty` method can be used without having to clone a new iterator.
-		let tokens: Vec<_> = text.split_whitespace().collect();
-		// If there is no text, do nothing
-		if tokens.is_empty() { return; }
-		// Store the font variant at the start so the current font variant can be reset to it after constructing the
-		// lines of text since the current font variant will change while calculating line widths
-		let start_font_variant = *self.current_font_variant();
-		// Vector containing each line of text to write to the textbox and the width of that textbox
-		let mut lines: Vec<(String, f32)> = Vec::with_capacity(1);
-		// String of the current line being measured
-		let mut line = String::new();
-		// Width of the current line being measured
-		let mut line_width: f32 = 0.0;
-		// Create a regex pattern for escaped font tags (font tags preceeded by backslashes)
-		// Ex: "\<r>", "\\\<bi>", "\\<i>", etc.
-		// Use this regex pattern to remove the first backslash from escaped font tags so that font tags are allowed
-		// to actually appear in spell text AND not affect the font at all
-		let escaped_font_tag_pattern = format!
-		(
-			"(\\\\)+({}|{}|{}|{}|{})",
-			REGULAR_FONT_TAG,
-			BOLD_FONT_TAG,
-			ITALIC_FONT_TAG,
-			BOLD_ITALIC_FONT_TAG,
-			ITALIC_BOLD_FONT_TAG
-		);
-		let escaped_font_tag_pattern = Regex::new(&escaped_font_tag_pattern)
-		.expect(format!
-		(
-			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::write_textbox`",
-			escaped_font_tag_pattern
-		).as_str());
-		// Loop through each token to measure how many lines there will be and how long each line is
-		for mut token in tokens
-		{
-			match token
-			{
-				// If It's a font tag, add the tag to the line without adding the width and switch the current font
-				// variant so width can be calculated correctly for the following tokens
-				REGULAR_FONT_TAG =>
-				{
-					line = String::from(format!("{} {}", line, token).trim());
-					self.set_current_font_variant(FontVariant::Regular);
-				},
-				BOLD_FONT_TAG =>
-				{
-					line = String::from(format!("{} {}", line, token).trim());
-					self.set_current_font_variant(FontVariant::Bold);
-				},
-				ITALIC_FONT_TAG =>
-				{
-					line = String::from(format!("{} {}", line, token).trim());
-					self.set_current_font_variant(FontVariant::Italic);
-				},
-				BOLD_ITALIC_FONT_TAG | ITALIC_BOLD_FONT_TAG =>
-				{
-					line = String::from(format!("{} {}", line, token).trim());
-					self.set_current_font_variant(FontVariant::BoldItalic);
-				},
-				// If it's not a special token, calculate its width and determine what to do from there
-				_ =>
-				{
-					// If the token is an escaped font tag, remove the first backslash from it so font tags can
-					// actually appear in spell text without affecting the font
-					if let Some(pat_match) = escaped_font_tag_pattern.find(token)
-					{
-						if pat_match.range() == (Range { start: 0, end: token.len() })
-						{ token = &token[1..]; }
-					}
-					// If the line is currently empty
-					if line_width == 0.0
-					{
-						// If the token is too large to fit on a single line, hyphenate it until it fits and get the
-						// width of the reamining token
-						// Calculate the width of the token
-						let mut width = self.calc_text_width(token);
-						// If the current token is too big to fit in the textbox
-						// Hyphenate the token, add it as a line, and remove the hyphenated part from the token until
-						// the remaining token can fit on a single line in the textbox
-						while width > textbox_width
-						{
-							// Hyphenate the token and get the new starting index and width
-							let (index, new_width) =
-							self.hyphenate_centered_textbox_token(token, textbox_width, &mut lines);
-							// Remove the part of the token that was hyphenated
-							token = &token[index..];
-							// Store the new width of this token
-							width = new_width;
-						}
-						// If there's any token remaining after being hyphenated
-						if width > 0.0
-						{
-							// Adds the current token to the start of the line
-							// (Adds a space before it in case there is a font tag / are font tags at the front and
-							// trim it to remove the space at the front if there are no font tags
-							line = String::from(format!("{} {}", line, token).trim());
-							// Sets the current line width to the width of this token
-							line_width += width;
-						}
-					}
-					// If the line is not empty
-					else if line_width > 0.0
-					{
-						// Calculate the width of the current token with a space in front of it
-						// (which could be added to the line)
-						let padded_token = format!(" {}", token);
-						let padded_width = self.calc_text_width(&padded_token);
-						// If adding this token to the line would make it go outside the textbox,
-						// Apply the current line and reset it to just the current token
-						if line_width + padded_width > textbox_width
-						{
-							// Calculate the width of the token
-							let mut width = self.calc_text_width(token);
-							// If the current token is too wide to fit in the textbox
-							if width > textbox_width
-							{
-								// Calculate the width of a space
-								let space_width = self.calc_text_width(" ");
-								// Hyphenate the first line of the token within the remaining space on the current
-								// line (calculate remaining line width by subtracting current line width and space
-								// width from the entire textbox width)
-								let (hyphenated_token, hyphen_token_width, index) =
-								self.get_hyphen_str(token, textbox_width - line_width - space_width);
-								// Add the hyphenated part of the token to the line with a space at the start
-								line += " ";
-								line += &hyphenated_token;
-								// Add the hyphenated token width and the width of the space to the total line width
-								line_width += space_width + hyphen_token_width;
-								// Push the current line to the lines vec
-								lines.push((line, line_width));
-								// Take the part of the token that was hyphenated out of it
-								token = &token[index..];
-								// Hyphenate the rest of the token
-								// Calculate the width of the token
-								width = self.calc_text_width(token);
-								// If the current token is too big to fit in the textbox
-								// Hyphenate the token, add it as a line, and remove the hyphenated part from the
-								// token until the remaining token can fit on a single line in the textbox
-								while width > textbox_width
-								{
-									// Hyphenate the token and get the new starting index and width
-									let (index, new_width) =
-									self.hyphenate_centered_textbox_token(token, textbox_width, &mut lines);
-									// Remove the part of the token that was hyphenated
-									token = &token[index..];
-									// Store the new width of this token
-									width = new_width;
-								}
-								// Set what's left of the token to the current line
-								line = String::from(token);
-								// Set the width of the token to the line width
-								line_width = width;
-							}
-							else
-							{
-								// Add the current line to the vec of lines
-								lines.push((line, line_width));
-								// Empties the current line and puts the current token at the start of the next one
-								line = String::from(token);
-								// Sets the new current line width to the width of the current token
-								line_width = width;
-							}
-						}
-						// If this token can fit on the line, add it to the line and add the width of a space and
-						// this token to the width of the line
-						else
-						{
-							// Add a space and this token to the end of this line
-							line += &padded_token;
-							// Add the width of a space and this token added to the width of the line
-							line_width += padded_width;
-						}
-					}
-					else { panic!(
-					"Line width is less than 0.0 in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::write_centered_textbox`"); }
-				}
-			}
-		}
-		// Push the remaining text in the last line to the vec of lines
-		lines.push((line, line_width));
-		// Set the font variant back to what it's supposed to be at the start of the text
-		self.set_current_font_variant(start_font_variant);
+		let lines = self.get_textbox_lines(text, textbox_width);
 		// Calculate how many lines this text is going to be
 		let max_lines = (textbox_height / self.current_newline_amount()).floor() as usize;
 		// If There are more lines than can fit on the page, set the y value to the top of the textbox
@@ -1044,33 +870,6 @@ impl <'a> SpellbookWriter<'a>
 		}
 	}
 
-	/// Hyphenates a token, adds the hyphenated part of the token to the lines vec along with its width, and returns
-	/// the new starting index of the token along with its new width.
-	fn hyphenate_centered_textbox_token(&mut self, token: &str, textbox_width: f32, lines: &mut Vec<(String, f32)>)
-	-> (usize, f32)
-	{
-		// Get a hyphenated part of the token and the index for where the hyphen cuts off
-		// in the token
-		let (hyphenated_token, hyphen_token_width, index) =
-		self.get_hyphen_str(token, textbox_width);
-		// Add the hyphenated part of the token as a line
-		lines.push((hyphenated_token, hyphen_token_width));
-		// If there's still some characters left in the token
-		if index < token.len()
-		{
-			// Take part of the token that was hyphenated off of it
-			let token = &token[index..];
-			// Recalculate the width of the token
-			let width = self.calc_text_width(token);
-			// return the new starting index and width
-			(index, width)
-		}
-		// If the entire token has been handled already, return the index at the end of the token and a width of 0
-		// (no need to worry about an unnecessary hyphen being added onto the pushed hyphen line since the
-		// get_hyphen_str method handles that)
-		else { (index, 0.0) }
-	}
-
 	/// For use in `write_textbox` functions. If the given font variant is different than the current one being used,
 	/// it applies the current line of text being processed, empties it, switches the current font variant to the
 	/// given one, and resets the line width to 0.
@@ -1091,77 +890,6 @@ impl <'a> SpellbookWriter<'a>
 			self.set_current_font_variant(font_variant);
 			// Resets the line width to 0 since the line is empty now
 			*line_width = 0.0;
-		}
-	}
-
-	/// Takes a string that is too wide to fit on a single line in a textbox and finds the cutoff / delimiter index
-	/// so that `&text[0..index] + '-'` fits inside the textbox, along with that hyphenated string itself
-	fn get_hyphen_str(&self, text: &str, textbox_width: f32) -> (String, f32, usize)
-	{
-		// Keeps track of the last hyphenated part of the text that was measured
-		let mut hyphenated_string = String::new();
-		// Keeps track of the width of the hyphenated part of the text
-		let mut hyphen_str_width = self.calc_text_width(text);
-		// If the string can fit in the textbox, return itself and its length
-		if hyphen_str_width <= textbox_width { return (String::from(text), hyphen_str_width, text.len()) }
-		// Lower and upper possible bounds for what the index could be
-		let mut lower_bound = 0;
-		let mut upper_bound = text.len();
-		// The current index being tested
-		let mut index = upper_bound / 2;
-		let mut last_index = index;
-		// Whether or not the index had just gone down or up
-		let mut went_up = false;
-		// Do - While loop until index and last_index are equal
-		// Binary search for the index where the text plus a hyphen at the end is as long as possible without going
-		// outside the textbox
-		while
-		{
-			// Store index in last index
-			last_index = index;
-			// Get a string of the start of the text up to the index with a hyphen at the end
-			hyphenated_string = format!("{}-", &text[0..index]);
-			// Calculate the width of the hyphenated string
-			hyphen_str_width = self.calc_text_width(&hyphenated_string);
-			// If the width is exactly the width of the textbox, return the current hyphen string data
-			if hyphen_str_width == textbox_width { return (hyphenated_string, hyphen_str_width, index); }
-			// If the width is less than the width of the textbox
-			else if hyphen_str_width < textbox_width
-			{
-				// Increase the lower bound to the index
-				lower_bound = index;
-				// Increase the index to be between the lower bound and upper bound
-				index += (upper_bound - lower_bound) / 2;
-				// Zero the went up flag
-				went_up = true;
-			}
-			// If the width is greater than the width of the textbox
-			else
-			{
-				// Decrease the upper bound to the index
-				upper_bound = index;
-				// Decrease the index to be between the lower and upper bound
-				index -= (upper_bound - lower_bound) / 2;
-				// Set the went up flag
-				went_up = false;
-			}
-			// Do - While condition
-			index != last_index
-		}{}
-		// If the index is 0, return that irregardless of whether it went up or down to signal that it can't fit
-		// within the width of this textbox at all
-		if index == 0 { (String::new(), 0.0, index) }
-		else
-		{
-			// If the index tried to go up on the last iteration, increase the cutoff / delimiter index by 1 along
-			// and change the hyphenated string and its width to match the index change
-			if went_up
-			{
-				index += 1;
-				hyphenated_string = format!("{}-", &text[0..index]);
-				hyphen_str_width = self.calc_text_width(&hyphenated_string);
-			}
-			(hyphenated_string, hyphen_str_width, index)
 		}
 	}
 
@@ -1300,32 +1028,330 @@ impl <'a> SpellbookWriter<'a>
 		};
 	}
 
+	fn get_table_lines(&mut self, cells: &Vec<Vec<String>>, textbox_width: f32) -> Vec<Vec<Vec<(String, f32)>>>
+	{
+		let mut lines: Vec<Vec<Vec<(String, f32)>>> = Vec::with_capacity(cells.len());
+		let mut width = 0.0;
+		let mut height = 0.0;
+		for row_index in 0..cells.len()
+		{
+			lines.push(Vec::with_capacity(cells[row_index].len()));
+			for column_index in 0..cells[row_index].len()
+			{
+
+				lines[row_index].push(self.get_textbox_lines(&cells[row_index][column_index], textbox_width));
+			}
+		}
+		lines
+	}
+
+	/// Takes a string along with a maximum width for lines to fit into, separates the string into lines, and returns
+	/// those lines along with their widths.
+	fn get_textbox_lines(&mut self, text: &str, textbox_width: f32) -> Vec<(String, f32)>
+	{
+		// Get all tokens separated by whitespace
+		// Collects it into a vec so the `is_empty` method can be used without having to clone a new iterator.
+		let tokens: Vec<_> = text.split_whitespace().collect();
+		// If there is no text, do nothing
+		if tokens.is_empty() { return Vec::new(); }
+		// Store the font variant at the start so the current font variant can be reset to it after constructing the
+		// lines of text since the current font variant will change while calculating line widths
+		let start_font_variant = *self.current_font_variant();
+		// Vector containing each line of text to write to the textbox and the width of that textbox
+		let mut lines: Vec<(String, f32)> = Vec::with_capacity(1);
+		// String of the current line being measured
+		let mut line = String::new();
+		// Width of the current line being measured
+		let mut line_width: f32 = 0.0;
+		// Create a regex pattern for escaped font tags (font tags preceeded by backslashes)
+		// Ex: "\<r>", "\\\<bi>", "\\<i>", etc.
+		// Use this regex pattern to remove the first backslash from escaped font tags so that font tags are allowed
+		// to actually appear in spell text AND not affect the font at all
+		let escaped_font_tag_pattern = format!
+		(
+			"(\\\\)+({}|{}|{}|{}|{})",
+			REGULAR_FONT_TAG,
+			BOLD_FONT_TAG,
+			ITALIC_FONT_TAG,
+			BOLD_ITALIC_FONT_TAG,
+			ITALIC_BOLD_FONT_TAG
+		);
+		let escaped_font_tag_pattern = Regex::new(&escaped_font_tag_pattern)
+		.expect(format!
+		(
+			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::get_textbox_lines`",
+			escaped_font_tag_pattern
+		).as_str());
+		// Loop through each token to measure how many lines there will be and how long each line is
+		for mut token in tokens
+		{
+			match token
+			{
+				// If It's a font tag, add the tag to the line without adding the width and switch the current font
+				// variant so width can be calculated correctly for the following tokens
+				REGULAR_FONT_TAG =>
+				{
+					line = String::from(format!("{} {}", line, token).trim());
+					self.set_current_font_variant(FontVariant::Regular);
+				},
+				BOLD_FONT_TAG =>
+				{
+					line = String::from(format!("{} {}", line, token).trim());
+					self.set_current_font_variant(FontVariant::Bold);
+				},
+				ITALIC_FONT_TAG =>
+				{
+					line = String::from(format!("{} {}", line, token).trim());
+					self.set_current_font_variant(FontVariant::Italic);
+				},
+				BOLD_ITALIC_FONT_TAG | ITALIC_BOLD_FONT_TAG =>
+				{
+					line = String::from(format!("{} {}", line, token).trim());
+					self.set_current_font_variant(FontVariant::BoldItalic);
+				},
+				// If it's not a special token, calculate its width and determine what to do from there
+				_ =>
+				{
+					// If the token is an escaped font tag, remove the first backslash from it so font tags can
+					// actually appear in spell text without affecting the font
+					if let Some(pat_match) = escaped_font_tag_pattern.find(token)
+					{
+						if pat_match.range() == (Range { start: 0, end: token.len() })
+						{ token = &token[1..]; }
+					}
+					// If the line is currently empty
+					if line_width == 0.0
+					{
+						// If the token is too large to fit on a single line, hyphenate it until it fits and get the
+						// width of the reamining token
+						// Calculate the width of the token
+						let mut width = self.calc_text_width(token);
+						// If the current token is too big to fit in the textbox
+						// Hyphenate the token, add it as a line, and remove the hyphenated part from the token until
+						// the remaining token can fit on a single line in the textbox
+						while width > textbox_width
+						{
+							// Hyphenate the token and get the new starting index and width
+							let (index, new_width) =
+							self.hyphenate_textbox_token(token, textbox_width, &mut lines);
+							// Remove the part of the token that was hyphenated
+							token = &token[index..];
+							// Store the new width of this token
+							width = new_width;
+						}
+						// If there's any token remaining after being hyphenated
+						if width > 0.0
+						{
+							// Adds the current token to the start of the line
+							// (Adds a space before it in case there is a font tag / are font tags at the front and
+							// trim it to remove the space at the front if there are no font tags
+							line = String::from(format!("{} {}", line, token).trim());
+							// Sets the current line width to the width of this token
+							line_width += width;
+						}
+					}
+					// If the line is not empty
+					else if line_width > 0.0
+					{
+						// Calculate the width of the current token with a space in front of it
+						// (which could be added to the line)
+						let padded_token = format!(" {}", token);
+						let padded_width = self.calc_text_width(&padded_token);
+						// If adding this token to the line would make it go outside the textbox,
+						// Apply the current line and reset it to just the current token
+						if line_width + padded_width > textbox_width
+						{
+							// Calculate the width of the token
+							let mut width = self.calc_text_width(token);
+							// If the current token is too wide to fit in the textbox
+							if width > textbox_width
+							{
+								// Calculate the width of a space
+								let space_width = self.calc_text_width(" ");
+								// Hyphenate the first line of the token within the remaining space on the current
+								// line (calculate remaining line width by subtracting current line width and space
+								// width from the entire textbox width)
+								let (hyphenated_token, hyphen_token_width, index) =
+								self.get_hyphen_str(token, textbox_width - line_width - space_width);
+								// Add the hyphenated part of the token to the line with a space at the start
+								line += " ";
+								line += &hyphenated_token;
+								// Add the hyphenated token width and the width of the space to the total line width
+								line_width += space_width + hyphen_token_width;
+								// Push the current line to the lines vec
+								lines.push((line, line_width));
+								// Take the part of the token that was hyphenated out of it
+								token = &token[index..];
+								// Hyphenate the rest of the token
+								// Calculate the width of the token
+								width = self.calc_text_width(token);
+								// If the current token is too big to fit in the textbox
+								// Hyphenate the token, add it as a line, and remove the hyphenated part from the
+								// token until the remaining token can fit on a single line in the textbox
+								while width > textbox_width
+								{
+									// Hyphenate the token and get the new starting index and width
+									let (index, new_width) =
+									self.hyphenate_textbox_token(token, textbox_width, &mut lines);
+									// Remove the part of the token that was hyphenated
+									token = &token[index..];
+									// Store the new width of this token
+									width = new_width;
+								}
+								// Set what's left of the token to the current line
+								line = String::from(token);
+								// Set the width of the token to the line width
+								line_width = width;
+							}
+							else
+							{
+								// Add the current line to the vec of lines
+								lines.push((line, line_width));
+								// Empties the current line and puts the current token at the start of the next one
+								line = String::from(token);
+								// Sets the new current line width to the width of the current token
+								line_width = width;
+							}
+						}
+						// If this token can fit on the line, add it to the line and add the width of a space and
+						// this token to the width of the line
+						else
+						{
+							// Add a space and this token to the end of this line
+							line += &padded_token;
+							// Add the width of a space and this token added to the width of the line
+							line_width += padded_width;
+						}
+					}
+					else { panic!(
+					"Line width is less than 0.0 in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::get_textbox_lines`"); }
+				}
+			}
+		}
+		// Push the remaining text in the last line to the vec of lines
+		lines.push((line, line_width));
+		// Set the font variant back to what it's supposed to be at the start of the text
+		self.set_current_font_variant(start_font_variant);
+		// Returns the lines of text and their widths
+		lines
+	}
+
+	/// Hyphenates a token, adds the hyphenated part of the token to the lines vec along with its width, and returns
+	/// the new starting index of the token along with its new width.
+	fn hyphenate_textbox_token(&mut self, token: &str, textbox_width: f32, lines: &mut Vec<(String, f32)>)
+	-> (usize, f32)
+	{
+		// Get a hyphenated part of the token and the index for where the hyphen cuts off
+		// in the token
+		let (hyphenated_token, hyphen_token_width, index) =
+		self.get_hyphen_str(token, textbox_width);
+		// Add the hyphenated part of the token as a line
+		lines.push((hyphenated_token, hyphen_token_width));
+		// If there's still some characters left in the token
+		if index < token.len()
+		{
+			// Take part of the token that was hyphenated off of it
+			let token = &token[index..];
+			// Recalculate the width of the token
+			let width = self.calc_text_width(token);
+			// return the new starting index and width
+			(index, width)
+		}
+		// If the entire token has been handled already, return the index at the end of the token and a width of 0
+		// (no need to worry about an unnecessary hyphen being added onto the pushed hyphen line since the
+		// get_hyphen_str method handles that)
+		else { (index, 0.0) }
+	}
+
+	/// Takes a string that is too wide to fit on a single line in a textbox and finds the cutoff / delimiter index
+	/// so that `&text[0..index] + '-'` fits inside the textbox, along with that hyphenated string itself
+	fn get_hyphen_str(&self, text: &str, textbox_width: f32) -> (String, f32, usize)
+	{
+		// Keeps track of the last hyphenated part of the text that was measured
+		let mut hyphenated_string = String::new();
+		// Keeps track of the width of the hyphenated part of the text
+		let mut hyphen_str_width = self.calc_text_width(text);
+		// If the string can fit in the textbox, return itself and its length
+		if hyphen_str_width <= textbox_width { return (String::from(text), hyphen_str_width, text.len()) }
+		// Lower and upper possible bounds for what the index could be
+		let mut lower_bound = 0;
+		let mut upper_bound = text.len();
+		// The current index being tested
+		let mut index = upper_bound / 2;
+		let mut last_index = index;
+		// Whether or not the index had just gone down or up
+		let mut went_up = false;
+		// Do - While loop until index and last_index are equal
+		// Binary search for the index where the text plus a hyphen at the end is as long as possible without going
+		// outside the textbox
+		while
+		{
+			// Store index in last index
+			last_index = index;
+			// Get a string of the start of the text up to the index with a hyphen at the end
+			hyphenated_string = format!("{}-", &text[0..index]);
+			// Calculate the width of the hyphenated string
+			hyphen_str_width = self.calc_text_width(&hyphenated_string);
+			// If the width is exactly the width of the textbox, return the current hyphen string data
+			if hyphen_str_width == textbox_width { return (hyphenated_string, hyphen_str_width, index); }
+			// If the width is less than the width of the textbox
+			else if hyphen_str_width < textbox_width
+			{
+				// Increase the lower bound to the index
+				lower_bound = index;
+				// Increase the index to be between the lower bound and upper bound
+				index += (upper_bound - lower_bound) / 2;
+				// Zero the went up flag
+				went_up = true;
+			}
+			// If the width is greater than the width of the textbox
+			else
+			{
+				// Decrease the upper bound to the index
+				upper_bound = index;
+				// Decrease the index to be between the lower and upper bound
+				index -= (upper_bound - lower_bound) / 2;
+				// Set the went up flag
+				went_up = false;
+			}
+			// Do - While condition
+			index != last_index
+		}{}
+		// If the index is 0, return that irregardless of whether it went up or down to signal that it can't fit
+		// within the width of this textbox at all
+		if index == 0 { (String::new(), 0.0, index) }
+		else
+		{
+			// If the index tried to go up on the last iteration, increase the cutoff / delimiter index by 1 along
+			// and change the hyphenated string and its width to match the index change
+			if went_up
+			{
+				index += 1;
+				hyphenated_string = format!("{}-", &text[0..index]);
+				hyphen_str_width = self.calc_text_width(&hyphenated_string);
+			}
+			(hyphenated_string, hyphen_str_width, index)
+		}
+	}
+
 	/// Calculates the width of some text using the current state of this object's font data field.
 	fn calc_text_width(&self, text: &str) -> f32
 	{
-		let width = self.current_size_data().layout(text, *self.current_font_scale(), point(0.0, 0.0))
-			.map(|g| g.position().x + g.unpositioned().h_metrics().advance_width)
-			.last()
-			.unwrap_or(0.0);
-		width * self.current_scalar()
+		calc_text_width(text, self.current_size_data(), self.current_font_scale(), self.current_scalar())
 	}
 
 	/// Calculates the text width of a page number.
 	fn calc_page_number_width(&self, page_number_text: &str) -> f32
 	{
-		let width = self.page_number_font_size_data().unwrap().layout
-		(
-			page_number_text,
-			*self.page_number_font_scale().unwrap(),
-			point(0.0, 0.0)
-		)
-		.map(|g| g.position().x + g.unpositioned().h_metrics().advance_width)
-		.last()
-		.unwrap_or(0.0);
-		width * self.page_number_font_scalar().expect
-		(
-			"Called `SpellbookWriter::calc_page_number_width()` with no page number data."
-		)
+		// Attempt to retrive all necessary data, panic if there is no page number data
+		let font_size_data = self.page_number_font_size_data()
+		.expect("Called `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::calc_page_number_width` with no page number data");
+		let font_scale = self.page_number_font_scale()
+		.expect("Called `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::calc_page_number_width` with no page number data.");
+		let font_scalar = self.page_number_font_scalar()
+		.expect("Called `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::calc_page_number_width` with no page number data.");
+		// Return the width of the page number
+		calc_text_width(page_number_text, font_size_data, font_scale, font_scalar)
 	}
 
 	// General Field Getters
@@ -1596,4 +1622,14 @@ impl <'a> SpellbookWriter<'a>
 			None => ()
 		}
 	}
+}
+
+/// Calculates the width of some text based with given font data.
+pub fn calc_text_width(text: &str, font_size_data: &Font, font_scale: &Scale, font_scalar: f32) -> f32
+{
+	let width = font_size_data.layout(text, *font_scale, point(0.0, 0.0))
+		.map(|g| g.position().x + g.unpositioned().h_metrics().advance_width)
+		.last()
+		.unwrap_or(0.0);
+	width * font_scalar
 }
