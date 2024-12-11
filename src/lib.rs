@@ -15,5 +15,7 @@ pub mod utils;
 
 // TODO
 // 1. Add table parsing and writing
-// 2. Add all 2024 Player's Handbook spells
-// 3. Make it so spells can have stat blocks in them
+// 2. Clean up the `write_textbox` method in `SpellbookWriter`
+// 3. Add all 2024 Player's Handbook spells
+// 4. Make it so multiple tables can be placed next to each other horizontally
+// 5. Make it so spells can have stat blocks in them

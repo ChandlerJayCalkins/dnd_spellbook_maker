@@ -521,13 +521,15 @@ impl <'a> SpellbookWriter<'a>
 								paragraph_newline_scalar = 1.0;
 								// Reset the x position to the left side of the textbox
 								self.x = x_min;
-								// Store the current font variant being used so it can be set back to it after the
-								// table
+								// Store the current text type and font variant being used so they can be reset to
+								// what they were before the table
+								let current_text_type = *self.current_text_type();
 								let current_font_variant = *self.current_font_variant();
 								// TODO: Add code to put in a table
 								self.parse_table(&tables[table_index], x_min, x_max, y_min, y_max);
 								self.apply_text_line(tokens[0], y_min);
-								// Reset the font variant to what it was before the table
+								// Reset the text type and font variant to what they were before the table
+								self.set_current_text_type(current_text_type);
 								self.set_current_font_variant(current_font_variant);
 								// Skip the token loop below and move to the next paragraph
 								continue;
@@ -899,149 +901,36 @@ impl <'a> SpellbookWriter<'a>
 		}
 	}
 
-	/// Writes a line of text to a page.
-	/// Moves to a new page / creates a new page if the text is below a certain y value.
-	fn apply_text_line(&mut self, text: &str, y_min: f32)
-	{
-		// If there is no text to apply, do nothing
-		if text.is_empty() { return; }
-		// Checks to see if the text should be applied to the next page or if a new page should be created.
-		self.check_for_new_page(y_min);
-		// Create a new text section on the page
-		self.layers[self.current_page_index].begin_text_section();
-		// Set the text cursor to the current x and y position of the text
-		self.layers[self.current_page_index].set_text_cursor(Mm(self.x), Mm(self.y));
-		// Set the font and font size of the text
-		self.layers[self.current_page_index].set_font(self.current_font_ref(), self.current_font_size());
-		// Set the text color
-		self.layers[self.current_page_index].set_fill_color(self.current_text_color().clone());
-		// Write the text to the page
-		self.layers[self.current_page_index].write_text(text, self.current_font_ref());
-		// End the text section on the page
-		self.layers[self.current_page_index].end_text_section();
-		// Move the x position to be at the end of the newly applied line
-		self.x += self.calc_text_width(&text);
-	}
-
-	/// Checks if the current layer should move to the next page if the text y position is below given `y_min` value.
-	/// Sets the y position to the top of the page if the function moves the text to a new page.
-	/// Creates a new page if the page index goes beyond the number of layers that exist.
-	fn check_for_new_page(&mut self, y_min: f32)
-	{
-		// If the y level is below the bottom of where text is allowed on the page
-		if self.y < y_min
-		{
-			// Increase the current page index to the layer for the next page
-			self.current_page_index += 1;
-			// If the index is beyond the number of layers in the document
-			if self.current_page_index >= self.layers.len()
-			{
-				// Create a new page
-				self.make_new_page();
-			}
-			// Move the y position of the text to the top of the page
-			self.y = self.y_max();
-		}
-	}
-
-	/// Adds a new page to the pdf document, including the background image and page number if options for those were
-	/// given. Sets `current_page_index` to the new page.
-	fn make_new_page(&mut self)
-	{
-		// Create a new page
-		let (page, layer) = self.doc.add_page
-		(
-			Mm(self.page_width()),
-			Mm(self.page_height()),
-			format!("{} {}", LAYER_NAME_PREFIX, self.layers.len())
-		);
-		// Get the layer for the new page
-		let layer_ref = self.doc.get_page(page).get_layer(layer);
-		// Add the new layer and page to the vecs holding them
-		self.layers.push(layer_ref);
-		self.pages.push(page);
-		// Update the current page index to point to the new page
-		self.current_page_index = self.layers.len() - 1;
-		// Add a background image (if there is a background to add)
-		self.add_background();
-		// Adds a page number to the new page (if there are page numbers)
-		self.add_page_number();
-		// Increases the page number count by 1
-		self.current_page_num += 1;
-	}
-
-	/// Adds the background image to the current layer (if a background image was given to use).
-	fn add_background(&mut self)
-	{
-		// If there is a background image
-		if let Some(background) = &self.background
-		{
-			// Construct a `printpdf::Image` from the `image::DynamicImage`
-			// Note: Cannot store a `printpdf::Image` in the background struct because of ownership issues and
-			// lacking implementations of the `printpdf::Image` struct from the `printpdf` crate.
-			let image = Image::from_dynamic_image(&background.image().clone());
-			// Add the image to the current layer with the given transform data
-			image.add_to_layer(self.current_layer().clone(), *background.transform());
-		}
-	}
-
-	/// Adds the page number to the current layer (if page number options were given).
-	fn add_page_number(&mut self)
-	{
-		// Determine whether there are page numbers in this spellbook
-		match &self.page_number_data
-		{
-			// If there are page numbers
-			Some(data) =>
-			{
-				// Convert the current page number into a string
-				let text = self.current_page_num.to_string();
-				// Determine the x position of the page number based on if it will be on the left or right side of the
-				// page
-				let x = match data.current_side()
-				{
-					HSide::Left => data.side_margin(),
-					HSide::Right =>
-					{
-						// Calculate the width of the page number text
-						let text_width = self.calc_page_number_width(&text);
-						// Set the x value to be based on the width of the text and the page margin
-						self.page_width() - data.side_margin() - text_width
-					}
-				};
-				// Set the page fill color to the color of the page numbers
-				self.layers[self.current_page_index].set_fill_color(data.color().clone());
-				// Apply the page number to the document
-				self.layers[self.current_page_index].use_text
-				(
-					&text,
-					data.font_size(),
-					Mm(x),
-					Mm(data.bottom_margin()),
-					data.font_ref()
-				);
-			},
-			// Do nothing if there are no page numbers
-			None => ()
-		};
-
-		// Have the page number for the next page flip sides if there are page numbers.
-		// Have to do this in a separate match statement because of mutable and immutable reference borrowing.
-		match &mut self.page_number_data
-		{
-			Some(data) => if data.flips_sides() { data.flip_side(); }
-			None => ()
-		};
-	}
-
+	/// Parses a table and applies it to the spellbook.
 	fn parse_table(&mut self, table: &spells::Table, x_min: f32, x_max: f32, y_min: f32, y_max: f32)
 	{
-
+		// Set the text type to table body mode
+		self.set_current_text_type(TextType::TableBody);
+		// Get the width of the widest cell in each column
+		let max_column_widths = self.get_max_table_column_widths(&table.column_labels, &table.cells);
+		// Calculate and assign widths to each column
+		let column_width_data = self.get_table_column_width_data(&max_column_widths, x_min, x_max, y_min, y_max);
+		// Calculate the width of the entire table
+		let table_width = self.get_table_width(&column_width_data);
+		// Get a vec of all data about columns needed for writing the table to the spellbook (computes x_min and
+		// x_max values for each column)
+		let column_data = self.get_column_data(&column_width_data, table_width);
+		// Split each column label into lines that will fit within the width of their columns
+		let column_label_lines =
+		self.get_table_row_lines(&table.column_labels, &column_width_data, FontVariant::Bold);
+		// Split each cell in the table into lines that will fit within the column each of the cells are in
+		let cell_lines = self.get_table_lines(&table.cells, &column_width_data);
+		// Change the text type and font variant to be in table title mode
+		self.set_current_text_type(TextType::TableTitle);
+		self.set_current_font_variant(FontVariant::Bold);
+		// Split the table title into lines that will fit on the page
+		let title_lines = self.get_textbox_lines(&table.title, x_max - x_min);
 	}
 
 	/// Gets the widths of the widest cells in each column and returns those widths along with the index of the
 	/// column that width belongs to (so the vec can be sorted later and still have identifiable widths).
-	fn get_max_column_widths(&mut self, column_labels: &Vec<String>, cells: &Vec<Vec<String>>) -> Vec<(usize, f32)>
+	fn get_max_table_column_widths(&mut self, column_labels: &Vec<String>, cells: &Vec<Vec<String>>)
+	-> Vec<(usize, f32)>
 	{
 		// Set the font variant to bold for calculating the column label widths
 		self.set_current_font_variant(FontVariant::Bold);
@@ -1080,39 +969,182 @@ impl <'a> SpellbookWriter<'a>
 		column_widths
 	}
 
-	/// Takes the widths of the widest cells in each column and the index of that column, returns a vec of the widths
-	/// that will be used for each column and a flag that tells whether or not each column is centered or left
-	/// aligned.
-	fn get_column_widths(max_column_widths: &Vec<(usize, f32)>) -> Vec<(f32, bool)>
+	/// Takes the widths of the widest cells in each column and the index of that column, returns a vec of structs
+	/// that contain the width of each column and whether each column is centered or not.
+	fn get_table_column_width_data
+	(
+		&self,
+		max_column_widths: &Vec<(usize, f32)>,
+		x_min: f32,
+		x_max: f32,
+		y_min: f32,
+		y_max: f32
+	)
+	-> Vec<(f32, bool)>
 	{
-		todo!()
+		// Keeps track of the number of columns in `usize` and `f32`
+		let column_count = max_column_widths.len();
+		let column_count_f32 = column_count as f32;
+		// Vec that stores the data for each column (width and whether its centered or not)
+		// It's pointless to use `default_column_width` as the default width value instead here of 0.0 in this vec
+		// since `default_column_width` changes over the course of the loop and needs to be reassigned anyways
+		let mut column_data = vec![(0.0, false); column_count];
+		// Sort the max width of each column in order of least to greatest
+		// MUST parse columns in order of thinnest to widest because the default column width widens as it goes, and
+		// that might make it so a column that might've been made skinnier could've actually been wider if the
+		// default column width was skinner than it when it was parsed and became wider than it afterwards
+		let mut sorted_max_widths = max_column_widths.clone();
+		sorted_max_widths.sort_by(|(_, a), (_, b)| a.partial_cmp(&b).expect(format!
+		(
+			"Failed to compare 2 `f32`s in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::get_column_widths`: {} and {}",
+			a, b
+		).as_str()));
+		// Calculate the maximum width of a table within the given x and y boundries along with the outer margin
+		// option
+		let max_table_width = x_max - x_min - (self.table_outer_horizontal_margin() * 2.0);
+		// The default column width that is used to determine the width of columns that are larger than their equal
+		// share of the remaining width in the table (is the width of the table divided by the number of columns at
+		// first)
+		let mut default_column_width =
+		(max_table_width - self.table_horizontal_cell_margin() * (column_count_f32 - 1.0)) / column_count_f32;
+		// Keeps track of the width of the number of remaining columns while calculating column widths (until columns
+		// that are wider than the default width are reached)
+		let mut remaining_columns = column_count_f32 - 1.0;
+		// Loop through each column max width in order of least to greatest to find the width of each column
+		for (index, max_column_width) in sorted_max_widths
+		{
+			// If the column's widest cell is thinner than the default column width, use that max width for the
+			// entire column's width
+			if max_column_width < default_column_width
+			{
+				// Use the widest cell's width as the width for the whole column, and make the column have centered
+				// text since it will only be 1 line
+				column_data[index] = (max_column_width, true);
+				// Increase the default column width by the amount of space that this column was given by default but
+				// didn't use
+				default_column_width += (default_column_width - max_column_width) / remaining_columns;
+				// Decrease the number of columns left to find the width of (don't need to do this in the else
+				// statement since this variable is only used for modifying the `default_column_width` variable)
+				remaining_columns -= 1.0;
+			}
+			// If the column is wider than or as wide as the default column width at some point, give it the default
+			// column width (default column width won't be affected once this point is reached since the widths that
+			// are being iterated through are sorted)
+			else { column_data[index].0 = default_column_width; }
+		}
+		// Return the data for this column
+		column_data
+	}
+
+	/// Calculates the width of a table based on the width of its columns and the margin space between cells.
+	fn get_table_width(&self, column_data: &Vec<(f32, bool)>) -> f32
+	{
+		// Adds up all of the column widths together
+		let mut column_width_sum = 0.0;
+		for column in column_data { column_width_sum += column.0; }
+		// Returns the sum of the column widths plus the margin space between each cell
+		column_width_sum + self.table_horizontal_cell_margin() * ((column_data.len() as f32) - 1.0)
+	}
+
+	/// Takes width data about a column (width and whether or not the column is centered) along with the width of the
+	/// entire table these columns are in and returns all of the data about columns needed when writing the table to
+	/// the spellbook. The main thing this method computes are the x_min and x_max values for each column.
+	fn get_column_data(&self, column_width_data: &Vec<(f32, bool)>, table_width: f32)
+	-> Vec<TableColumnData>
+	{
+		// Vec that holds the x_min and x_max values for a column
+		// First value is x_min, second is x_max
+		let mut horizontal_column_bounds = Vec::with_capacity(column_width_data.len());
+		// Holds the x_min value for the next column
+		// Calculates where the should should be to be centered on the page and has the first column start there
+		let mut current_x_min = (self.page_width() - table_width) / 2.0;
+		// Loop through each column to calculate and store its x_min and x_max values
+		for column in column_width_data
+		{
+			// Calculate the x_max value
+			let x_max = current_x_min + column.0;
+			// Store the x_min and x_max values for this column
+			horizontal_column_bounds.push(TableColumnData
+			{
+				x_min: current_x_min,
+				x_max: x_max,
+				centered: column.1
+			});
+			// Move the x_min value to the right for the next column
+			current_x_min = x_max + self.table_horizontal_cell_margin();
+		}
+		// Return the column bounds
+		horizontal_column_bounds
 	}
 
 	/// Takes a 2D vec of cells from a table and the widths of each column in the table, divides each cell into
-	/// lines, and returns a 3D vec of those lines for each cell.
-	fn get_table_lines(&mut self, cells: &Vec<Vec<String>>, column_data: &Vec<(f32, bool)>)
+	/// lines, and returns a 3D vec of those lines for each cell along with the width of each line.
+	fn get_table_lines(&mut self, cells: &Vec<Vec<String>>, column_width_data: &Vec<(f32, bool)>)
 	-> Vec<Vec<Vec<(String, f32)>>>
 	{
-		// Create the vec of lines to be returned
+		// Create the vec of lines to be returned along with their widths
 		let mut lines: Vec<Vec<Vec<(String, f32)>>> = Vec::with_capacity(cells.len());
-		// Loop through each cell
-		for row_index in 0..cells.len()
+		// Loop through each row
+		for table_row in cells
 		{
-			lines.push(Vec::with_capacity(cells[row_index].len()));
-			for column_index in 0..cells[row_index].len()
-			{
-				// Set the font variant to regular for the start of each cell
-				self.set_current_font_variant(FontVariant::Regular);
-				// Divide the cell into lines and add it to the return vec
-				lines[row_index].push(self.get_textbox_lines
-				(
-					&cells[row_index][column_index],
-					column_data[column_index].0
-				));
-			}
+			// Get the lines of each cell in this row
+			let lines_in_row = self.get_table_row_lines(table_row, column_width_data, FontVariant::Regular);
+			// Add the cell lines of this row to the vec to return
+			lines.push(lines_in_row);
 		}
 		// Return the lines of each cell
 		lines
+	}
+
+	/// Takes a Vec of cells from a table and the widths of each column in the table, divides each cell into lines,
+	/// and returns a 2D vec of the lines of each cell in the row along with the width of each line.
+	/// `start_font_variant` is what the current font variant gets set to at the start of each cell before it gets
+	/// divided into lines.
+	fn get_table_row_lines
+	(
+		&mut self,
+		row: &Vec<String>,
+		column_width_data: &Vec<(f32, bool)>,
+		start_font_variant: FontVariant
+	)
+	-> Vec<Vec<(String, f32)>>
+	{
+		// Create a vec of the lines of each cell in the row
+		let mut lines = Vec::with_capacity(row.len());
+		// Loop through each cell in the row
+		for column_index in 0..row.len()
+		{
+			// Reset the font variant for this cell
+			self.set_current_font_variant(start_font_variant);
+			// Add the lines to the vec to return
+			lines.push(self.get_textbox_lines(&row[column_index], column_width_data[column_index].0));
+		}
+		// Return the cell lines in this row
+		lines
+	}
+
+	/// Writes a line of text to a page.
+	/// Moves to a new page / creates a new page if the text is below a certain y value.
+	fn apply_text_line(&mut self, text: &str, y_min: f32)
+	{
+		// If there is no text to apply, do nothing
+		if text.is_empty() { return; }
+		// Checks to see if the text should be applied to the next page or if a new page should be created.
+		self.check_for_new_page(y_min);
+		// Create a new text section on the page
+		self.layers[self.current_page_index].begin_text_section();
+		// Set the text cursor to the current x and y position of the text
+		self.layers[self.current_page_index].set_text_cursor(Mm(self.x), Mm(self.y));
+		// Set the font and font size of the text
+		self.layers[self.current_page_index].set_font(self.current_font_ref(), self.current_font_size());
+		// Set the text color
+		self.layers[self.current_page_index].set_fill_color(self.current_text_color().clone());
+		// Write the text to the page
+		self.layers[self.current_page_index].write_text(text, self.current_font_ref());
+		// End the text section on the page
+		self.layers[self.current_page_index].end_text_section();
+		// Move the x position to be at the end of the newly applied line
+		self.x += self.calc_text_width(&text);
 	}
 
 	/// Takes a string along with a maximum width for lines to fit into, separates the string into lines, and returns
@@ -1402,6 +1434,117 @@ impl <'a> SpellbookWriter<'a>
 			}
 			(hyphenated_string, hyphen_str_width, index)
 		}
+	}
+
+	/// Checks if the current layer should move to the next page if the text y position is below given `y_min` value.
+	/// Sets the y position to the top of the page if the function moves the text to a new page.
+	/// Creates a new page if the page index goes beyond the number of layers that exist.
+	fn check_for_new_page(&mut self, y_min: f32)
+	{
+		// If the y level is below the bottom of where text is allowed on the page
+		if self.y < y_min
+		{
+			// Increase the current page index to the layer for the next page
+			self.current_page_index += 1;
+			// If the index is beyond the number of layers in the document
+			if self.current_page_index >= self.layers.len()
+			{
+				// Create a new page
+				self.make_new_page();
+			}
+			// Move the y position of the text to the top of the page
+			self.y = self.y_max();
+		}
+	}
+
+	/// Adds a new page to the pdf document, including the background image and page number if options for those were
+	/// given. Sets `current_page_index` to the new page.
+	fn make_new_page(&mut self)
+	{
+		// Create a new page
+		let (page, layer) = self.doc.add_page
+		(
+			Mm(self.page_width()),
+			Mm(self.page_height()),
+			format!("{} {}", LAYER_NAME_PREFIX, self.layers.len())
+		);
+		// Get the layer for the new page
+		let layer_ref = self.doc.get_page(page).get_layer(layer);
+		// Add the new layer and page to the vecs holding them
+		self.layers.push(layer_ref);
+		self.pages.push(page);
+		// Update the current page index to point to the new page
+		self.current_page_index = self.layers.len() - 1;
+		// Add a background image (if there is a background to add)
+		self.add_background();
+		// Adds a page number to the new page (if there are page numbers)
+		self.add_page_number();
+		// Increases the page number count by 1
+		self.current_page_num += 1;
+	}
+
+	/// Adds the background image to the current layer (if a background image was given to use).
+	fn add_background(&mut self)
+	{
+		// If there is a background image
+		if let Some(background) = &self.background
+		{
+			// Construct a `printpdf::Image` from the `image::DynamicImage`
+			// Note: Cannot store a `printpdf::Image` in the background struct because of ownership issues and
+			// lacking implementations of the `printpdf::Image` struct from the `printpdf` crate.
+			let image = Image::from_dynamic_image(&background.image().clone());
+			// Add the image to the current layer with the given transform data
+			image.add_to_layer(self.current_layer().clone(), *background.transform());
+		}
+	}
+
+	/// Adds the page number to the current layer (if page number options were given).
+	fn add_page_number(&mut self)
+	{
+		// Determine whether there are page numbers in this spellbook
+		match &self.page_number_data
+		{
+			// If there are page numbers
+			Some(data) =>
+			{
+				// Convert the current page number into a string
+				let text = self.current_page_num.to_string();
+				// Determine the x position of the page number based on if it will be on the left or right side of the
+				// page
+				let x = match data.current_side()
+				{
+					HSide::Left => data.side_margin(),
+					HSide::Right =>
+					{
+						// Calculate the width of the page number text
+						let text_width = self.calc_page_number_width(&text);
+						// Set the x value to be based on the width of the text and the page margin
+						self.page_width() - data.side_margin() - text_width
+					}
+				};
+				// Set the page fill color to the color of the page numbers
+				self.layers[self.current_page_index].set_fill_color(data.color().clone());
+				// Apply the page number to the document
+				self.layers[self.current_page_index].use_text
+				(
+					&text,
+					data.font_size(),
+					Mm(x),
+					Mm(data.bottom_margin()),
+					data.font_ref()
+				);
+			},
+			// Do nothing if there are no page numbers
+			None => ()
+		};
+
+		// Have the page number for the next page flip sides if there are page numbers.
+		// Have to do this in a separate match statement because of mutable and immutable reference borrowing.
+		match &mut self.page_number_data
+		{
+			Some(data) => if data.flips_sides() { data.flip_side(); }
+			None => ()
+		};
 	}
 
 	/// Calculates the width of some text using the current state of this object's font data field.

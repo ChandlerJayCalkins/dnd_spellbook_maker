@@ -663,7 +663,7 @@ impl <'a> PageNumberData<'a>
 	pub fn flip_side(&mut self) { self.current_side = !self.current_side; }
 }
 
-/// Holds the background image and the transform data for it (positioning, size, rotation, etc.)
+/// Holds the background image and the transform data for it (positioning, size, rotation, etc.).
 #[derive(Debug, Clone, PartialEq)]
 pub struct BackgroundImage
 {
@@ -699,4 +699,16 @@ impl BackgroundImage
 
 	pub fn image(&self) -> &DynamicImage { &self.image }
 	pub fn transform(&self) -> &ImageTransform { &self.transform }
+}
+
+/// Holds data about a column in a table in a spellbook.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TableColumnData
+{
+	/// The starting x position of the text in the column.
+	pub x_min: f32,
+	/// The ending x position of the text in the column.
+	pub x_max: f32,
+	/// Whether or not the text in the column is centered.
+	pub centered: bool
 }
