@@ -245,7 +245,7 @@ impl <'a> SpellbookWriter<'a>
 		let page_number_data = self.page_number_data.clone();
 		self.page_number_data = None;
 		// Write the title to the page
-		self.write_centered_textbox(title, self.x_min(), self.x_max(), self.y_min(), self.y_max());
+		self.write_centered_textbox(title, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false);
 		// Reset the page number data to what it was before
 		self.page_number_data = page_number_data;
 	}
@@ -805,6 +805,29 @@ impl <'a> SpellbookWriter<'a>
 		if in_table { self.y -= self.current_newline_amount(); }
 	}
 
+	/// For use in `write_textbox` functions. If the given font variant is different than the current one being used,
+	/// it applies the current line of text being processed, empties it, switches the current font variant to the
+	/// given one, and resets the line width to 0.
+	fn switch_font_variant(&mut self, font_variant: FontVariant, line: &mut String, line_width: &mut f32, y_min: f32)
+	{
+		// If the current font variant different than the one to switch to
+		if *self.current_font_variant() != font_variant
+		{
+			// Applies the current line of text
+			self.apply_text_line(&line, y_min);
+			// Empties the line of text
+			*line = String::new();
+			// Move the cursor over by a space width of the current font type to prevent text of different font types
+			// being too close together.
+			let space_width = self.calc_text_width(" ");
+			self.x += space_width;
+			// Switches to the desired font variant
+			self.set_current_font_variant(font_variant);
+			// Resets the line width to 0 since the line is empty now
+			*line_width = 0.0;
+		}
+	}
+
 	/// Hyphenates a token, writes the hyphated part of the token to the spellbook, resets the x and y positions to
 	/// a new line, and returns the new starting index of the token along with its new width.
 	fn hyphenate_and_apply_token(&mut self, token: &str, max_line_width: f32, y_min: f32, current_x_min: f32)
@@ -840,29 +863,57 @@ impl <'a> SpellbookWriter<'a>
 	/// If the text is too big to fit in the textbox, it continues into the next page from the top of the page going
 	/// to the bottom and staying within the same horizontal bounds.
 	/// This method can also process font variant changes in the text.
-	fn write_centered_textbox(&mut self, text: &str, x_min: f32, x_max: f32, y_min: f32, y_max: f32)
+	fn write_centered_textbox
+	(
+		&mut self,
+		text: &str,
+		x_min: f32,
+		x_max: f32,
+		y_min: f32,
+		y_max: f32,
+		v_center_lock: bool
+	)
 	{
 		// If either dimensional bounds overlap with each other, do nothing
 		if x_min >= x_max || y_min >= y_max { return; }
 		// Calculates the actual sizes of the horizontal and vertical dimensions of the textbox
 		let textbox_width = x_max - x_min;
 		let textbox_height = y_max - y_min;
+		// Split the text into lines that will fit horizontally within the textbox
 		let lines = self.get_textbox_lines(text, textbox_width);
+		// Apply the text lines to the spellbook
+		self.apply_centered_text_lines(&lines, textbox_width, textbox_height, x_min, y_min, y_max, v_center_lock);
+	}
+
+	/// Applies lines of text to the spellbook so that each line is centered horizontally and all of the lines are
+	/// centered horizontally if possible.
+	fn apply_centered_text_lines
+	(
+		&mut self,
+		text_lines: &Vec<(String, f32)>,
+		textbox_width: f32,
+		textbox_height: f32,
+		x_min: f32,
+		y_min: f32,
+		y_max: f32,
+		v_center_lock: bool
+	)
+	{
 		// Calculate how many lines this text is going to be
 		let max_lines = (textbox_height / self.current_newline_amount()).floor() as usize;
 		// If There are more lines than can fit on the page, set the y value to the top of the textbox
 		// (text on following pages will start at the top of the entire page but stay within the horizontal
 		// boundries of the textbox)
-		if lines.len() > max_lines { self.y = y_max; }
+		if text_lines.len() > max_lines { self.y = y_max; }
 		// If all the lines can fit on one page, calculate what y value to start the text at so it is vertically
 		// centered in the textbox and set the y value to that
-		else { self.y = (y_max / 2.0) + (lines.len() - 1) as f32 / 2.0 * self.current_newline_amount(); }
+		else { self.y = (y_max / 2.0) + (text_lines.len() - 1) as f32 / 2.0 * self.current_newline_amount(); }
 		// The number of newlines to go down by before each line is printed
 		// Is 0.0 for the first line (so the textbox doesn't get moved down by an extra newline)
 		// Is 1.0 for all other lines
 		let mut newline_scalar = 0.0;
 		// Loop through each line to apply it to the document
-		for (line, width) in lines
+		for (line, width) in text_lines
 		{
 			// Move the y position down by 0 or 1 newline amounts
 			// 0 newlines for the first line (so the textbox doesn't get moved down by an extra newline)
@@ -875,29 +926,6 @@ impl <'a> SpellbookWriter<'a>
 			self.x = (textbox_width / 2.0) - (width / 2.0) + x_min;
 			// Apply the line to the page
 			self.apply_text_line(&line, y_min);
-		}
-	}
-
-	/// For use in `write_textbox` functions. If the given font variant is different than the current one being used,
-	/// it applies the current line of text being processed, empties it, switches the current font variant to the
-	/// given one, and resets the line width to 0.
-	fn switch_font_variant(&mut self, font_variant: FontVariant, line: &mut String, line_width: &mut f32, y_min: f32)
-	{
-		// If the current font variant different than the one to switch to
-		if *self.current_font_variant() != font_variant
-		{
-			// Applies the current line of text
-			self.apply_text_line(&line, y_min);
-			// Empties the line of text
-			*line = String::new();
-			// Move the cursor over by a space width of the current font type to prevent text of different font types
-			// being too close together.
-			let space_width = self.calc_text_width(" ");
-			self.x += space_width;
-			// Switches to the desired font variant
-			self.set_current_font_variant(font_variant);
-			// Resets the line width to 0 since the line is empty now
-			*line_width = 0.0;
 		}
 	}
 
@@ -925,6 +953,11 @@ impl <'a> SpellbookWriter<'a>
 		self.set_current_font_variant(FontVariant::Bold);
 		// Split the table title into lines that will fit on the page
 		let title_lines = self.get_textbox_lines(&table.title, x_max - x_min);
+		// TODO
+		// 1. Calculate height of each row (determines row color lines height and vertical placement of single line
+		// cells)
+		// 2. Calculate Entire table height (determine whether table gets place on current page or next page)
+		// 3. 
 	}
 
 	/// Gets the widths of the widest cells in each column and returns those widths along with the index of the
