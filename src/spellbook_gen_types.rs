@@ -777,9 +777,14 @@ impl TextLine
 {
 	pub fn new() -> Self
 	{
+		Self::with_capacity(0)
+	}
+
+	pub fn with_capacity(size: usize) -> Self
+	{
 		Self
 		{
-			tokens: Vec::new(),
+			tokens: Vec::with_capacity(size),
 			width: 0.0
 		}
 	}
@@ -809,6 +814,8 @@ impl TextLine
 	}
 
 	pub fn add_width(&mut self, width: f32) { self.width += width; }
+
+	pub fn shrink_to_fit(&mut self) { self.tokens.shrink_to_fit(); }
 
 	pub fn tokens(&self) -> &Vec<Token> { &self.tokens }
 	pub fn width(&self) -> f32 { self.width }
