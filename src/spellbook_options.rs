@@ -4,6 +4,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+use std::fmt;
+
 pub use printpdf::{ImageTransform, ImageRotation, Mm};
 
 /// Conveys which variant of a font is being used.
@@ -14,6 +16,20 @@ pub enum FontVariant
 	Bold,
 	Italic,
 	BoldItalic
+}
+
+impl fmt::Display for FontVariant
+{
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
+	{
+		match self
+		{
+			Self::Regular => write!(f, "Regular"),
+			Self::Bold => write!(f, "Bold"),
+			Self::Italic => write!(f, "Italic"),
+			Self::BoldItalic => write!(f, "Bold Italic")
+		}
+	}
 }
 
 /// File paths to all the font files needed for `generate_spellbook()`.

@@ -7,9 +7,10 @@
 use std::fs;
 use std::{rc::Rc, cell::{RefCell, Ref}};
 use std::error::Error;
+use std::fmt;
 
 pub use image::DynamicImage;
-pub use rusttype::{Font, Scale};
+pub use rusttype::{Font, Scale, point};
 pub use printpdf::{PdfDocumentReference, IndirectFontRef, Color, Rgb};
 
 pub use crate::spellbook_options::*;
@@ -701,6 +702,120 @@ impl BackgroundImage
 	pub fn transform(&self) -> &ImageTransform { &self.transform }
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum Token
+{
+	FontTag(FontVariant),
+	Text(TextToken)
+}
+
+impl Token
+{
+	pub fn get_token_str(&self) -> String
+	{
+		match self
+		{
+			Self::FontTag(_) => String::new(),
+			Self::Text(token) => token.text.clone()
+		}
+	}
+}
+
+impl fmt::Display for Token
+{
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
+	{
+		match self
+		{
+			Self::FontTag(tag) => tag.fmt(f),
+			Self::Text(token) => token.fmt(f)
+		}
+	}
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TextToken
+{
+	pub text: String,
+	pub width: f32
+}
+
+impl TextToken
+{
+	pub fn new(text: &str, font_size_data: &Font, font_scale: &Scale, font_scalar: f32) -> Self
+	{
+		let width = calc_text_width(text, font_size_data, font_scale, font_scalar);
+		Self
+		{
+			text: String::from(text),
+			width: width
+		}
+	}
+
+	pub fn text(&self) -> &String { &self.text }
+	pub fn width(&self) -> f32 { self.width }
+
+	pub fn as_str(&self) -> &str { self.text.as_str() }
+}
+
+impl fmt::Display for TextToken
+{
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
+	{
+		write!(f, "{}", self.text)
+	}
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TextLine
+{
+	pub tokens: Vec<Token>,
+	pub width: f32
+}
+
+impl TextLine
+{
+	pub fn new() -> Self
+	{
+		Self
+		{
+			tokens: Vec::new(),
+			width: 0.0
+		}
+	}
+
+	pub fn add_token(&mut self, token: Token, width: f32)
+	{
+		match token
+		{
+			Token::Text(ref text) =>
+			{
+				self.width += text.width;
+			},
+			Token::FontTag(_) => ()
+		}
+		self.tokens.push(token);
+	}
+
+	pub fn add_font_tag(&mut self, tag: FontVariant)
+	{
+		self.tokens.push(Token::FontTag(tag));
+	}
+
+	pub fn add_text(&mut self, text: TextToken)
+	{
+		self.width += text.width;
+		self.tokens.push(Token::Text(text));
+	}
+
+	pub fn add_width(&mut self, width: f32) { self.width += width; }
+
+	pub fn tokens(&self) -> &Vec<Token> { &self.tokens }
+	pub fn width(&self) -> f32 { self.width }
+
+	pub fn is_empty(&self) -> bool { self.tokens.is_empty() }
+}
+
 /// Holds data about a column in a table in a spellbook.
 #[derive(Clone, Debug, PartialEq)]
 pub struct TableColumnData
@@ -711,4 +826,14 @@ pub struct TableColumnData
 	pub x_max: f32,
 	/// Whether or not the text in the column is centered.
 	pub centered: bool
+}
+
+/// Calculates the width of some text based with given font data.
+pub fn calc_text_width(text: &str, font_size_data: &Font, font_scale: &Scale, font_scalar: f32) -> f32
+{
+	let width = font_size_data.layout(text, *font_scale, point(0.0, 0.0))
+		.map(|g| g.position().x + g.unpositioned().h_metrics().advance_width)
+		.last()
+		.unwrap_or(0.0);
+	width * font_scalar
 }
