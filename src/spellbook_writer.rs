@@ -1426,7 +1426,7 @@ impl <'a> SpellbookWriter<'a>
 		let start_font_variant = *self.current_font_variant();
 		// Keeps track of the current max textbox width
 		// Uses `first_line_width` for the first line and `textbox_width` for all lines after that
-		let mut max_width = first_line_width;
+		let mut current_line_max_width = first_line_width;
 		// Vec containing each line of text to write to the textbox
 		let mut lines: Vec<TextLine> = Vec::with_capacity(1);
 		// Keeps track of the next line of tokens to fill up and add to the vec of lines
@@ -1473,7 +1473,7 @@ impl <'a> SpellbookWriter<'a>
 					(tokens[i], width) = self.hyphenate_token
 					(
 						tokens[i],
-						&mut max_width,
+						&mut current_line_max_width,
 						textbox_width,
 						&mut line,
 						&mut lines
@@ -1492,7 +1492,7 @@ impl <'a> SpellbookWriter<'a>
 						let padded_width = self.get_current_space_width() + width;
 						// If adding this token to the line would make it go outside the textbox,
 						// apply the current line and set it to just the current token
-						if line.width() + padded_width > max_width
+						if line.width() + padded_width > current_line_max_width
 						{
 							// Make sure the line doesn't have any excess capacity in its vec
 							line.shrink_to_fit();
@@ -1510,7 +1510,7 @@ impl <'a> SpellbookWriter<'a>
 							line.add_text(text_token, self.space_widths());
 							// Set the max width width to the textbox width in case the previous line was the first
 							// line
-							max_width = textbox_width;
+							current_line_max_width = textbox_width;
 						}
 						// If this token can fit on the line, add it to the line
 						else
@@ -1518,9 +1518,6 @@ impl <'a> SpellbookWriter<'a>
 							// Add this token to the line
 							let text_token = TextToken::with_width(tokens[i], width);
 							line.add_text(text_token, self.space_widths());
-							// Set the max width width to the textbox width in case the previous line was the first
-							// line
-							max_width = textbox_width;
 						}
 					}
 					// If the line has a negative width
@@ -1579,28 +1576,46 @@ impl <'a> SpellbookWriter<'a>
 	(
 		&mut self,
 		mut token: &'t str,
-		max_width: &mut f32,
+		current_line_max_width: &mut f32,
 		textbox_width: f32,
 		current_line: &mut TextLine,
 		lines: &mut Vec<TextLine>
 	)
 	-> (&'t str, f32)
 	{
-		// Get the original token's length to be able to tell if it was hyphenated or not
-		let og_token_len = token.len();
-		let mut width = 0.0;
-		// If the token was too wide to fit on a the first line, hyphenate it and return its width
-		// Otherwise, just return the token the way it is and its width
-		(token, width) = self.hyphenate_once(token, *max_width - current_line.width(), current_line, lines);
-		// If the token was hyphenated (different length), set the current max width to the actual textbox width
-		// since its definitely not the first line anymore.
-		if token.len() != og_token_len { *max_width = textbox_width; }
-		// Otherwise, return the original token and its width
-		else { return (token, width); }
+		// Calculate the width of the token
+		let mut width = self.calc_text_width(token);
+		if current_line.width() == 0.0 && width > *current_line_max_width
+		{
+			(token, width) = self.hyphenate_once
+			(
+				token,
+				width,
+				*current_line_max_width,
+				current_line,
+				lines
+			);
+		}
+		else if width > textbox_width
+		{
+			(token, width) = self.hyphenate_once
+			(
+				token,
+				width,
+				textbox_width - current_line.width() - self.get_current_space_width(),
+				current_line,
+				lines
+			);
+		}
+		else
+		{
+			return (token, width);
+		}
+		*current_line_max_width = textbox_width;
 		// Hyphenate the token until just the end of it remains and it can fit on a single line
 		while width > textbox_width
 		{
-			(token, width) = self.hyphenate_once(token, textbox_width, current_line, lines);
+			(token, width) = self.hyphenate_once(token, width, textbox_width, current_line, lines);
 		}
 		// Return the end of the token and its width
 		(token, width)
@@ -1613,19 +1628,19 @@ impl <'a> SpellbookWriter<'a>
 	(
 		&mut self,
 		mut token: &'t str,
+		mut width: f32,
 		textbox_width: f32,
 		current_line: &mut TextLine,
 		lines: &mut Vec<TextLine>
 	)
 	-> (&'t str, f32)
 	{
-		// Calculate the width of the token
-		let mut width = self.calc_text_width(token);
 		// If its small enough to fit on the line, return it the way it is along with its width
 		if width <= textbox_width { return (token, width); }
 		// Hyphenates the string and gets the hyphenated part as a `TextToken` and an index for where the rest of it
 		// starts in the string
 		let (hyphenated_token, index) = self.get_hyphen_str(token, width, textbox_width);
+		println!("token: {}, len: {}, index: {}", token, token.len(), index);
 		// If the token could be hyphenated to fit on the line (if the returned index is 0, that means the token was
 		// either too close to the end of the line to be hyphenated or has characters that are too wide to fit in the
 		// textbox)
@@ -1667,7 +1682,7 @@ impl <'a> SpellbookWriter<'a>
 		let mut hyphenated_string = String::new();
 		// Keeps track of the width of the hyphenated part of the text
 		let mut hyphen_str_width = token_width;
-		// If the string can fit in the textbox, return itself and its length
+		// If the string can fit in the textbox, return an empty text token and the inputted token's length
 		if hyphen_str_width <= textbox_width { return (TextToken::empty(), text.len()); }
 		// Lower and upper possible bounds for what the index could be
 		let mut lower_bound = 0;
@@ -1675,8 +1690,6 @@ impl <'a> SpellbookWriter<'a>
 		// The current index being tested
 		let mut index = upper_bound / 2;
 		let mut last_index = index;
-		// Whether or not the index had just gone down or up
-		let mut went_up = false;
 		// Do - While loop until index and last_index are equal
 		// Binary search for the index where the text plus a hyphen at the end is as long as possible without going
 		// outside the textbox
@@ -1701,8 +1714,6 @@ impl <'a> SpellbookWriter<'a>
 				lower_bound = index;
 				// Increase the index to be between the lower bound and upper bound
 				index += (upper_bound - lower_bound) / 2;
-				// Zero the went up flag
-				went_up = true;
 			}
 			// If the width is greater than the width of the textbox
 			else
@@ -1711,29 +1722,20 @@ impl <'a> SpellbookWriter<'a>
 				upper_bound = index;
 				// Decrease the index to be between the lower and upper bound
 				index -= (upper_bound - lower_bound) / 2;
-				// Set the went up flag
-				went_up = false;
 			}
 			// Do - While condition
 			index != last_index
 		}{}
-		// If the index is 0, return that irregardless of whether it went up or down to signal that it can't fit
-		// within the width of this textbox at all
+		// If the index is 0, return an empty token and that index to signal that it can't fit within the width of
+		// this textbox at all
 		if index == 0
 		{
 			let new_token = TextToken::empty();
 			(new_token, index)
 		}
+		// Otherwise return the hyphenated token and its index
 		else
 		{
-			// If the index tried to go up on the last iteration, increase the cutoff / delimiter index by 1 along
-			// and change the hyphenated string and its width to match the index change
-			if went_up
-			{
-				index += 1;
-				hyphenated_string = format!("{}-", &text[0..index]);
-				hyphen_str_width = self.calc_text_width(&hyphenated_string);
-			}
 			let new_token = TextToken::with_width(&hyphenated_string, hyphen_str_width);
 			(new_token, index)
 		}
