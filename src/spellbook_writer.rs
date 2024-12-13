@@ -381,465 +381,6 @@ impl <'a> SpellbookWriter<'a>
 		}
 	}
 
-	// /// Writes text to the current page inside the given dimensions, starting at the x_min value and current y value.
-	// /// The text is left-aligned and if it goes below the y_min, it continues writing onto the next page (or a new
-	// /// page), continuing to stay within the given dimensions on the new page.
-	// /// `starting_tab` determines whether or not the first paragraph gets tabbed in on the first line or not.
-	// /// If `tables` is empty, table tags will be treated as normal tokens and parsed or skipped.
-	// /// This method can also process bullet points, tables, and font variant changes in the text.
-	// fn write_textbox
-	// (
-	// 	&mut self,
-	// 	text: &str,
-	// 	x_min: f32,
-	// 	x_max: f32,
-	// 	y_min: f32,
-	// 	y_max: f32,
-	// 	starting_tab: bool,
-	// 	tables: &Vec<spells::Table>
-	// )
-	// {
-	// 	// If either dimensional bounds overlap with each other, do nothing
-	// 	if x_min >= x_max || y_min >= y_max { return; }
-	// 	// Keeps track of whether or not a regular paragraph is currently being processed
-	// 	let mut in_paragraph = false;
-	// 	// Keeps track of whether or not a bullet point list is currently being processed
-	// 	let mut in_bullet_list = false;
-	// 	// Keeps track of whether or not a table is currently being processed
-	// 	let mut in_table = false;
-	// 	// The x position to reset the text to upon a newline (changes inside bullet lists)
-	// 	let mut current_x_min = x_min;
-	// 	// The number of newlines to go down by at the start of a paragraph
-	// 	// Is 0.0 for the first paragraph (so the entire textbox doesn't get moved down by an extra newline)
-	// 	// Is 1.0 for all other paragraphs
-	// 	let mut paragraph_newline_scalar = 0.0;
-	// 	// The amount to tab the text in by at the start of a paragraph
-	// 	// Is 0.0 for the first non-bullet-point paragraph if `starting_tab` is false 
-	// 	// (to match the Player's Handbook formatting)
-	// 	// Is equal to `self.tab_amount()` for all other paragraphs
-	// 	let mut current_tab_amount = match starting_tab
-	// 	{
-	// 		true => self.tab_amount(),
-	// 		false => 0.0
-	// 	};
-	// 	// Split the text into paragraphs by newlines
-	// 	// Collects it into a vec so the `is_empty` method can be used without having to clone a new iterator.
-	// 	let paragraphs: Vec<_> = text.split('\n').collect();
-	// 	// If there is no text, do nothing
-	// 	if paragraphs.is_empty() { return; }
-	// 	// If there is text and the x position is beyond the x_max, reset the x position to x_min and go to a new line
-	// 	else if self.x > x_max { self.x = x_min; self.y -= self.current_newline_amount(); }
-	// 	// Loop through each paragraph
-	// 	for paragraph in paragraphs
-	// 	{
-	// 		// Move the y position down by 0 or 1 newline amounts
-	// 		// 0 newlines for the first paragraph (so the entire textbox doesn't get moved down by an extra newline)
-	// 		// 1 newline for all other paragraphs
-	// 		self.y -= paragraph_newline_scalar * self.current_newline_amount();
-	// 		// If a table was just being processed, move down an extra newline amount to keep the table separated
-	// 		// (to match the Player's Handbook Formatting)
-	// 		if in_table { self.y -= self.current_newline_amount(); }
-	// 		// Split the paragraph into tokens by whitespace
-	// 		let mut tokens: Vec<_> = paragraph.split_whitespace().collect();
-	// 		// If there is no text in this paragraph, skip to the next one
-	// 		if tokens.is_empty() { continue; }
-	// 		// Whether or not this is the first line in the paragraph
-	// 		let mut first_line = true;
-	// 		// The current line of text being processed
-	// 		let mut line = String::new();
-	// 		// The width of the current line being processed
-	// 		let mut line_width: f32 = 0.0;
-	// 		// If the paragraph starts with a bullet point symbol
-	// 		if tokens[0] == "•" || tokens[0] == "-"
-	// 		{
-	// 			// If this is the start of a bullet list (not currently in a bullet list and this is the first
-	// 			// bullet point)
-	// 			if !in_bullet_list
-	// 			{
-	// 				// Set the bullet point flag to signal that a bullet list is currently being processed
-	// 				in_bullet_list = true;
-	// 				// Zero the paragraph flag
-	// 				in_paragraph = false;
-	// 				// Set the value that the x position resets to so it lines up after the bullet point
-	// 				current_x_min = self.calc_text_width("• ") + x_min;
-	// 				// If a table was being processed before, zero the table flag and don't go down annother extra
-	// 				// newline since that was already done above
-	// 				if in_table { in_table = false; }
-	// 				// If a table was not being processed before, move the y position down an extra newline amount
-	// 				else
-	// 				{
-	// 					// Move the y position down an extra newline amount to separate it from normal paragraphs
-	// 					// (to match the Player's Handbook formatting)
-	// 					// Moves the y position down 0 newlines on the first paragraph, 0 on all others.
-	// 					self.y -= paragraph_newline_scalar * self.current_newline_amount();
-	// 				}
-	// 			}
-	// 			// If the bullet point symbol is a dash, make it a dot
-	// 			if tokens[0] == "-" { tokens[0] = "•"; }
-	// 			// Reset the x position to the left side of the text box
-	// 			self.x = x_min;
-	// 		}
-	// 		else
-	// 		{
-	// 			// If there are any tables to parse
-	// 			if tables.len() > 0
-	// 			{
-	// 				// If there is a table tag in this first token (ex: "[table][5]", "[table][0]", etc.)
-	// 				if let Some(pat_match) = self.table_tag_regex.find(tokens[0])
-	// 				{
-	// 					// Get the index range of the table tag pattern patch
-	// 					let table_tag_range = pat_match.range();
-	// 					// If the table tag is at the end of the first token
-	// 					if table_tag_range.end == tokens[0].len()
-	// 					{
-	// 						// If the table tag is the whole first token, write a table to the document
-	// 						if table_tag_range.start == 0
-	// 						{
-	// 							// Get a string slice of the table index (the 'x' in "[table][x]")
-	// 							let index_str = &tokens[0][8 .. tokens[0].len() - 1];
-	// 							// Convert the table index into a number
-	// 							let table_index = match index_str.parse::<usize>()
-	// 							{
-	// 								Ok(index) => index,
-	// 								// If the index wasn't a valid number, skip over this table token
-	// 								Err(_) => continue
-	// 							};
-	// 							// If the index is out of bounds of the tables vec, skip over this table token
-	// 							if table_index >= tables.len() { continue; }
-	// 							// If another table was not being processed before, move the y position down an extra
-	// 							// newline amount
-	// 							if !in_table
-	// 							{
-	// 								// Move the y position down an extra newline amount to separate it more from
-	// 								// normal paragraphs (to match the Player's Handbook formatting)
-	// 								// Moves the y position down 0 newlines on the first paragraph, 0 on all others.
-	// 								self.y -= paragraph_newline_scalar * self.current_newline_amount();
-	// 								// Set the table flag to signal that a table is being processed
-	// 								in_table = true;
-	// 							}
-	// 							// If this table is right after a bullet list (bullet flag still set)
-	// 							if in_bullet_list
-	// 							{
-	// 								// Set the value that the x position resets to so that it lines up with the left
-	// 								// side of the text box again
-	// 								current_x_min = x_min;
-	// 								// Zero the bullet flag to signal that a bullet list isn't being currently
-	// 								// processed anymore
-	// 								in_bullet_list = false;
-	// 							}
-	// 							// Zero the paragraph flag
-	// 							in_paragraph = false;
-	// 							// Make it so all paragraphs after the first get moved down a newline amount before
-	// 							// being processed
-	// 							paragraph_newline_scalar = 1.0;
-	// 							// Reset the x position to the left side of the textbox
-	// 							self.x = x_min;
-	// 							// Store the current text type and font variant being used so they can be reset to
-	// 							// what they were before the table
-	// 							let current_text_type = *self.current_text_type();
-	// 							let current_font_variant = *self.current_font_variant();
-	// 							// TODO: Add code to put in a table
-	// 							self.parse_table(&tables[table_index], x_min, x_max, y_min, y_max);
-	// 							self.apply_text(tokens[0], y_min);
-	// 							// Reset the text type and font variant to what they were before the table
-	// 							self.set_current_text_type(current_text_type);
-	// 							self.set_current_font_variant(current_font_variant);
-	// 							// Skip the token loop below and move to the next paragraph
-	// 							continue;
-	// 						}
-	// 						// Check to see if this is an escaped table tag (a backslash or multiple backslashes
-	// 						// before the table tag)
-	// 						// If there is at least one backslash in the first token
-	// 						else if let Some(backslashes_match) = self.backslashes_regex.find(tokens[0])
-	// 						{
-	// 							// Get the index range of the backslash pattern match
-	// 							let backslashes_range = backslashes_match.range();
-	// 							// If the backslashes are at the start of the token and right before the table tag
-	// 							// (if the entire token is backslashes followed by a table tag)
-	// 							if backslashes_range.start == 0 && backslashes_range.end == table_tag_range.start
-	// 							{
-	// 								// Remove the first backslash from the token
-	// 								tokens[0] = &tokens[0][1..];
-	// 							}
-	// 						}
-	// 					}
-	// 				}
-	// 			}
-	// 			// If this is a normal text paragraph
-	// 			// ...
-
-	// 			// If this paragraph is right after a bullet list (bullet flag still set)
-	// 			if in_bullet_list
-	// 			{
-	// 				// Move the y position down an extra newline amount to separate the bullet list from this
-	// 				// paragraph (to match the Player's Handbook formatting)
-	// 				self.y -= self.current_newline_amount();
-	// 				// Set the value that the x position resets to so that it lines up with the left side of the text
-	// 				// box again
-	// 				current_x_min = x_min;
-	// 				// Zero the bullet flag to signal that a bullet list isn't being currently processed anymore
-	// 				in_bullet_list = false;
-	// 			}
-	// 			// If this paragraph is right after a table (table flag still set), zero the table flag
-	// 			if in_table { in_table = false; }
-	// 			// Set the x position to be 0 or 1 tab amounts from the left side of the text box
-	// 			// 0 tab amounts for the first paragraph (to match the Player's Handbook formatting)
-	// 			// 1 tab amount for all other paragraphs
-	// 			self.x = x_min + current_tab_amount;
-	// 			// Set the paragraph flag
-	// 			in_paragraph = true;
-	// 		}
-	// 		// Make it so all paragraphs after the first get moved down a newline amount before being processed
-	// 		paragraph_newline_scalar = 1.0;
-	// 		// TODO: Make it so single tokens that are too long to fit on a line get hyphenated
-	// 		// Loop through each token after the first to check if it does something special, if it should be
-	// 		// written to the current line, or cause the current line to be wrtten then add it to the next line.
-	// 		for mut token in tokens
-	// 		{
-	// 			// Determine if the current token is a special token
-	// 			match token
-	// 			{
-	// 				// If It's a regular font tag, write the current line to the page and switch the current font
-	// 				// variant to regular
-	// 				REGULAR_FONT_TAG =>
-	// 				{
-	// 					self.switch_font_variant(FontVariant::Regular, &mut line, &mut line_width, y_min);
-	// 				},
-	// 				// If It's a bold font tag, write the current line to the page and switch the current font
-	// 				// variant to bold
-	// 				BOLD_FONT_TAG =>
-	// 				{
-	// 					self.switch_font_variant(FontVariant::Bold, &mut line, &mut line_width, y_min);
-	// 				},
-	// 				// If It's a italic font tag, write the current line to the page and switch the current font
-	// 				// variant to italic
-	// 				ITALIC_FONT_TAG =>
-	// 				{
-	// 					self.switch_font_variant(FontVariant::Italic, &mut line, &mut line_width, y_min);
-	// 				},
-	// 				// If It's a bold-italic font tag, write the current line to the page and switch the current font
-	// 				// variant to bold-italic
-	// 				BOLD_ITALIC_FONT_TAG | ITALIC_BOLD_FONT_TAG =>
-	// 				{
-	// 					self.switch_font_variant(FontVariant::BoldItalic, &mut line, &mut line_width, y_min);
-	// 				},
-	// 				// If it's not a special token
-	// 				_ =>
-	// 				{
-	// 					// Calculate the width of the token
-	// 					let mut width = self.calc_text_width(token);
-	// 					// If the token is an escaped font tag, remove the first backslash from it so font tags can
-	// 					// actually appear in spell text without affecting the font
-	// 					if self.is_escaped_font_tag(token)
-	// 					{
-	// 						token = &token[1..];
-	// 						// Also recalculate the width of the token
-	// 						width = self.calc_text_width(token);
-	// 					}
-	// 					// If the next line to be written is currently empty
-	// 					if line_width == 0.0
-	// 					{
-	// 						// If the token is too wide to fit on a single line in the textbox
-	// 						if current_x_min + width > x_max
-	// 						{
-	// 							// Hyphenate the token and get the new starting index and width
-	// 							let (index, new_width) =
-	// 							self.hyphenate_and_apply_token(token, width, x_max - self.x, y_min, current_x_min);
-	// 							// Zero the first line flag since at least 1 line has been written
-	// 							first_line = false;
-	// 							// Remove the part of the token that was hyphenated
-	// 							token = &token[index..];
-	// 							// Store the new width of this token
-	// 							width = new_width;
-	// 							// Calculate the maximum line width based on where the text starts and ends
-	// 							let max_line_width = x_max - current_x_min;
-	// 							// Keep hyphenating the token until the only part that remains can fit on a single
-	// 							// line
-	// 							while width > max_line_width
-	// 							{
-	// 								// Hyphenate the token and get the new starting index and width
-	// 								let (index, new_width) = self.hyphenate_and_apply_token
-	// 								(
-	// 									token,
-	// 									width,
-	// 									max_line_width,
-	// 									y_min,
-	// 									current_x_min
-	// 								);
-	// 								// Remove the part of the token that was hyphenated
-	// 								token = &token[index..];
-	// 								// Store the new width of this token
-	// 								width = new_width;
-	// 							}
-	// 						}
-	// 						// If it's the first token on the first line in a tabbed paragraph and it can't fit on
-	// 						// that first line
-	// 						else if self.x + width > x_max && self.x == x_min + current_tab_amount && first_line
-	// 						{
-	// 							// Hyphenate the token and get the new starting index and width
-	// 							let (index, new_width) = self.hyphenate_and_apply_token
-	// 							(
-	// 								token,
-	// 								width,
-	// 								x_max - x_min - current_tab_amount,
-	// 								y_min,
-	// 								current_x_min
-	// 							);
-	// 							// Zero the first line flag since at least 1 line has been written
-	// 							first_line = false;
-	// 							// Remove the part of the token that was hyphenated
-	// 							token = &token[index..];
-	// 							// Store the new width of this token
-	// 							width = new_width;
-	// 							// Calculate the maximum line width based on where the text starts and ends
-	// 							let max_line_width = x_max - current_x_min;
-	// 							// Keep hyphenating the token until the only part that remains can fit on a single
-	// 							// line
-	// 							while width > max_line_width
-	// 							{
-	// 								// Hyphenate the token and get the new starting index and width
-	// 								let (index, new_width) = self.hyphenate_and_apply_token
-	// 								(
-	// 									token,
-	// 									width,
-	// 									max_line_width,
-	// 									y_min,
-	// 									current_x_min
-	// 								);
-	// 								// Remove the part of the token that was hyphenated
-	// 								token = &token[index..];
-	// 								// Store the new width of this token
-	// 								width = new_width;
-	// 							}
-	// 						}
-	// 						else if self.x + width > x_max
-	// 						{
-	// 							// Set the x position back to the new-line reset point
-	// 							self.x = current_x_min;
-	// 							// Move the y position down a line
-	// 							self.y -= self.current_newline_amount();
-	// 						}
-	// 						// Put this token at the start of the line
-	// 						line = String::from(token);
-	// 						// Assign this token's width to the width of the current line
-	// 						line_width = width;
-	// 					}
-	// 					// If the current line is not empty
-	// 					else if line_width > 0.0
-	// 					{
-	// 						// Store a space string
-	// 						let space = SPACE;
-	// 						// Calculate the width of a space character
-	// 						let space_width = self.calc_text_width(space);
-	// 						// Calculate the width of the current token with a space in front of it
-	// 						// (which is how it would be added to the line)
-	// 						let padded_width = space_width + width;
-	// 						// Calculate where the line would end if the token was added onto this line
-	// 						let new_line_end = self.x + line_width + padded_width;
-	// 						// If this token would make the line go past the right side boundry of the textbox
-	// 						if new_line_end > x_max
-	// 						{
-	// 							// If the current token is too wide to fit on a single line in the textbox
-	// 							if current_x_min + width > x_max
-	// 							{
-	// 								// Calculate the maximum line width based on where the text starts and ends
-	// 								let max_line_width = x_max - current_x_min;
-	// 								// Get a hyphenated part of the token and the index for where the hyphen cuts off
-	// 								// in the token
-	// 								let (hyphenated_token, index) = self.get_hyphen_str
-	// 								(
-	// 									token,
-	// 									width,
-	// 									max_line_width - (self.x - current_x_min) - space_width - line_width
-	// 								);
-	// 								let hyphenated_token = hyphenated_token.text();
-	// 								// If the token can be made to fit on the current line by hyphenating it
-	// 								// (might not fit if the current line is near the end or something)
-	// 								if index != 0
-	// 								{
-	// 									// Add a space and the hyphenated token to the end of the line
-	// 									line += space;
-	// 									line += &hyphenated_token;
-	// 								}
-	// 								// Apply the line to the spellbook
-	// 								self.apply_text(&line, y_min);
-	// 								// Zero the first line flag since at least one ine has been applied now
-	// 								first_line = false;
-	// 								// Set the x position back to the new-line reset point
-	// 								self.x = current_x_min;
-	// 								// Move the y position down a line
-	// 								self.y -= self.current_newline_amount();
-	// 								// Take off the part of the token that was hyphenated
-	// 								token = &token[index..];
-	// 								// Calculate the width of the new shorter token
-	// 								width = self.calc_text_width(token);
-	// 								// Keep hyphenating the token until the only part that remains can fit on a
-	// 								// single line
-	// 								while width > max_line_width
-	// 								{
-	// 									// Hyphenate the token and get the new starting index and width
-	// 									let (index, new_width) = self.hyphenate_and_apply_token
-	// 									(
-	// 										token,
-	// 										width,
-	// 										max_line_width,
-	// 										y_min,
-	// 										current_x_min
-	// 									);
-	// 									// Remove the part of the token that was hyphenated
-	// 									token = &token[index..];
-	// 									// Store the new width of this token
-	// 									width = new_width;
-	// 								}
-	// 								// Set the line to whatever is left in the token
-	// 								line = String::from(token);
-	// 								// Store the width of the token as the width of the new line
-	// 								line_width = width;
-	// 							}
-	// 							else
-	// 							{
-	// 								// Apply the current line
-	// 								self.apply_text(&line, y_min);
-	// 								// Zero the first line flag since at least one line has been applied now
-	// 								first_line = false;
-	// 								// Set the x position back to the new-line reset point
-	// 								self.x = current_x_min;
-	// 								// Move the y position down a line
-	// 								self.y -= self.current_newline_amount();
-	// 								// Empty the line and put the current token in it to be at the start of the next line
-	// 								line = String::from(token);
-	// 								// Set the new line width to the width of the current line
-	// 								line_width = width;
-	// 							}
-	// 						}
-	// 						// If the token doesn't make the line too wide, add the token to the line
-	// 						else
-	// 						{
-	// 							// Add the token to the line
-	// 							line += format!(" {}", token).as_str();
-	// 							// Add the width of a space and this token to the line
-	// 							line_width += padded_width;
-	// 						}
-	// 					}
-	// 					// If the line width is less than 0, shouldn't be possible
-	// 					else { panic!
-	// 					("Line width is less than 0.0 in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::write_textbox`"); }
-	// 				}
-	// 			};
-	// 		}
-	// 		// If the current line is empty, move the y position back up a newline amount
-	// 		if line_width <= 0.0 { self.y += self.current_newline_amount(); }
-	// 		// Write any remaining text to the page
-	// 		else { self.apply_text(&line, y_min); }
-	// 		// If this was a paragraph, set the current tab amount to be the normal tab amount so all paragraphs
-	// 		// after the first are tabbed in on the first line
-	// 		if in_paragraph { current_tab_amount = self.tab_amount(); }
-	// 	}
-	// 	// If a table was the last thing that was applied to the page, move down an extra newline amount to keep
-	// 	// whatever comes next more separated from the table (to match the Player's Handbook formatting)
-	// 	if in_table { self.y -= self.current_newline_amount(); }
-	// }
-
 	/// Writes text to the current page inside the given dimensions, starting at the x_min value and current y value.
 	/// The text is left-aligned and if it goes below the y_min, it continues writing onto the next page (or a new
 	/// page), continuing to stay within the given dimensions on the new page.
@@ -1025,6 +566,9 @@ impl <'a> SpellbookWriter<'a>
 
 	fn apply_text_lines(&mut self, text_lines: &Vec<TextLine>, x_reset: f32, y_min: f32)
 	{
+		// The number of newlines to go down by before each line is printed
+		// Is 0.0 for the first line (so the textbox doesn't get moved down by an extra newline)
+		// Is 1.0 for all other lines
 		let mut newline_scalar = 0.0;
 		// Loop through each line to apply it to the document
 		for line in text_lines
@@ -1090,42 +634,6 @@ impl <'a> SpellbookWriter<'a>
 		}
 		// In all other cases, it's not a table tag
 		TableTagCheckResult::NotTableTag
-	}
-
-	/// Hyphenates a token, writes the hyphated part of the token to the spellbook, resets the x and y positions to
-	/// a new line, and returns the new starting index of the token along with its new width.
-	fn hyphenate_and_apply_token
-	(
-		&mut self, token: &str,
-		token_width: f32,
-		max_line_width: f32,
-		y_min: f32,
-		current_x_min: f32
-	)
-	-> (usize, f32)
-	{
-		// Get a hyphenated part of the token and the index for where the hyphen cuts off in the token
-		let (hyphenated_token, index) = self.get_hyphen_str(token, token_width, max_line_width);
-		// Apply the line to the spellbook
-		self.apply_text(hyphenated_token.text(), y_min);
-		// Set the x position back to the new-line reset point
-		self.x = current_x_min;
-		// Move the y position down a line
-		self.y -= self.current_newline_amount();
-		// If there's still some characters left in the token
-		if index < token.len()
-		{
-			// Take off the part of the token that was hyphenated
-			let token = &token[index..];
-			// Calculate the width of the new shorter token
-			let width = self.calc_text_width(token);
-			// Return the new starting index and width
-			(index, width)
-		}
-		// If the entire token has been handled already, return the index at the end of the token and a width of 0
-		// (no need to worry about an unnecessary hyphen being added onto the pushed hyphen line since the
-		// get_hyphen_str method handles that)
-		else { (index, 0.0) }
 	}
 
 	/// For use in `write_textbox` functions. If the given font variant is different than the current one being used,
@@ -1585,8 +1093,10 @@ impl <'a> SpellbookWriter<'a>
 	{
 		// Calculate the width of the token
 		let mut width = self.calc_text_width(token);
+		// If the line is empty and the token is wider than the current line
 		if current_line.width() == 0.0 && width > *current_line_max_width
 		{
+			// Hyphenate the token using the current line's width
 			(token, width) = self.hyphenate_once
 			(
 				token,
@@ -1596,8 +1106,10 @@ impl <'a> SpellbookWriter<'a>
 				lines
 			);
 		}
+		// If the token is wider than the textbox width
 		else if width > textbox_width
 		{
+			// Hyphenate the token using the remaining width on the current line
 			let remaining_width =
 			*current_line_max_width - current_line.width() - current_line.get_last_space_width(self.space_widths());
 			(token, width) = self.hyphenate_once
@@ -1609,10 +1121,11 @@ impl <'a> SpellbookWriter<'a>
 				lines
 			);
 		}
-		else
-		{
-			return (token, width);
-		}
+		// If the token fits on the current line and doesn't need to be hyphenated, just return it and its width
+		else { return (token, width); }
+		// Reset the current line width to the width of the textbox since a line just had to have been applied to get
+		// to this point and it is no longer the first line (which is the only line that could have a different
+		// width than the rest)
 		*current_line_max_width = textbox_width;
 		// Hyphenate the token until just the end of it remains and it can fit on a single line
 		while width > textbox_width
@@ -1727,19 +1240,12 @@ impl <'a> SpellbookWriter<'a>
 			// Do - While condition
 			index != last_index
 		}{}
-		// If the index is 0, return an empty token and that index to signal that it can't fit within the width of
-		// this textbox at all
-		if index == 0
-		{
-			let new_token = TextToken::empty();
-			(new_token, index)
-		}
-		// Otherwise return the hyphenated token and its index
-		else
-		{
-			let new_token = TextToken::with_width(&hyphenated_string, hyphen_str_width);
-			(new_token, index)
-		}
+		// If the index is 0, set the return token to be empty
+		let new_token = if index == 0 { let new_token = TextToken::empty() }
+		// Otherwise set the return token to be the part of the string that was hyphenated in the last loop iteration
+		else { let new_token = TextToken::with_width(&hyphenated_string, hyphen_str_width) };
+		// Return the token and index
+		(new_token, index)
 	}
 
 	/// Applies lines of text to the spellbook so that each line is centered horizontally and all of the lines are
