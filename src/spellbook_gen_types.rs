@@ -707,6 +707,15 @@ impl BackgroundImage
 	pub fn transform(&self) -> &ImageTransform { &self.transform }
 }
 
+/// Used for returning the result of whether or not a token was a table tag, an escaped table tag, or neither.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TableTagCheckResult
+{
+	TableTag(usize),
+	EscapedTableTag,
+	NotTableTag
+}
+
 /// Holds a single token in a spellbook
 #[derive(Clone, Debug, PartialEq)]
 pub enum Token
