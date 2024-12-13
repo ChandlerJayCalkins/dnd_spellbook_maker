@@ -40,6 +40,8 @@ const ITALIC_FONT_TAG: &str = "<i>";
 const BOLD_ITALIC_FONT_TAG: &str = "<bi>";
 const ITALIC_BOLD_FONT_TAG: &str = "<ib>";
 
+const SPACE: &str = " ";
+
 /// All data needed to write spells to a pdf document.
 // Can't derive clone or debug unfortunately.
 pub struct SpellbookWriter<'a>
@@ -54,6 +56,7 @@ pub struct SpellbookWriter<'a>
 	page_number_data: Option<PageNumberData<'a>>,
 	background: Option<BackgroundImage>,
 	table_options: TableOptions,
+	// Regex patterns are stored since they consume lots of runtime being reconstructed continutally
 	escaped_font_tag_regex: Regex,
 	table_tag_regex: Regex,
 	backslashes_regex: Regex,
@@ -191,7 +194,7 @@ impl <'a> SpellbookWriter<'a>
 			// If no background image was given, don't use a background
 			None => None
 		};
-	// Create a regex pattern for escaped font tags (font tags preceeded by backslashes)
+		// Create a regex pattern for escaped font tags (font tags preceeded by backslashes)
 		// Ex: "\<r>", "\\\<bi>", "\\<i>", etc.
 		// Use this regex pattern to remove the first backslash from escaped font tags so that font tags are allowed
 		// to actually appear in spell text AND not affect the font at all
@@ -207,23 +210,24 @@ impl <'a> SpellbookWriter<'a>
 		let escaped_font_tag_regex = Regex::new(&escaped_font_tag_pattern)
 		.expect(format!
 		(
-			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::is_escaped_font_tag`",
+			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::new`",
 			escaped_font_tag_pattern
 		).as_str());
-		// Create a regex pattern to find table tags
+		// Create a regex pattern to find table tags which are used for inserting tables into spell descriptions
+		// Ex: "[table][5]", "[table][0]", "[table][2]", etc.
 		let table_tag_pattern = "\\[table\\]\\[[0-9]+\\]";
 		let table_tag_regex = Regex::new(table_tag_pattern)
 		.expect(format!
 		(
-			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::write_textbox`",
+			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::new`",
 			table_tag_pattern
 		).as_str());
-		// Create a regex pattern to find repeating backslashes
+		// Create a regex pattern to find repeating backslashes which areused for finding escaped table tags
 		let backslashes_pattern = "\\\\+";
 		let backslashes_regex = Regex::new(backslashes_pattern)
 		.expect(format!
 		(
-			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::write_textbox`",
+			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::new`",
 			backslashes_pattern
 		).as_str());
 
@@ -721,7 +725,7 @@ impl <'a> SpellbookWriter<'a>
 						else if line_width > 0.0
 						{
 							// Store a space string
-							let space = " ";
+							let space = SPACE;
 							// Calculate the width of a space character
 							let space_width = self.calc_text_width(space);
 							// Calculate the width of the current token with a space in front of it
@@ -745,7 +749,7 @@ impl <'a> SpellbookWriter<'a>
 										width,
 										max_line_width - (self.x - current_x_min) - space_width - line_width
 									);
-									let hyphenated_token = hyphenated_token.text.as_str();
+									let hyphenated_token = hyphenated_token.text();
 									// If the token can be made to fit on the current line by hyphenating it
 									// (might not fit if the current line is near the end or something)
 									if index != 0
@@ -845,11 +849,10 @@ impl <'a> SpellbookWriter<'a>
 	)
 	-> (usize, f32)
 	{
-		// Get a hyphenated part of the token and the index for where the hyphen cuts
-		// off in the token
+		// Get a hyphenated part of the token and the index for where the hyphen cuts off in the token
 		let (hyphenated_token, index) = self.get_hyphen_str(token, token_width, max_line_width);
 		// Apply the line to the spellbook
-		self.apply_text(&hyphenated_token.text, y_min);
+		self.apply_text(hyphenated_token.text(), y_min);
 		// Set the x position back to the new-line reset point
 		self.x = current_x_min;
 		// Move the y position down a line
@@ -874,15 +877,7 @@ impl <'a> SpellbookWriter<'a>
 	/// If the text is too big to fit in the textbox, it continues into the next page from the top of the page going
 	/// to the bottom and staying within the same horizontal bounds.
 	/// This method can also process font variant changes in the text.
-	fn write_centered_textbox
-	(
-		&mut self,
-		text: &str,
-		x_min: f32,
-		x_max: f32,
-		y_min: f32,
-		y_max: f32
-	)
+	fn write_centered_textbox(&mut self, text: &str, x_min: f32, x_max: f32, y_min: f32, y_max: f32)
 	{
 		// If either dimensional bounds overlap with each other, do nothing
 		if x_min >= x_max || y_min >= y_max { return; }
@@ -902,17 +897,17 @@ impl <'a> SpellbookWriter<'a>
 		self.set_current_text_type(TextType::TableBody);
 		// Get the width of the widest cell in each column
 		let max_column_widths = self.get_max_table_column_widths(&table.column_labels, &table.cells);
-		// Calculate and assign widths to each column
+		// Calculate and assign widths to each column (as well as whether each column is centered or not)
 		let column_width_data = self.get_table_column_width_data(&max_column_widths, x_min, x_max, y_min, y_max);
 		// Calculate the width of the entire table
 		let table_width = self.get_table_width(&column_width_data);
 		// Get a vec of all data about columns needed for writing the table to the spellbook (computes x_min and
-		// x_max values for each column)
+		// x_max values for each column and stores whether each column is centered or not)
 		let column_data = self.get_column_data(&column_width_data, table_width);
 		// Split each column label into lines that will fit within the width of their columns
 		let column_label_lines =
 		self.get_table_row_lines(&table.column_labels, &column_width_data, FontVariant::Bold);
-		// Split each cell in the table into lines that will fit within the column each of the cells are in
+		// Split each cell in the table into lines that will fit within the column each cell is in
 		let cell_lines = self.get_table_lines(&table.cells, &column_width_data);
 		// Change the text type and font variant to be in table title mode
 		self.set_current_text_type(TextType::TableTitle);
@@ -920,24 +915,29 @@ impl <'a> SpellbookWriter<'a>
 		// Split the table title into lines that will fit on the page
 		let title_lines = self.get_textbox_lines(&table.title, x_max - x_min);
 		// TODO
+		// 1. Calculate title height (determines entire table height)
 		// 1. Calculate height of each row (determines row color lines height and vertical placement of single line
 		// cells)
 		// 2. Calculate Entire table height (determine whether table gets place on current page or next page)
-		// 3. 
+		// 3. Apply title
+		// 4. Apply color lines
+		// 5. Apply table
 	}
 
 	/// Gets the widths of the widest cells in each column and returns those widths along with the index of the
-	/// column that width belongs to (so the vec can be sorted later and still have identifiable widths).
+	/// column that width belongs to so the vec can be sorted by width later and the widths can still be tracable
+	/// to which column that is the width of.
 	fn get_max_table_column_widths(&mut self, column_labels: &Vec<String>, cells: &Vec<Vec<String>>)
 	-> Vec<(usize, f32)>
 	{
-		// Set the font variant to bold for calculating the column label widths
-		self.set_current_font_variant(FontVariant::Bold);
 		// Create a vec to hold the column widths and their associated indexes
 		let mut column_widths = Vec::with_capacity(column_labels.len());
 		// Loop through each column label to use its width as a starter value for the max width of that column
 		for index in 0..column_labels.len()
 		{
+			// Set the font variant to bold for calculating the width of each column label
+			// Reset it each time in case the font changes in one column label
+			self.set_current_font_variant(FontVariant::Bold);
 			// Calculate the width of that column label
 			let width = self.calc_text_width(&column_labels[index]);
 			// Add that width as a starter value for the max width of that column
@@ -1192,11 +1192,7 @@ impl <'a> SpellbookWriter<'a>
 						// If there's any token remaining after being hyphenated
 						if width > 0.0
 						{
-							let text_token = TextToken
-							{
-								text: String::from(tokens[i]),
-								width: width
-							};
+							let text_token = TextToken::with_width(tokens[i], width);
 							line.add_text(text_token);
 						}
 					}
@@ -1204,7 +1200,7 @@ impl <'a> SpellbookWriter<'a>
 					else if line.width() > 0.0
 					{
 						// Calculate the width of a space
-						let space_width = self.calc_text_width(" ");
+						let space_width = self.calc_text_width(SPACE);
 						// Calculate the width of the token
 						let mut width = self.calc_text_width(tokens[i]);
 						// Calculate the width of the current token with a space in front of it
@@ -1261,22 +1257,14 @@ impl <'a> SpellbookWriter<'a>
 								lines.push(line);
 							}
 							line = TextLine::with_capacity(tokens.len() - i);
-							let text_token = TextToken
-							{
-								text: String::from(tokens[i]),
-								width: width
-							};
+							let text_token = TextToken::with_width(tokens[i], width);
 							line.add_text(text_token);
 						}
 						// If this token can fit on the line, add it to the line and add the width of a space and
 						// this token to the width of the line
 						else
 						{
-							let text_token = TextToken
-							{
-								text: String::from(tokens[i]),
-								width: width
-							};
+							let text_token = TextToken::with_width(tokens[i], width);
 							// Add this token to the line
 							line.add_text(text_token);
 							// Add the width of a space and this token added to the width of the line
@@ -1344,10 +1332,6 @@ impl <'a> SpellbookWriter<'a>
 			// the x value to that
 			self.x = (textbox_width / 2.0) - (line.width() / 2.0) + x_min;
 			// Apply the line to the page
-			// self.apply_text(line.join(" ").as_str(), y_min);
-			let mut next_line = String::new();
-			let mut line_width = 0.0;
-			// TODO: Get font changes working here.
 			self.apply_text_line(line, y_min);
 		}
 	}
@@ -1365,9 +1349,9 @@ impl <'a> SpellbookWriter<'a>
 					if *font_variant != *self.current_font_variant()
 					{
 						let next_line: &Vec<_> =
-						&tokens[last_index..index].iter().map(|token| token.get_token_str()).collect();
-						self.apply_text(next_line.join(" ").as_str(), y_min);
-						let space_width = self.calc_text_width(" ");
+						&tokens[last_index..index].iter().map(|token| token.as_spellbook_string()).collect();
+						self.apply_text(next_line.join(SPACE).as_str(), y_min);
+						let space_width = self.calc_text_width(SPACE);
 						self.x += space_width;
 						self.set_current_font_variant(*font_variant);
 						last_index = index + 1;
@@ -1377,8 +1361,8 @@ impl <'a> SpellbookWriter<'a>
 			}
 		}
 		let next_line: &Vec<_> =
-		&tokens[last_index..].iter().map(|token| token.to_string()).collect();
-		self.apply_text(next_line.join(" ").as_str(), y_min);
+		&tokens[last_index..].iter().map(|token| token.as_spellbook_string()).collect();
+		self.apply_text(next_line.join(SPACE).as_str(), y_min);
 	}
 
 	/// For use in `write_textbox` functions. If the given font variant is different than the current one being used,
@@ -1395,7 +1379,7 @@ impl <'a> SpellbookWriter<'a>
 			*line = String::new();
 			// Move the cursor over by a space width of the current font type to prevent text of different font types
 			// being too close together.
-			let space_width = self.calc_text_width(" ");
+			let space_width = self.calc_text_width(SPACE);
 			self.x += space_width;
 			// Switches to the desired font variant
 			self.set_current_font_variant(font_variant);
@@ -1492,7 +1476,7 @@ impl <'a> SpellbookWriter<'a>
 		// Keeps track of the width of the hyphenated part of the text
 		let mut hyphen_str_width = token_width;
 		// If the string can fit in the textbox, return itself and its length
-		if hyphen_str_width <= textbox_width { return (TextToken{ text: String::new(), width: 0.0 }, text.len()); }
+		if hyphen_str_width <= textbox_width { return (TextToken::empty(), text.len()); }
 		// Lower and upper possible bounds for what the index could be
 		let mut lower_bound = 0;
 		let mut upper_bound = text.len();
@@ -1515,11 +1499,7 @@ impl <'a> SpellbookWriter<'a>
 			// If the width is exactly the width of the textbox, return the current hyphen string data
 			if hyphen_str_width == textbox_width
 			{
-				let new_token = TextToken
-				{
-					text: hyphenated_string,
-					width: hyphen_str_width
-				};
+				let new_token = TextToken::with_width(&hyphenated_string, hyphen_str_width);
 				return (new_token, index);
 			}
 			// If the width is less than the width of the textbox
@@ -1549,11 +1529,7 @@ impl <'a> SpellbookWriter<'a>
 		// within the width of this textbox at all
 		if index == 0
 		{
-			let new_token = TextToken
-			{
-				text: String::new(),
-				width: 0.0
-			};
+			let new_token = TextToken::empty();
 			(new_token, index)
 		}
 		else
@@ -1566,11 +1542,7 @@ impl <'a> SpellbookWriter<'a>
 				hyphenated_string = format!("{}-", &text[0..index]);
 				hyphen_str_width = self.calc_text_width(&hyphenated_string);
 			}
-			let new_token = TextToken
-			{
-				text: hyphenated_string,
-				width: hyphen_str_width
-			};
+			let new_token = TextToken::with_width(&hyphenated_string, hyphen_str_width);
 			(new_token, index)
 		}
 	}

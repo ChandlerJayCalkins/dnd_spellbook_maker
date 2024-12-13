@@ -702,21 +702,28 @@ impl BackgroundImage
 	pub fn transform(&self) -> &ImageTransform { &self.transform }
 }
 
+/// Holds a single token in a spellbook
 #[derive(Clone, Debug, PartialEq)]
 pub enum Token
 {
+	/// A symbol that changes the font variant that the following text uses.
+	// Ex: Regular: "<r>", Bold: "<b>", Italic: "<i>", Bold-Italic: "<bi>" or "<ib>".
 	FontTag(FontVariant),
+	/// Tokens that are treated like text and are applied to the page.
 	Text(TextToken)
 }
 
 impl Token
 {
-	pub fn get_token_str(&self) -> String
+	/// Gets a string of this token as it will appear in the spellbook.
+	/// Font tags will return an empty string, text tokens will return the string they are holding.
+	pub fn as_spellbook_string(&self) -> &str
 	{
+		static EMPTY_STR: &str = "";
 		match self
 		{
-			Self::FontTag(_) => String::new(),
-			Self::Text(token) => token.text.clone()
+			Self::FontTag(_) => EMPTY_STR,
+			Self::Text(token) => &token.text()
 		}
 	}
 }
@@ -733,15 +740,19 @@ impl fmt::Display for Token
 	}
 }
 
+/// Holds a single token of text in a spellbook along with the width of the text in the font it will be applied with.
 #[derive(Clone, Debug, PartialEq)]
 pub struct TextToken
 {
-	pub text: String,
-	pub width: f32
+	/// The actual text.
+	text: String,
+	/// The width of the token in `printpdf::Mm` units.
+	width: f32
 }
 
 impl TextToken
 {
+	/// Creates a new text token from a string and font data. Calculates width automatically.
 	pub fn new(text: &str, font_size_data: &Font, font_scale: &Scale, font_scalar: f32) -> Self
 	{
 		let width = calc_text_width(text, font_size_data, font_scale, font_scalar);
@@ -752,10 +763,33 @@ impl TextToken
 		}
 	}
 
-	pub fn text(&self) -> &String { &self.text }
-	pub fn width(&self) -> f32 { self.width }
+	/// Creates a new text token from a string and a precalculated width of that string. Does not check to make sure
+	/// the given width is correct.
+	pub fn with_width(text: &str, width: f32) -> Self
+	{
+		Self
+		{
+			text: String::from(text),
+			width: width
+		}
+	}
 
-	pub fn as_str(&self) -> &str { self.text.as_str() }
+	/// Creates a new empty text token with no text and a width of 0.0.
+	pub fn empty() -> Self
+	{
+		Self
+		{
+			text: String::new(),
+			width: 0.0
+		}
+	}
+
+	// Getters
+
+	/// Returns the text this object is holding.
+	pub fn text(&self) -> &str {&self.text.as_str() }
+	/// Returns the width of the text his object is holding.
+	pub fn width(&self) -> f32 { self.width }
 }
 
 impl fmt::Display for TextToken
@@ -766,20 +800,25 @@ impl fmt::Display for TextToken
 	}
 }
 
+/// Holds a line of tokens that will be applied to a spellbook along with the width of the entire line.
 #[derive(Clone, Debug, PartialEq)]
 pub struct TextLine
 {
+	/// The line of tokens that will be applied to the spellbook.
 	pub tokens: Vec<Token>,
+	/// The width of the entire line in `printpdf::Mm` units.
 	pub width: f32
 }
 
 impl TextLine
 {
+	/// Creates a new empty text line.
 	pub fn new() -> Self
 	{
 		Self::with_capacity(0)
 	}
 
+	/// Creates a new text line with a given capacity for its vec of tokens.
 	pub fn with_capacity(size: usize) -> Self
 	{
 		Self
@@ -789,37 +828,44 @@ impl TextLine
 		}
 	}
 
+	// Setters
+
+	/// Adds a token to the line.
 	pub fn add_token(&mut self, token: Token, width: f32)
 	{
 		match token
 		{
-			Token::Text(ref text) =>
-			{
-				self.width += text.width;
-			},
-			Token::FontTag(_) => ()
+			Token::Text(text) => self.add_text(text),
+			Token::FontTag(tag) => self.add_font_tag(tag)
 		}
-		self.tokens.push(token);
 	}
 
+	/// Adds a font tag to the line.
 	pub fn add_font_tag(&mut self, tag: FontVariant)
 	{
 		self.tokens.push(Token::FontTag(tag));
 	}
 
+	/// Adds text to the line.
 	pub fn add_text(&mut self, text: TextToken)
 	{
+		// Adds the width of the token to the line's width before adding the token itself to the line.
 		self.width += text.width;
 		self.tokens.push(Token::Text(text));
 	}
 
+	/// Adds extra width to the line (usually used for adding the width of a space character to the line).
 	pub fn add_width(&mut self, width: f32) { self.width += width; }
-
+	/// Shrinks the capacity of the vec of tokens to fit its size.
 	pub fn shrink_to_fit(&mut self) { self.tokens.shrink_to_fit(); }
 
-	pub fn tokens(&self) -> &Vec<Token> { &self.tokens }
-	pub fn width(&self) -> f32 { self.width }
+	// Getters
 
+	/// Returns the vec of all the tokens in the line.
+	pub fn tokens(&self) -> &Vec<Token> { &self.tokens }
+	/// Returns the width of the line.
+	pub fn width(&self) -> f32 { self.width }
+	/// Returns whether or not the vec of tokens in this line is empty.
 	pub fn is_empty(&self) -> bool { self.tokens.is_empty() }
 }
 
