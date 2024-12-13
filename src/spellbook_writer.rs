@@ -54,6 +54,9 @@ pub struct SpellbookWriter<'a>
 	page_number_data: Option<PageNumberData<'a>>,
 	background: Option<BackgroundImage>,
 	table_options: TableOptions,
+	escaped_font_tag_regex: Regex,
+	table_tag_regex: Regex,
+	backslashes_regex: Regex,
 	// Current x position of text
 	x: f32,
 	// Current y position of text
@@ -188,6 +191,41 @@ impl <'a> SpellbookWriter<'a>
 			// If no background image was given, don't use a background
 			None => None
 		};
+	// Create a regex pattern for escaped font tags (font tags preceeded by backslashes)
+		// Ex: "\<r>", "\\\<bi>", "\\<i>", etc.
+		// Use this regex pattern to remove the first backslash from escaped font tags so that font tags are allowed
+		// to actually appear in spell text AND not affect the font at all
+		let escaped_font_tag_pattern = format!
+		(
+			"(\\\\)+({}|{}|{}|{}|{})",
+			REGULAR_FONT_TAG,
+			BOLD_FONT_TAG,
+			ITALIC_FONT_TAG,
+			BOLD_ITALIC_FONT_TAG,
+			ITALIC_BOLD_FONT_TAG
+		);
+		let escaped_font_tag_regex = Regex::new(&escaped_font_tag_pattern)
+		.expect(format!
+		(
+			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::is_escaped_font_tag`",
+			escaped_font_tag_pattern
+		).as_str());
+		// Create a regex pattern to find table tags
+		let table_tag_pattern = "\\[table\\]\\[[0-9]+\\]";
+		let table_tag_regex = Regex::new(table_tag_pattern)
+		.expect(format!
+		(
+			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::write_textbox`",
+			table_tag_pattern
+		).as_str());
+		// Create a regex pattern to find repeating backslashes
+		let backslashes_pattern = "\\\\+";
+		let backslashes_regex = Regex::new(backslashes_pattern)
+		.expect(format!
+		(
+			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::write_textbox`",
+			backslashes_pattern
+		).as_str());
 
 		// Construct instance of self and return
 		Ok(Self
@@ -202,6 +240,9 @@ impl <'a> SpellbookWriter<'a>
 			page_number_data: page_number_data,
 			background: background,
 			table_options: table_options,
+			escaped_font_tag_regex: escaped_font_tag_regex,
+			table_tag_regex: table_tag_regex,
+			backslashes_regex: backslashes_regex,
 			x: page_size_data.x_min(),
 			y: page_size_data.y_max()
 		})
@@ -381,22 +422,6 @@ impl <'a> SpellbookWriter<'a>
 		if paragraphs.is_empty() { return; }
 		// If there is text and the x position is beyond the x_max, reset the x position to x_min and go to a new line
 		else if self.x > x_max { self.x = x_min; self.y -= self.current_newline_amount(); }
-		// Create a regex pattern to find table tags
-		let table_tag_pattern = "\\[table\\]\\[[0-9]+\\]";
-		let table_tag_pattern = Regex::new(table_tag_pattern)
-		.expect(format!
-		(
-			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::write_textbox`",
-			table_tag_pattern
-		).as_str());
-		// Create a regex pattern to find repeating backslashes
-		let backslashes_pattern = "\\\\+";
-		let backslashes_pattern = Regex::new(backslashes_pattern)
-		.expect(format!
-		(
-			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::write_textbox`",
-			backslashes_pattern
-		).as_str());
 		// Loop through each paragraph
 		for paragraph in paragraphs
 		{
@@ -453,7 +478,7 @@ impl <'a> SpellbookWriter<'a>
 				if tables.len() > 0
 				{
 					// If there is a table tag in this first token (ex: "[table][5]", "[table][0]", etc.)
-					if let Some(pat_match) = table_tag_pattern.find(tokens[0])
+					if let Some(pat_match) = self.table_tag_regex.find(tokens[0])
 					{
 						// Get the index range of the table tag pattern patch
 						let table_tag_range = pat_match.range();
@@ -518,7 +543,7 @@ impl <'a> SpellbookWriter<'a>
 							// Check to see if this is an escaped table tag (a backslash or multiple backslashes
 							// before the table tag)
 							// If there is at least one backslash in the first token
-							else if let Some(backslashes_match) = backslashes_pattern.find(tokens[0])
+							else if let Some(backslashes_match) = self.backslashes_regex.find(tokens[0])
 							{
 								// Get the index range of the backslash pattern match
 								let backslashes_range = backslashes_match.range();
@@ -598,7 +623,7 @@ impl <'a> SpellbookWriter<'a>
 						let mut width = self.calc_text_width(token);
 						// If the token is an escaped font tag, remove the first backslash from it so font tags can
 						// actually appear in spell text without affecting the font
-						if Self::is_escaped_font_tag(token)
+						if self.is_escaped_font_tag(token)
 						{
 							token = &token[1..];
 							// Also recalculate the width of the token
@@ -704,8 +729,7 @@ impl <'a> SpellbookWriter<'a>
 							let padded_width = space_width + width;
 							// Calculate where the line would end if the token was added onto this line
 							let new_line_end = self.x + line_width + padded_width;
-							// If this token would make the line go past the right side boundry of the textbox,
-							// Apply the current line and reset it to just the current token
+							// If this token would make the line go past the right side boundry of the textbox
 							if new_line_end > x_max
 							{
 								// If the current token is too wide to fit on a single line in the textbox
@@ -1144,7 +1168,7 @@ impl <'a> SpellbookWriter<'a>
 				_ =>
 				{
 					// If the token is an escaped font tag, remove the first backslash at the start
-					if Self::is_escaped_font_tag(tokens[i]) { tokens[i] = &tokens[i][1..]; }
+					if self.is_escaped_font_tag(tokens[i]) { tokens[i] = &tokens[i][1..]; }
 					// If the line is currently empty
 					if line.width() == 0.0
 					{
@@ -1346,7 +1370,6 @@ impl <'a> SpellbookWriter<'a>
 						let space_width = self.calc_text_width(" ");
 						self.x += space_width;
 						self.set_current_font_variant(*font_variant);
-						println!("{}", font_variant);
 						last_index = index + 1;
 					}
 				},
@@ -1407,29 +1430,10 @@ impl <'a> SpellbookWriter<'a>
 
 	/// Returns whether or not a token / string is an escaped font tag (font tag with any amount of backslashes
 	/// before it).
-	fn is_escaped_font_tag(token: &str) -> bool
+	fn is_escaped_font_tag(&self, token: &str) -> bool
 	{
-		// Create a regex pattern for escaped font tags (font tags preceeded by backslashes)
-		// Ex: "\<r>", "\\\<bi>", "\\<i>", etc.
-		// Use this regex pattern to remove the first backslash from escaped font tags so that font tags are allowed
-		// to actually appear in spell text AND not affect the font at all
-		let escaped_font_tag_pattern = format!
-		(
-			"(\\\\)+({}|{}|{}|{}|{})",
-			REGULAR_FONT_TAG,
-			BOLD_FONT_TAG,
-			ITALIC_FONT_TAG,
-			BOLD_ITALIC_FONT_TAG,
-			ITALIC_BOLD_FONT_TAG
-		);
-		let escaped_font_tag_pattern = Regex::new(&escaped_font_tag_pattern)
-		.expect(format!
-		(
-			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::is_escaped_font_tag`",
-			escaped_font_tag_pattern
-		).as_str());
 		// Determine whether or not there is an escaped font tag in the token
-		match escaped_font_tag_pattern.find(token)
+		match self.escaped_font_tag_regex.find(token)
 		{
 			// If there is an escaped font tag in the token
 			Some(pat_match) =>
