@@ -27,7 +27,7 @@
   "duration": {
     "Controlled": "Instant"
   },
-  "description": "Choose any number of creatures made of tangible matter within range. Those creatures must all make a constitution savint throw against your spell save DC. All creatures that fail this saving throw get turned inside out, immediately die, and have their souls eternally damned to all nine hells simultaneously.\nCreatures that succeed the saving throw take 20d4 scrunching damage.",
+  "description": "Choose any number of creatures made of tangible matter within range. Those creatures must all make a constitution saving throw against your spell save DC. All creatures that fail this saving throw get turned inside out, immediately die, and have their souls eternally damned to all nine hells simultaneously.\nCreatures that succeed the saving throw take 20d4 scrunching damage.",
   "upcast_description": null,
   "tables": []
 }

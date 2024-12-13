@@ -1489,7 +1489,7 @@ impl <'a> SpellbookWriter<'a>
 					else if line.width() > 0.0
 					{
 						// Calculate the width of the current token with a space in front of it
-						let padded_width = self.get_current_space_width() + width;
+						let padded_width = line.get_last_space_width(self.space_widths()) + width;
 						// If adding this token to the line would make it go outside the textbox,
 						// apply the current line and set it to just the current token
 						if line.width() + padded_width > current_line_max_width
@@ -1598,11 +1598,13 @@ impl <'a> SpellbookWriter<'a>
 		}
 		else if width > textbox_width
 		{
+			let remaining_width =
+			*current_line_max_width - current_line.width() - current_line.get_last_space_width(self.space_widths());
 			(token, width) = self.hyphenate_once
 			(
 				token,
 				width,
-				textbox_width - current_line.width() - self.get_current_space_width(),
+				remaining_width,
 				current_line,
 				lines
 			);
@@ -1640,7 +1642,6 @@ impl <'a> SpellbookWriter<'a>
 		// Hyphenates the string and gets the hyphenated part as a `TextToken` and an index for where the rest of it
 		// starts in the string
 		let (hyphenated_token, index) = self.get_hyphen_str(token, width, textbox_width);
-		println!("token: {}, len: {}, index: {}", token, token.len(), index);
 		// If the token could be hyphenated to fit on the line (if the returned index is 0, that means the token was
 		// either too close to the end of the line to be hyphenated or has characters that are too wide to fit in the
 		// textbox)

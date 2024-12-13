@@ -873,9 +873,21 @@ impl TextLine
 	/// Adds a font tag to the line.
 	pub fn add_font_tag(&mut self, tag: FontVariant, space_widths: &SpaceWidths)
 	{
-		self.previous_font_variant = self.current_font_variant;
+		if self.tokens.len() > 0
+		{
+			let last_index = self.tokens.len() - 1;
+			match self.tokens[last_index]
+			{
+				Token::FontTag(_) => self.tokens[last_index] = Token::FontTag(tag),
+				Token::Text(_) =>
+				{
+					self.previous_font_variant = self.current_font_variant;
+					self.tokens.push(Token::FontTag(tag));
+				}
+			}
+		}
+		else { self.tokens.push(Token::FontTag(tag)); }
 		self.current_font_variant = tag;
-		self.tokens.push(Token::FontTag(tag));
 	}
 
 	/// Adds text to the line.
@@ -908,6 +920,12 @@ impl TextLine
 	pub fn is_empty(&self) -> bool { self.tokens.is_empty() }
 	/// Returns whether or not the vec of tokens in this line is not empty.
 	pub fn not_empty(&self) -> bool { self.tokens.len() > 0 }
+
+	/// Returns the space width using the font data of the previous token
+	pub fn get_last_space_width(&self, space_widths: &SpaceWidths) -> f32
+	{
+		space_widths.get_width_for(self.text_type, self.previous_font_variant)
+	}
 }
 
 /// Keeps track of the width of spaces in spellbooks using `printpdf::Mm` units.
