@@ -876,6 +876,29 @@ impl <'a> SpellbookWriter<'a>
 		else { (index, 0.0) }
 	}
 
+	/// For use in `write_textbox` functions. If the given font variant is different than the current one being used,
+	/// it applies the current line of text being processed, empties it, switches the current font variant to the
+	/// given one, and resets the line width to 0.
+	fn switch_font_variant(&mut self, font_variant: FontVariant, line: &mut String, line_width: &mut f32, y_min: f32)
+	{
+		// If the current font variant different than the one to switch to
+		if *self.current_font_variant() != font_variant
+		{
+			// Applies the current line of text
+			self.apply_text(line.trim_start(), y_min);
+			// Empties the line of text
+			*line = String::new();
+			// Move the cursor over by a space width of the current font type to prevent text of different font types
+			// being too close together.
+			let space_width = self.calc_text_width(SPACE);
+			self.x += space_width;
+			// Switches to the desired font variant
+			self.set_current_font_variant(font_variant);
+			// Resets the line width to 0 since the line is empty now
+			*line_width = 0.0;
+		}
+	}
+
 	/// Writes vertically and horizontally centered text into a fixed sized textbox.
 	/// If the text is too big to fit in the textbox, it continues into the next page from the top of the page going
 	/// to the bottom and staying within the same horizontal bounds.
@@ -1149,8 +1172,10 @@ impl <'a> SpellbookWriter<'a>
 		// Store the font variant at the start so the current font variant can be reset to it after constructing the
 		// lines of text since the current font variant will change while calculating line widths
 		let start_font_variant = *self.current_font_variant();
+		// Keeps track of the current max textbox width
+		// Uses `first_line_width` for the first line and `textbox_width` for all lines after that
 		let mut max_width = first_line_width;
-		// Vec containing each line of text to write to the textbox and the width of that textbox
+		// Vec containing each line of text to write to the textbox
 		let mut lines: Vec<TextLine> = Vec::with_capacity(1);
 		// Keeps track of the next line of tokens to fill up and add to the vec of lines
 		let mut line = TextLine::with_capacity
@@ -1164,8 +1189,8 @@ impl <'a> SpellbookWriter<'a>
 		{
 			match tokens[i]
 			{
-				// If It's a font tag, add the tag to the line without adding the width and switch the current font
-				// variant so width can be calculated correctly for the following tokens
+				// If It's a font tag, add the tag to the line and switch the current font variant so width can be
+				// calculated correctly for the following tokens
 				REGULAR_FONT_TAG =>
 				{
 					line.add_font_tag(FontVariant::Regular, self.space_widths());
@@ -1192,7 +1217,8 @@ impl <'a> SpellbookWriter<'a>
 					// If the token is an escaped font tag, remove the first backslash at the start
 					if self.is_escaped_font_tag(tokens[i]) { tokens[i] = &tokens[i][1..]; }
 					let mut width = 0.0;
-					(tokens[i], width) = self.completely_hyphenate_token
+					// Hyphenate the token if it's too long to fit on a line and compute its width
+					(tokens[i], width) = self.hyphenate_token
 					(
 						tokens[i],
 						&mut max_width,
@@ -1203,185 +1229,72 @@ impl <'a> SpellbookWriter<'a>
 					// If the line is currently empty
 					if line.width() == 0.0
 					{
+						// Put the token into the line
 						let text_token = TextToken::with_width(tokens[i], width);
 						line.add_text(text_token, self.space_widths());
 					}
 					// If the line is not empty
 					else if line.width() > 0.0
 					{
-						// Calculate the width of a space
-						let space_width = self.get_current_space_width();
 						// Calculate the width of the current token with a space in front of it
-						// (which could be added to the line)
-						let padded_width = space_width + width;
+						let padded_width = self.get_current_space_width() + width;
 						// If adding this token to the line would make it go outside the textbox,
-						// Apply the current line and reset it to just the current token
+						// apply the current line and set it to just the current token
 						if line.width() + padded_width > max_width
 						{
+							// Make sure the line doesn't have any excess capacity in its vec
 							line.shrink_to_fit();
 							// Add the current line to the vec of lines
 							lines.push(line);
+							// Create a new line with the capacity of the number of remaining tokens
 							line = TextLine::with_capacity
 							(
 								tokens.len() - i,
 								*self.current_text_type(),
 								*self.current_font_variant()
 							);
+							// Add the token to the start of the new line
 							let text_token = TextToken::with_width(tokens[i], width);
 							line.add_text(text_token, self.space_widths());
+							// Set the max width width to the textbox width in case the previous line was the first
+							// line
 							max_width = textbox_width;
 						}
-						// If this token can fit on the line, add it to the line and add the width of a space and
-						// this token to the width of the line
+						// If this token can fit on the line, add it to the line
 						else
 						{
-							let text_token = TextToken::with_width(tokens[i], width);
 							// Add this token to the line
+							let text_token = TextToken::with_width(tokens[i], width);
 							line.add_text(text_token, self.space_widths());
+							// Set the max width width to the textbox width in case the previous line was the first
+							// line
 							max_width = textbox_width;
 						}
 					}
-					else { panic!(
-					"Line width is less than 0.0 in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::get_textbox_lines`"); }
+					// If the line has a negative width
+					else
+					{
+						panic!("Line width is less than 0.0 in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::get_textbox_lines`");
+					}
 				}
 			}
 		}
+		// Make sure the line doesn't have any excess capacity in its vec
 		line.shrink_to_fit();
 		// Push the remaining text in the last line to the vec of lines
 		lines.push(line);
 		// Set the font variant back to what it's supposed to be at the start of the text
 		self.set_current_font_variant(start_font_variant);
-		// Returns the lines of text and their widths
+		// Return the lines of text
 		lines
 	}
 
+	/// Constructs and returns a text token without a precalculated width.
 	fn get_text_token(&self, token: &str, font_variant: FontVariant) -> TextToken
 	{
 		let font_size_data = self.font_data.get_size_data_for(font_variant);
 		let scalar = self.font_data.get_scalar_for(font_variant);
 		TextToken::new(token, font_size_data, self.current_font_scale(), scalar)
-	}
-
-	/// Applies lines of text to the spellbook so that each line is centered horizontally and all of the lines are
-	/// centered horizontally if possible.
-	fn apply_centered_text_lines
-	(
-		&mut self,
-		text_lines: &Vec<TextLine>,
-		textbox_width: f32,
-		textbox_height: f32,
-		x_min: f32,
-		y_min: f32,
-		y_max: f32
-	)
-	{
-		// Calculate how many lines this text is going to be
-		let max_lines = (textbox_height / self.current_newline_amount()).floor() as usize;
-		// If There are more lines than can fit on the page, set the y value to the top of the textbox
-		// (text on following pages will start at the top of the entire page but stay within the horizontal
-		// boundries of the textbox)
-		if text_lines.len() > max_lines { self.y = y_max; }
-		// If all the lines can fit on one page, calculate what y value to start the text at so it is vertically
-		// centered in the textbox and set the y value to that
-		else { self.y = (y_max / 2.0) + (text_lines.len() - 1) as f32 / 2.0 * self.current_newline_amount(); }
-		// The number of newlines to go down by before each line is printed
-		// Is 0.0 for the first line (so the textbox doesn't get moved down by an extra newline)
-		// Is 1.0 for all other lines
-		let mut newline_scalar = 0.0;
-		// Loop through each line to apply it to the document
-		for line in text_lines
-		{
-			if line.is_empty() { continue; }
-			// Move the y position down by 0 or 1 newline amounts
-			// 0 newlines for the first line (so the textbox doesn't get moved down by an extra newline)
-			// 1 newline for all other lines
-			self.y -= newline_scalar * self.current_newline_amount();
-			// Make it so all lines after the first will move down 1 newline amount before being applied to the page
-			newline_scalar = 1.0;
-			// Calculate where to set the x position so that the line is horizontally centered in the textbox and set
-			// the x value to that
-			self.x = (textbox_width / 2.0) - (line.width() / 2.0) + x_min;
-			// Apply the line to the page
-			self.apply_text_line(line, y_min);
-		}
-	}
-
-	fn apply_text_line(&mut self, line: &TextLine, y_min: f32)
-	{
-		let mut last_index = 0;
-		let tokens = line.tokens();
-		for index in 0..tokens.len()
-		{
-			match &tokens[index]
-			{
-				Token::FontTag(font_variant) =>
-				{
-					if *font_variant != *self.current_font_variant()
-					{
-						let next_line: &Vec<_> =
-						&tokens[last_index..index].iter().map(|token| token.as_spellbook_string()).collect();
-						self.apply_text(next_line.join(SPACE).as_str(), y_min);
-						if index < tokens.len() - 1
-						{
-							self.apply_text(SPACE, y_min);
-						}
-						self.set_current_font_variant(*font_variant);
-						last_index = index + 1;
-					}
-				},
-				Token::Text(text) => ()
-			}
-		}
-		let next_line: &Vec<_> =
-		&tokens[last_index..].iter().map(|token| token.as_spellbook_string()).collect();
-		self.apply_text(next_line.join(SPACE).as_str(), y_min);
-	}
-
-	/// For use in `write_textbox` functions. If the given font variant is different than the current one being used,
-	/// it applies the current line of text being processed, empties it, switches the current font variant to the
-	/// given one, and resets the line width to 0.
-	fn switch_font_variant(&mut self, font_variant: FontVariant, line: &mut String, line_width: &mut f32, y_min: f32)
-	{
-		// If the current font variant different than the one to switch to
-		if *self.current_font_variant() != font_variant
-		{
-			// Applies the current line of text
-			self.apply_text(line.trim_start(), y_min);
-			// Empties the line of text
-			*line = String::new();
-			// Move the cursor over by a space width of the current font type to prevent text of different font types
-			// being too close together.
-			let space_width = self.calc_text_width(SPACE);
-			self.x += space_width;
-			// Switches to the desired font variant
-			self.set_current_font_variant(font_variant);
-			// Resets the line width to 0 since the line is empty now
-			*line_width = 0.0;
-		}
-	}
-
-	/// Writes a line of text to a page.
-	/// Moves to a new page / creates a new page if the text is below a certain y value.
-	fn apply_text(&mut self, text: &str, y_min: f32)
-	{
-		// If there is no text to apply, do nothing
-		if text.is_empty() { return; }
-		// Checks to see if the text should be applied to the next page or if a new page should be created.
-		self.check_for_new_page(y_min);
-		// Create a new text section on the page
-		self.layers[self.current_page_index].begin_text_section();
-		// Set the text cursor to the current x and y position of the text
-		self.layers[self.current_page_index].set_text_cursor(Mm(self.x), Mm(self.y));
-		// Set the font and font size of the text
-		self.layers[self.current_page_index].set_font(self.current_font_ref(), self.current_font_size());
-		// Set the text color
-		self.layers[self.current_page_index].set_fill_color(self.current_text_color().clone());
-		// Write the text to the page
-		self.layers[self.current_page_index].write_text(text, self.current_font_ref());
-		// End the text section on the page
-		self.layers[self.current_page_index].end_text_section();
-		// Move the x position to be at the end of the newly applied line
-		self.x += self.calc_text_width(&text);
 	}
 
 	/// Returns whether or not a token / string is an escaped font tag (font tag with any amount of backslashes
@@ -1402,7 +1315,15 @@ impl <'a> SpellbookWriter<'a>
 		}
 	}
 
-	fn completely_hyphenate_token<'t>
+	/// If the given token is too wide to fit on a single line within the given textbox constraints, hyphenate it and
+	/// apply it to the spellbook until the end of it is reached and it can fit in a single line without being
+	/// hyphenated.
+	/// Takes the current max width (which might be shorter on the first line of a textbox) and sets it to the
+	/// textbox width if the token is hyphenated and a line is applied.
+	/// Takes the current line and the vec of lines being processed to modify them if the token is hyphenated.
+	/// Returns the token and its calculated width if it was short enough to fit on a line, otherwise it returns the
+	/// end of the hyphenated token and its width.
+	fn hyphenate_token<'t>
 	(
 		&mut self,
 		mut token: &'t str,
@@ -1413,19 +1334,30 @@ impl <'a> SpellbookWriter<'a>
 	)
 	-> (&'t str, f32)
 	{
+		// Get the original token's length to be able to tell if it was hyphenated or not
 		let og_token_len = token.len();
 		let mut width = 0.0;
-		(token, width) = self.hyphenate_token(token, *max_width - current_line.width(), current_line, lines);
+		// If the token was too wide to fit on a the first line, hyphenate it and return its width
+		// Otherwise, just return the token the way it is and its width
+		(token, width) = self.hyphenate_once(token, *max_width - current_line.width(), current_line, lines);
+		// If the token was hyphenated (different length), set the current max width to the actual textbox width
+		// since its definitely not the first line anymore.
 		if token.len() != og_token_len { *max_width = textbox_width; }
+		// Otherwise, return the original token and its width
 		else { return (token, width); }
+		// Hyphenate the token until just the end of it remains and it can fit on a single line
 		while width > textbox_width
 		{
-			(token, width) = self.hyphenate_token(token, textbox_width, current_line, lines);
+			(token, width) = self.hyphenate_once(token, textbox_width, current_line, lines);
 		}
+		// Return the end of the token and its width
 		(token, width)
 	}
 
-	fn hyphenate_token<'t>
+	/// Hyphenates it a single time, applies and resets the current line, and returns the rest of the hyphenated
+	/// token along with its width if the token is too big to fit on a line. Otherwise it just returns the token the
+	/// way it is along with its width.
+	fn hyphenate_once<'t>
 	(
 		&mut self,
 		mut token: &'t str,
@@ -1435,26 +1367,43 @@ impl <'a> SpellbookWriter<'a>
 	)
 	-> (&'t str, f32)
 	{
+		// Calculate the width of the token
 		let mut width = self.calc_text_width(token);
+		// If its small enough to fit on the line, return it the way it is along with its width
 		if width <= textbox_width { return (token, width); }
+		// Hyphenates the string and gets the hyphenated part as a `TextToken` and an index for where the rest of it
+		// starts in the string
 		let (hyphenated_token, index) = self.get_hyphen_str(token, width, textbox_width);
+		// If the token could be hyphenated to fit on the line (if the returned index is 0, that means the token was
+		// either too close to the end of the line to be hyphenated or has characters that are too wide to fit in the
+		// textbox)
 		if index > 0
 		{
+			// If the token was hyphenated
 			if index < token.len()
 			{
+				// Add the hyphenated part of the token to the current line
 				current_line.add_text(hyphenated_token, self.space_widths());
+				// Make sure there isn't any extra capacity in the line's token vec
 				current_line.shrink_to_fit();
 			}
+			// If the returned index was the length of the token (which means it could fit on the line without being
+			// hyphenated)
 			else
 			{
+				// Return the token the way it is along with its width
 				return (token, width);
 			}
 		}
+		// Apply the line
 		lines.push(current_line.clone());
+		// Empty the line
 		*current_line = TextLine::with_capacity(1, *self.current_text_type(), *self.current_font_variant());
+		// Chop off the hyphenated part from the token
 		token = &token[index..];
+		// Recalculate the width of the token
 		width = self.calc_text_width(token);
-		
+		// Return the token and its width
 		(token, width)
 	}
 
@@ -1536,6 +1485,117 @@ impl <'a> SpellbookWriter<'a>
 			let new_token = TextToken::with_width(&hyphenated_string, hyphen_str_width);
 			(new_token, index)
 		}
+	}
+
+	/// Applies lines of text to the spellbook so that each line is centered horizontally and all of the lines are
+	/// centered horizontally if possible.
+	fn apply_centered_text_lines
+	(
+		&mut self,
+		text_lines: &Vec<TextLine>,
+		textbox_width: f32,
+		textbox_height: f32,
+		x_min: f32,
+		y_min: f32,
+		y_max: f32
+	)
+	{
+		// Calculate how many lines this text is going to be
+		let max_lines = (textbox_height / self.current_newline_amount()).floor() as usize;
+		// If There are more lines than can fit on the page, set the y value to the top of the textbox
+		// (text on following pages will start at the top of the entire page but stay within the horizontal
+		// boundries of the textbox)
+		if text_lines.len() > max_lines { self.y = y_max; }
+		// If all the lines can fit on one page, calculate what y value to start the text at so it is vertically
+		// centered in the textbox and set the y value to that
+		else { self.y = (y_max / 2.0) + (text_lines.len() - 1) as f32 / 2.0 * self.current_newline_amount(); }
+		// The number of newlines to go down by before each line is printed
+		// Is 0.0 for the first line (so the textbox doesn't get moved down by an extra newline)
+		// Is 1.0 for all other lines
+		let mut newline_scalar = 0.0;
+		// Loop through each line to apply it to the document
+		for line in text_lines
+		{
+			if line.is_empty() { continue; }
+			// Move the y position down by 0 or 1 newline amounts
+			// 0 newlines for the first line (so the textbox doesn't get moved down by an extra newline)
+			// 1 newline for all other lines
+			self.y -= newline_scalar * self.current_newline_amount();
+			// Make it so all lines after the first will move down 1 newline amount before being applied to the page
+			newline_scalar = 1.0;
+			// Calculate where to set the x position so that the line is horizontally centered in the textbox and set
+			// the x value to that
+			self.x = (textbox_width / 2.0) - (line.width() / 2.0) + x_min;
+			// Apply the line to the page
+			self.apply_text_line(line, y_min);
+		}
+	}
+
+	/// Applies a single line of text to the current page in the spellbook.
+	fn apply_text_line(&mut self, line: &TextLine, y_min: f32)
+	{
+		// Keeps track of what index in the line to start at when applying tokens to the page
+		let mut last_index = 0;
+		let tokens = line.tokens();
+		// Loop through all of the tokens to find font tags
+		for index in 0..tokens.len()
+		{
+			match &tokens[index]
+			{
+				// If the current token is a font tag
+				Token::FontTag(font_variant) =>
+				{
+					// If the font tag is different than the current font
+					if *font_variant != *self.current_font_variant()
+					{
+						// Get a vec of strings of all the previous tokens
+						let next_line: &Vec<_> =
+						&tokens[last_index..index].iter().map(|token| token.as_spellbook_string()).collect();
+						// Join those tokens together with spaces and apply them to the page
+						self.apply_text(next_line.join(SPACE).as_str(), y_min);
+						// If this isn't the last token in the line, apply another space to the page
+						if index < tokens.len() - 1
+						{
+							self.apply_text(SPACE, y_min);
+						}
+						// Set the current font variant so the following tokens will be applied correctly
+						self.set_current_font_variant(*font_variant);
+						// Increase the index to start applying tokens at to be after this font tag token
+						last_index = index + 1;
+					}
+				},
+				Token::Text(text) => ()
+			}
+		}
+		// Get a vec of strings of all the previous tokens
+		let next_line: &Vec<_> =
+		&tokens[last_index..].iter().map(|token| token.as_spellbook_string()).collect();
+		// Join those tokens together withs spaces and apply them to the page
+		self.apply_text(next_line.join(SPACE).as_str(), y_min);
+	}
+
+	/// Writes a line of text to a page.
+	/// Moves to a new page / creates a new page if the text is below a certain y value.
+	fn apply_text(&mut self, text: &str, y_min: f32)
+	{
+		// If there is no text to apply, do nothing
+		if text.is_empty() { return; }
+		// Checks to see if the text should be applied to the next page or if a new page should be created.
+		self.check_for_new_page(y_min);
+		// Create a new text section on the page
+		self.layers[self.current_page_index].begin_text_section();
+		// Set the text cursor to the current x and y position of the text
+		self.layers[self.current_page_index].set_text_cursor(Mm(self.x), Mm(self.y));
+		// Set the font and font size of the text
+		self.layers[self.current_page_index].set_font(self.current_font_ref(), self.current_font_size());
+		// Set the text color
+		self.layers[self.current_page_index].set_fill_color(self.current_text_color().clone());
+		// Write the text to the page
+		self.layers[self.current_page_index].write_text(text, self.current_font_ref());
+		// End the text section on the page
+		self.layers[self.current_page_index].end_text_section();
+		// Move the x position to be at the end of the newly applied line
+		self.x += self.calc_text_width(&text);
 	}
 
 	/// Checks if the current layer should move to the next page if the text y position is below given `y_min` value.
