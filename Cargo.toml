@@ -1,5 +1,5 @@
 [package]
-name = "dnd_spellbook_maker"
+name = "dnd-spellbook-maker"
 version = "1.0.0"
 authors = ["Chandler Calkins <chandlerjaycalkins@gmail.com>"]
 edition = "2021"

@@ -15,6 +15,8 @@ pub use printpdf::{PdfDocumentReference, IndirectFontRef, Color, Rgb};
 
 pub use crate::spellbook_options::*;
 
+pub const SPACE: &str = " ";
+
 /// Converts rgb byte values into a `printpdf::Color` struct.
 fn bytes_to_color(rgb: &(u8, u8, u8)) -> Color
 {
@@ -30,14 +32,17 @@ fn bytes_to_color(rgb: &(u8, u8, u8)) -> Color
 
 /// Conveys the type of text that is being used.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(usize)]
 pub enum TextType
 {
-	Title,
-	Header,
-	Body,
-	TableTitle,
-	TableBody
+	Title = 0,
+	Header = 1,
+	Body = 2,
+	TableTitle = 3,
+	TableBody = 4
 }
+/// This must always be the same as the number of variants in `TextType`
+const TEXTTYPE_VARIANTS: usize = 5;
 
 /// Holds the bytes from inputted font files.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -805,50 +810,73 @@ impl fmt::Display for TextToken
 pub struct TextLine
 {
 	/// The line of tokens that will be applied to the spellbook.
-	pub tokens: Vec<Token>,
+	tokens: Vec<Token>,
 	/// The width of the entire line in `printpdf::Mm` units.
-	pub width: f32
+	width: f32,
+	/// Holds the text type of this line (used for calculating space widths)
+	text_type: TextType,
+	/// Holds the current font variant of the line (used for calculating space widths)
+	current_font_variant: FontVariant,
+	/// Holds the font variant of the previous token in the line (used for calculating space widths)
+	previous_font_variant: FontVariant
+}
+
+impl std::ops::Index<usize> for TextLine
+{
+	type Output = Token;
+	/// Allows `TextLine`s to be indexed using the index operator `[]` to retrieve individual tokens.
+	fn index(&self, index: usize) -> &Self::Output { &self.tokens[index] }
 }
 
 impl TextLine
 {
 	/// Creates a new empty text line.
-	pub fn new() -> Self
+	pub fn new(text_type: TextType, current_font_variant: FontVariant) -> Self
 	{
-		Self::with_capacity(0)
+		Self::with_capacity(0, text_type, current_font_variant)
 	}
 
 	/// Creates a new text line with a given capacity for its vec of tokens.
-	pub fn with_capacity(size: usize) -> Self
+	pub fn with_capacity(size: usize, text_type: TextType, current_font_variant: FontVariant) -> Self
 	{
 		Self
 		{
 			tokens: Vec::with_capacity(size),
-			width: 0.0
+			width: 0.0,
+			text_type: text_type,
+			current_font_variant: current_font_variant,
+			previous_font_variant: current_font_variant
 		}
 	}
 
 	// Setters
 
 	/// Adds a token to the line.
-	pub fn add_token(&mut self, token: Token, width: f32)
+	pub fn add_token(&mut self, token: Token, width: f32, space_widths: &SpaceWidths)
 	{
 		match token
 		{
-			Token::Text(text) => self.add_text(text),
-			Token::FontTag(tag) => self.add_font_tag(tag)
+			Token::Text(text) => self.add_text(text, space_widths),
+			Token::FontTag(tag) => self.add_font_tag(tag, space_widths)
 		}
 	}
 
 	/// Adds a font tag to the line.
-	pub fn add_font_tag(&mut self, tag: FontVariant)
+	pub fn add_font_tag(&mut self, tag: FontVariant, space_widths: &SpaceWidths)
 	{
+		self.previous_font_variant = self.current_font_variant;
+		self.current_font_variant = tag;
 		self.tokens.push(Token::FontTag(tag));
 	}
 
 	/// Adds text to the line.
-	pub fn add_text(&mut self, text: TextToken)
+	pub fn add_text(&mut self, text: TextToken, space_widths: &SpaceWidths)
 	{
+		if self.width > 0.0
+		{
+			self.width += space_widths.get_width_for(self.text_type, self.previous_font_variant);
+		}
+		self.previous_font_variant = self.current_font_variant;
 		// Adds the width of the token to the line's width before adding the token itself to the line.
 		self.width += text.width;
 		self.tokens.push(Token::Text(text));
@@ -865,8 +893,117 @@ impl TextLine
 	pub fn tokens(&self) -> &Vec<Token> { &self.tokens }
 	/// Returns the width of the line.
 	pub fn width(&self) -> f32 { self.width }
+	/// Returns the number of tokens in the line
+	pub fn len(&self) -> usize { self.tokens.len() }
 	/// Returns whether or not the vec of tokens in this line is empty.
 	pub fn is_empty(&self) -> bool { self.tokens.is_empty() }
+	/// Returns whether or not the vec of tokens in this line is not empty.
+	pub fn not_empty(&self) -> bool { self.tokens.len() > 0 }
+}
+
+/// Keeps track of the width of spaces in spellbooks using `printpdf::Mm` units.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SpaceWidths
+{
+	// Outer dimension represents font scales, inner dimension represents font variants
+	widths: [[f32; FONTVARIANT_VARIANTS]; TEXTTYPE_VARIANTS]
+}
+
+/// Used for constructing empty width arrays in `SpaceWidths`.
+const DEFAULT_WIDTHS: [f32; FONTVARIANT_VARIANTS] = [0.0; FONTVARIANT_VARIANTS];
+
+impl SpaceWidths
+{
+	/// Constructs a new `SpaceWidths` object using font data.
+	pub fn new(font_data: &FontData) -> Self
+	{
+		const TITLE: usize = TextType::Title as usize;
+		const HEADER: usize = TextType::Header as usize;
+		const BODY: usize = TextType::Body as usize;
+		const TABLE_TITLE: usize = TextType::TableTitle as usize;
+		const TABLE_BODY: usize = TextType::TableBody as usize;
+		// Initialize an empty 2D array of widths
+		let mut widths = [DEFAULT_WIDTHS; TEXTTYPE_VARIANTS];
+		// Loop through each `TextType` variant to get the widths for each font variant with that text type's font
+		// scale.
+		// (use a loop in case the underlying numbers for `TextType` change)
+		for i in 0..TEXTTYPE_VARIANTS
+		{
+			widths[i] = match i
+			{
+				TITLE =>
+				Self::construct_widths_for(font_data.get_font_scale_for(TextType::Title), font_data),
+				HEADER =>
+				Self::construct_widths_for(font_data.get_font_scale_for(TextType::Header), font_data),
+				BODY =>
+				Self::construct_widths_for(font_data.get_font_scale_for(TextType::Body), font_data),
+				TABLE_TITLE =>
+				Self::construct_widths_for(font_data.get_font_scale_for(TextType::TableTitle), font_data),
+				TABLE_BODY =>
+				Self::construct_widths_for(font_data.get_font_scale_for(TextType::TableBody), font_data),
+				_ => panic!("Invalid TextType variant / usize / index in `dnd_spellbook_maker::spellbook_gen_types::SpaceWidths::new`")
+			}
+		}
+		SpaceWidths { widths: widths }
+	}
+
+	/// Gives the font widths for each font variant using a specific font scale.
+	fn construct_widths_for(scale: &Scale, font_data: &FontData) -> [f32; FONTVARIANT_VARIANTS]
+	{
+		const REGULAR: usize = FontVariant::Regular as usize;
+		const BOLD: usize = FontVariant::Bold as usize;
+		const ITALIC: usize = FontVariant::Italic as usize;
+		const BOLD_ITALIC: usize = FontVariant::BoldItalic as usize;
+		// Initialize an empty array of widths
+		let mut widths = DEFAULT_WIDTHS;
+		// Loop through each `FontVariant` variant to get the widths for each one using the given font scale.
+		// (use a loop in case the underlying numbers for `FontVariant` change)
+		for i in 0..FONTVARIANT_VARIANTS
+		{
+			widths[i] = match i
+			{
+				REGULAR => calc_text_width
+				(
+					SPACE,
+					font_data.get_size_data_for(FontVariant::Regular),
+					scale,
+					font_data.get_scalar_for(FontVariant::Regular)
+				),
+				BOLD => calc_text_width
+				(
+					SPACE,
+					font_data.get_size_data_for(FontVariant::Bold),
+					scale,
+					font_data.get_scalar_for(FontVariant::Bold)
+				),
+				ITALIC => calc_text_width
+				(
+					SPACE,
+					font_data.get_size_data_for(FontVariant::Italic),
+					scale,
+					font_data.get_scalar_for(FontVariant::Italic)
+				),
+				BOLD_ITALIC => calc_text_width
+				(
+					SPACE,
+					font_data.get_size_data_for(FontVariant::BoldItalic),
+					scale,
+					font_data.get_scalar_for(FontVariant::BoldItalic)
+				),
+				_ => panic!("Invalid FontVariant / usize / index in `dnd_spellbook_maker::spellbook_gen_types::SpaceWidths::construct_widths_for`")
+			}
+		}
+		widths
+	}
+
+	/// Gets the width of a space for a given `TextType` and `FontVariant`.
+	pub fn get_width_for(&self, text_type: TextType, font_variant: FontVariant) -> f32
+	{
+		self.widths[text_type as usize][font_variant as usize]
+	}
+
+	/// Gives all space width values in an unlabeled 2D array.
+	pub fn all_widths(&self) -> &[[f32; FONTVARIANT_VARIANTS]; TEXTTYPE_VARIANTS] { &self.widths }
 }
 
 /// Holds data about a column in a table in a spellbook.

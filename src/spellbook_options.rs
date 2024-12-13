@@ -10,13 +10,16 @@ pub use printpdf::{ImageTransform, ImageRotation, Mm};
 
 /// Conveys which variant of a font is being used.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(usize)]
 pub enum FontVariant
 {
-	Regular,
-	Bold,
-	Italic,
-	BoldItalic
+	Regular = 0,
+	Bold = 1,
+	Italic = 2,
+	BoldItalic = 3
 }
+/// This must always be the same as the number of variants in `FontVariant`
+pub const FONTVARIANT_VARIANTS: usize = 4;
 
 impl fmt::Display for FontVariant
 {
