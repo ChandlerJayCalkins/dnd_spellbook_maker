@@ -1241,9 +1241,9 @@ impl <'a> SpellbookWriter<'a>
 			index != last_index
 		}{}
 		// If the index is 0, set the return token to be empty
-		let new_token = if index == 0 { let new_token = TextToken::empty() }
+		let new_token = if index == 0 { TextToken::empty() }
 		// Otherwise set the return token to be the part of the string that was hyphenated in the last loop iteration
-		else { let new_token = TextToken::with_width(&hyphenated_string, hyphen_str_width) };
+		else { TextToken::with_width(&hyphenated_string, hyphen_str_width) };
 		// Return the token and index
 		(new_token, index)
 	}
