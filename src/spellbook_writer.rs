@@ -547,8 +547,8 @@ impl <'a> SpellbookWriter<'a>
 					// Zero the bullet flag to signal that a bullet list isn't being currently processed anymore
 					in_bullet_list = false;
 				}
-				// If this paragraph is right after a table (table flag still set), zero the table flag
-				if in_table { in_table = false; }
+				// Zero the table flag
+				in_table = false;
 				// Set the x position to be 0 or 1 tab amounts from the left side of the text box
 				// 0 tab amounts for the first paragraph (to match the Player's Handbook formatting)
 				// 1 tab amount for all other paragraphs
