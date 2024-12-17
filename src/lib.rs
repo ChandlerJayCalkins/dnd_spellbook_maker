@@ -14,9 +14,8 @@ mod tests;
 pub mod utils;
 
 // TODO
-// 1. Clean up the `write_textbox` method in `SpellbookWriter`
-// 2. Add table parsing and writing
-// 3. Clean up `spells` module and remove support for legacy spell files (since they can't be parsed anymore)
-// 4. Add all 2024 Player's Handbook spells
-// 5. Make it so spells can have stat blocks in them
-// 6. Make it so multiple tables can be placed next to each other horizontally
+// 1. Add table parsing and writing
+// 2. Clean up `spells` module and remove support for legacy spell files (since they can't be parsed anymore)
+// 3. Add all 2024 Player's Handbook spells
+// 4. Make it so spells can have stat blocks in them
+// 5. Make it so multiple tables can be placed next to each other horizontally
