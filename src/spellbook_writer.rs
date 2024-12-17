@@ -473,8 +473,13 @@ impl <'a> SpellbookWriter<'a>
 				if first_token == "-" { first_token = "•"; }
 				// Reset the x position to the left side of the text box
 				self.x = x_min;
-				self.apply_text("• ", y_min);
+				// Checks to see if the text should be applied to the next page or if a new page should be created.
+				self.check_for_new_page(y_min);
+				// Applies a bullet point to the page
+				self.apply_text("• ");
+				// Calculate the width that the rest of the text in the bullet point will have to fit inside
 				let width = x_max - x_reset;
+				// Get lines of the rest of the text in this bullet point
 				self.get_textbox_lines(rest_of_paragraph, width, width)
 			}
 			else
@@ -517,7 +522,7 @@ impl <'a> SpellbookWriter<'a>
 						let current_font_variant = *self.current_font_variant();
 						// TODO: Add code to put in a table
 						self.parse_table(&tables[table_index], x_min, x_max, y_min, y_max);
-						self.apply_text(first_token, y_min);
+						self.apply_text(first_token);
 						// Reset the text type and font variant to what they were before the table
 						self.set_current_text_type(current_text_type);
 						self.set_current_font_variant(current_font_variant);
@@ -550,8 +555,10 @@ impl <'a> SpellbookWriter<'a>
 				self.x = x_min + current_tab_amount;
 				// Set the paragraph flag
 				in_paragraph = true;
+				// Get the lines of text in this paragraph
 				self.get_textbox_lines(paragraph, x_max - self.x, x_max - x_reset)
 			};
+			// Apply the lines of text of this paragraph to the spellbook
 			self.apply_text_lines(&lines, x_reset, y_min);
 			// Make it so all paragraphs after the first get moved down a newline amount before being processed
 			paragraph_newline_scalar = 1.0;
@@ -564,6 +571,9 @@ impl <'a> SpellbookWriter<'a>
 		if in_table { self.y -= self.current_newline_amount(); }
 	}
 
+	/// Applies lines to a text box so that the text is left aligned.
+	/// `x_reset` is the value that the x position gets reset to after it applies each line.
+	/// `y_min` is the minimum y value on the page.
 	fn apply_text_lines(&mut self, text_lines: &Vec<TextLine>, x_reset: f32, y_min: f32)
 	{
 		// The number of newlines to go down by before each line is printed
@@ -634,29 +644,6 @@ impl <'a> SpellbookWriter<'a>
 		}
 		// In all other cases, it's not a table tag
 		TableTagCheckResult::NotTableTag
-	}
-
-	/// For use in `write_textbox` functions. If the given font variant is different than the current one being used,
-	/// it applies the current line of text being processed, empties it, switches the current font variant to the
-	/// given one, and resets the line width to 0.
-	fn switch_font_variant(&mut self, font_variant: FontVariant, line: &mut String, line_width: &mut f32, y_min: f32)
-	{
-		// If the current font variant different than the one to switch to
-		if *self.current_font_variant() != font_variant
-		{
-			// Applies the current line of text
-			self.apply_text(line.trim_start(), y_min);
-			// Empties the line of text
-			*line = String::new();
-			// Move the cursor over by a space width of the current font type to prevent text of different font types
-			// being too close together.
-			let space_width = self.calc_text_width(SPACE);
-			self.x += space_width;
-			// Switches to the desired font variant
-			self.set_current_font_variant(font_variant);
-			// Resets the line width to 0 since the line is empty now
-			*line_width = 0.0;
-		}
 	}
 
 	/// Writes vertically and horizontally centered text into a fixed sized textbox.
@@ -1249,7 +1236,7 @@ impl <'a> SpellbookWriter<'a>
 	}
 
 	/// Applies lines of text to the spellbook so that each line is centered horizontally and all of the lines are
-	/// centered horizontally if possible.
+	/// centered vertically if possible.
 	fn apply_centered_text_lines
 	(
 		&mut self,
@@ -1295,6 +1282,10 @@ impl <'a> SpellbookWriter<'a>
 	/// Applies a single line of text to the current page in the spellbook.
 	fn apply_text_line(&mut self, line: &TextLine, y_min: f32)
 	{
+		// If the line is empty, do nothing
+		if line.is_empty() { return; }
+		// Checks to see if the text should can fit on this page or needs to move to a new page.
+		self.check_for_new_page(y_min);
 		// Keeps track of what index in the line to start at when applying tokens to the page
 		let mut last_index = 0;
 		let tokens = line.tokens();
@@ -1313,11 +1304,11 @@ impl <'a> SpellbookWriter<'a>
 						let next_line: &Vec<_> =
 						&tokens[last_index..index].iter().map(|token| token.as_spellbook_string()).collect();
 						// Join those tokens together with spaces and apply them to the page
-						self.apply_text(next_line.join(SPACE).as_str(), y_min);
+						self.apply_text(next_line.join(SPACE).as_str());
 						// If this isn't the last token in the line, apply another space to the page
 						if index < tokens.len() - 1
 						{
-							self.apply_text(SPACE, y_min);
+							self.apply_text(SPACE);
 						}
 						// Set the current font variant so the following tokens will be applied correctly
 						self.set_current_font_variant(*font_variant);
@@ -1332,17 +1323,15 @@ impl <'a> SpellbookWriter<'a>
 		let next_line: &Vec<_> =
 		&tokens[last_index..].iter().map(|token| token.as_spellbook_string()).collect();
 		// Join those tokens together withs spaces and apply them to the page
-		self.apply_text(next_line.join(SPACE).as_str(), y_min);
+		self.apply_text(next_line.join(SPACE).as_str());
 	}
 
 	/// Writes a line of text to a page.
 	/// Moves to a new page / creates a new page if the text is below a certain y value.
-	fn apply_text(&mut self, text: &str, y_min: f32)
+	fn apply_text(&mut self, text: &str)
 	{
 		// If there is no text to apply, do nothing
 		if text.is_empty() { return; }
-		// Checks to see if the text should be applied to the next page or if a new page should be created.
-		self.check_for_new_page(y_min);
 		// Create a new text section on the page
 		self.layers[self.current_page_index].begin_text_section();
 		// Set the text cursor to the current x and y position of the text
