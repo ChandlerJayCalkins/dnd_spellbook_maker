@@ -1465,6 +1465,20 @@ impl <'a> SpellbookWriter<'a>
 		calc_text_width(text, self.current_size_data(), self.current_font_scale(), self.current_scalar())
 	}
 
+	/// Calculates the height of a certain number of lines of text using the current state of this object's font data
+	/// field.
+	fn calc_text_height(&self, lines: usize) -> f32
+	{
+		calc_text_height
+		(
+			self.current_size_data(),
+			self.current_font_scale(),
+			self.current_scalar(),
+			self.current_newline_amount(),
+			lines
+		)
+	}
+
 	/// Calculates the text width of a page number.
 	fn calc_page_number_width(&self, page_number_text: &str) -> f32
 	{

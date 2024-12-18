@@ -1054,3 +1054,25 @@ pub fn calc_text_width(text: &str, font_size_data: &Font, font_scale: &Scale, fo
 		.unwrap_or(0.0);
 	width * font_scalar
 }
+
+/// Calculates the height of some text based on given font data.
+pub fn calc_text_height
+(
+	font_size_data: &Font,
+	font_scale: &Scale,
+	font_scalar: f32,
+	newline_amount: f32,
+	lines: usize
+)
+-> f32
+{
+	// If there are no lines, return 0 for the height
+	if lines == 0 { return 0.0; }
+	// Calculate the amount of space every newline takes up
+	let newlines_height = ((lines - 1) as f32) * newline_amount;
+	// Calculate the height of a the lower half and the upper half of a line of text in this font
+	let v_metrics = font_size_data.v_metrics(*font_scale);
+	let line_height = (v_metrics.ascent - v_metrics.descent) * font_scalar;
+	// Return the amount of space the newlines take up plus the space a single line takes up
+	newlines_height + line_height
+}
