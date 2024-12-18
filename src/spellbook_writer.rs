@@ -516,16 +516,9 @@ impl <'a> SpellbookWriter<'a>
 						paragraph_newline_scalar = 1.0;
 						// Reset the x position to the left side of the textbox
 						self.x = x_min;
-						// Store the current text type and font variant being used so they can be reset to
-						// what they were before the table
-						let current_text_type = *self.current_text_type();
-						let current_font_variant = *self.current_font_variant();
 						// TODO: Add code to put in a table
 						self.parse_table(&tables[table_index], x_min, x_max, y_min, y_max);
 						self.apply_text(first_token);
-						// Reset the text type and font variant to what they were before the table
-						self.set_current_text_type(current_text_type);
-						self.set_current_font_variant(current_font_variant);
 						// Skip the token loop below and move to the next paragraph
 						continue;
 					},
@@ -666,6 +659,8 @@ impl <'a> SpellbookWriter<'a>
 	/// Parses a table and applies it to the spellbook.
 	fn parse_table(&mut self, table: &spells::Table, x_min: f32, x_max: f32, y_min: f32, y_max: f32)
 	{
+		let starting_text_type = *self.current_text_type();
+		let starting_font_variant = *self.current_font_variant();
 		// Set the text type to table body mode
 		self.set_current_text_type(TextType::TableBody);
 		// Get the width of the widest cell in each column
@@ -681,13 +676,29 @@ impl <'a> SpellbookWriter<'a>
 		let column_label_lines =
 		self.get_table_row_lines(&table.column_labels, &column_width_data, FontVariant::Bold);
 		// Split each cell in the table into lines that will fit within the column each cell is in
-		let cell_lines = self.get_table_lines(&table.cells, &column_width_data);
+		let cell_lines = self.get_table_cells_lines(&table.cells, &column_width_data);
+		// Calculate the height of the column labels plus the margin space below it
+		let labels_height = if column_label_lines.len() > 0
+		{
+			self.calc_table_row_height(&column_label_lines) + if cell_lines.len() > 0
+			{ self.table_vertical_cell_margin() } else { 0.0 }
+		}
+		else { 0.0 };
+		// Calculate the height of the each row in the table
+		let row_heights = self.calc_table_row_heights(&cell_lines);
 		// Change the text type and font variant to be in table title mode
 		self.set_current_text_type(TextType::TableTitle);
 		self.set_current_font_variant(FontVariant::Bold);
 		// Split the table title into lines that will fit on the page
 		let total_width = x_max - x_min;
 		let title_lines = self.get_textbox_lines(&table.title, total_width, total_width);
+		// Reset font settings in case it changed in the middle of the title
+		self.set_current_text_type(TextType::TableTitle);
+		self.set_current_font_variant(FontVariant::Bold);
+		// Calculate the height of the title text (if there is any)
+		let title_height =
+		if title_lines.len() > 0 { self.calc_text_height(title_lines.len()) + self.current_newline_amount() }
+		else { 0.0 };
 		// TODO
 		// 1. Calculate title height (determines entire table height)
 		// 1. Calculate height of each row (determines row color lines height and vertical placement of single line
@@ -696,6 +707,8 @@ impl <'a> SpellbookWriter<'a>
 		// 3. Apply title
 		// 4. Apply color lines
 		// 5. Apply table
+		self.set_current_text_type(starting_text_type);
+		self.set_current_font_variant(starting_font_variant);
 	}
 
 	/// Gets the widths of the widest cells in each column and returns those widths along with the index of the
@@ -857,7 +870,7 @@ impl <'a> SpellbookWriter<'a>
 
 	/// Takes a 2D vec of cells from a table and the widths of each column in the table, divides each cell into
 	/// lines, and returns a 3D vec of those lines for each cell along with the width of each line.
-	fn get_table_lines(&mut self, cells: &Vec<Vec<String>>, column_width_data: &Vec<(f32, bool)>)
+	fn get_table_cells_lines(&mut self, cells: &Vec<Vec<String>>, column_width_data: &Vec<(f32, bool)>)
 	-> Vec<Vec<Vec<TextLine>>>
 	{
 		// Create the vec of lines to be returned along with their widths
@@ -905,6 +918,31 @@ impl <'a> SpellbookWriter<'a>
 		}
 		// Return the cell lines in this row
 		lines
+	}
+
+	/// Calculates the height of each row in a table and returns the height for each of those rows.
+	fn calc_table_row_heights(&self, cells: &Vec<Vec<Vec<TextLine>>>) -> Vec<f32>
+	{
+		// Keeps track of the height of each row
+		let mut row_heights = Vec::with_capacity(cells.len());
+		// Add the height of each row to the return vec
+		for row in cells
+		{
+			row_heights.push(self.calc_table_row_height(row));
+		}
+		row_heights
+	}
+
+	/// Calculates the height of a row of cells in a table.
+	fn calc_table_row_height(&self, row: &Vec<Vec<TextLine>>) -> f32
+	{
+		// Returns the height of the tallest cell in the row
+		let mut max_height: f32 = 0.0;
+		for cell in row
+		{
+			max_height = max_height.max(self.calc_text_height(cell.len()));
+		}
+		max_height
 	}
 
 	/// Takes a string along with a maximum width for lines to fit into, separates the string into lines of tokens
