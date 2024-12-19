@@ -474,7 +474,7 @@ impl <'a> SpellbookWriter<'a>
 				// Reset the x position to the left side of the text box
 				self.x = x_min;
 				// Checks to see if the text should be applied to the next page or if a new page should be created.
-				self.check_for_new_page(y_min);
+				self.check_for_new_page();
 				// Applies a bullet point to the page
 				self.apply_text("• ");
 				// Calculate the width that the rest of the text in the bullet point will have to fit inside
@@ -517,7 +517,7 @@ impl <'a> SpellbookWriter<'a>
 						// Reset the x position to the left side of the textbox
 						self.x = x_min;
 						// TODO: Add code to put in a table
-						self.parse_table(&tables[table_index], x_min, x_max, y_min, y_max);
+						self.write_table(&tables[table_index], x_min, x_max, y_min, y_max);
 						self.apply_text(first_token);
 						// Skip the token loop below and move to the next paragraph
 						continue;
@@ -584,7 +584,7 @@ impl <'a> SpellbookWriter<'a>
 			// Make it so all lines after the first will move down 1 newline amount before being applied to the page
 			newline_scalar = 1.0;
 			// Apply the line to the page
-			self.apply_text_line(line, y_min);
+			self.apply_text_line(line);
 			self.x = x_reset;
 		}
 	}
@@ -647,17 +647,27 @@ impl <'a> SpellbookWriter<'a>
 	{
 		// If either dimensional bounds overlap with each other, do nothing
 		if x_min >= x_max || y_min >= y_max { return; }
-		// Calculates the actual sizes of the horizontal and vertical dimensions of the textbox
+		// Calculates the width of the textbox to determine how many tokens can fit on each line
 		let textbox_width = x_max - x_min;
+		// Calculates the height of the textbox to determine where the text should go so it is vertically centered
 		let textbox_height = y_max - y_min;
 		// Split the text into lines that will fit horizontally within the textbox
 		let lines = self.get_textbox_lines(text, textbox_width, textbox_width);
+		// Calculate how many lines this text is going to be
+		let max_lines = (textbox_height / self.current_newline_amount()).floor() as usize;
+		// If There are more lines than can fit on the page, set the y value to the top of the textbox
+		// (text on following pages will start at the top of the entire page but stay within the horizontal
+		// boundries of the textbox)
+		if lines.len() > max_lines { self.y = y_max; }
+		// If all the lines can fit on one page, calculate what y value to start the text at so it is vertically
+		// centered in the textbox and set the y value to that
+		else { self.y = (y_max / 2.0) + (lines.len() - 1) as f32 / 2.0 * self.current_newline_amount(); }
 		// Apply the text lines to the spellbook
-		self.apply_centered_text_lines(&lines, textbox_width, textbox_height, x_min, y_min, y_max);
+		self.apply_centered_text_lines(&lines, x_min, x_max);
 	}
 
 	/// Parses a table and applies it to the spellbook.
-	fn parse_table(&mut self, table: &spells::Table, x_min: f32, x_max: f32, y_min: f32, y_max: f32)
+	fn write_table(&mut self, table: &spells::Table, x_min: f32, x_max: f32, y_min: f32, y_max: f32)
 	{
 		let starting_text_type = *self.current_text_type();
 		let starting_font_variant = *self.current_font_variant();
@@ -688,9 +698,6 @@ impl <'a> SpellbookWriter<'a>
 		// Split the table title into lines that will fit on the page
 		let total_width = x_max - x_min;
 		let title_lines = self.get_textbox_lines(&table.title, total_width, total_width);
-		// Reset font settings in case it changed in the middle of the title
-		self.set_current_text_type(TextType::TableTitle);
-		self.set_current_font_variant(FontVariant::Bold);
 		// Calculate the height of the title text (if there is any)
 		let title_height =
 		if title_lines.len() > 0 { self.calc_text_height(title_lines.len()) } else { 0.0 };
@@ -710,11 +717,22 @@ impl <'a> SpellbookWriter<'a>
 			self.make_new_page();
 			self.y = y_max;
 		}
-		self.apply_table(&title_lines, &column_label_lines, &cell_lines, &column_data, labels_height, &row_heights);
-		// TODO
-		// 1. Apply title
-		// 2. Apply color lines
-		// 3. Apply table
+		// Apply the table to the spellbook
+		self.apply_table
+		(
+			&title_lines,
+			&column_label_lines,
+			&cell_lines,
+			&column_data,
+			title_height,
+			labels_height,
+			&row_heights,
+			x_min,
+			x_max,
+			y_min,
+			y_max
+		);
+		// Reset the text type and font variant so it is the same as what it was before the table
 		self.set_current_text_type(starting_text_type);
 		self.set_current_font_variant(starting_font_variant);
 	}
@@ -953,6 +971,7 @@ impl <'a> SpellbookWriter<'a>
 		max_height
 	}
 
+	/// Applies a parsed table to the spellbook.
 	fn apply_table
 	(
 		&mut self,
@@ -960,11 +979,24 @@ impl <'a> SpellbookWriter<'a>
 		column_label_lines: &Vec<Vec<TextLine>>,
 		cell_lines: &Vec<Vec<Vec<TextLine>>>,
 		column_data: &Vec<TableColumnData>,
+		title_height: f32,
 		labels_height: f32,
-		row_heights: &Vec<f32>
+		row_heights: &Vec<f32>,
+		x_min: f32,
+		x_max: f32,
+		y_min: f32,
+		y_max: f32
 	)
 	{
-		todo!()
+		// Reset font settings in case it changed in the middle of the title
+		self.set_current_text_type(TextType::TableTitle);
+		self.set_current_font_variant(FontVariant::Bold);
+		// Write the title text to the spellbook
+		self.apply_centered_text_lines(title_lines, x_min, x_max);
+		// TODO
+		// 1. Apply color lines
+		// 2. Apply column labels
+		// 3. Apply cells
 	}
 
 	/// Takes a string along with a maximum width for lines to fit into, separates the string into lines of tokens
@@ -1295,28 +1327,16 @@ impl <'a> SpellbookWriter<'a>
 		(new_token, index)
 	}
 
-	/// Applies lines of text to the spellbook so that each line is centered horizontally and all of the lines are
-	/// centered vertically if possible.
+	/// Applies lines of text to the spellbook so that each line is centered horizontally.
 	fn apply_centered_text_lines
 	(
 		&mut self,
 		text_lines: &Vec<TextLine>,
-		textbox_width: f32,
-		textbox_height: f32,
 		x_min: f32,
-		y_min: f32,
-		y_max: f32
+		x_max: f32
 	)
 	{
-		// Calculate how many lines this text is going to be
-		let max_lines = (textbox_height / self.current_newline_amount()).floor() as usize;
-		// If There are more lines than can fit on the page, set the y value to the top of the textbox
-		// (text on following pages will start at the top of the entire page but stay within the horizontal
-		// boundries of the textbox)
-		if text_lines.len() > max_lines { self.y = y_max; }
-		// If all the lines can fit on one page, calculate what y value to start the text at so it is vertically
-		// centered in the textbox and set the y value to that
-		else { self.y = (y_max / 2.0) + (text_lines.len() - 1) as f32 / 2.0 * self.current_newline_amount(); }
+		let textbox_width = x_max - x_min;
 		// The number of newlines to go down by before each line is printed
 		// Is 0.0 for the first line (so the textbox doesn't get moved down by an extra newline)
 		// Is 1.0 for all other lines
@@ -1335,17 +1355,17 @@ impl <'a> SpellbookWriter<'a>
 			// the x value to that
 			self.x = (textbox_width / 2.0) - (line.width() / 2.0) + x_min;
 			// Apply the line to the page
-			self.apply_text_line(line, y_min);
+			self.apply_text_line(line);
 		}
 	}
 
 	/// Applies a single line of text to the current page in the spellbook.
-	fn apply_text_line(&mut self, line: &TextLine, y_min: f32)
+	fn apply_text_line(&mut self, line: &TextLine)
 	{
 		// If the line is empty, do nothing
 		if line.is_empty() { return; }
 		// Checks to see if the text should can fit on this page or needs to move to a new page.
-		self.check_for_new_page(y_min);
+		self.check_for_new_page();
 		// Keeps track of what index in the line to start at when applying tokens to the page
 		let mut last_index = 0;
 		let tokens = line.tokens();
@@ -1411,10 +1431,10 @@ impl <'a> SpellbookWriter<'a>
 	/// Checks if the current layer should move to the next page if the text y position is below given `y_min` value.
 	/// Sets the y position to the top of the page if the function moves the text to a new page.
 	/// Creates a new page if the page index goes beyond the number of layers that exist.
-	fn check_for_new_page(&mut self, y_min: f32)
+	fn check_for_new_page(&mut self)
 	{
 		// If the y level is below the bottom of where text is allowed on the page
-		if self.y < y_min
+		if self.y < self.y_min()
 		{
 			// Increase the current page index to the layer for the next page
 			self.current_page_index += 1;
