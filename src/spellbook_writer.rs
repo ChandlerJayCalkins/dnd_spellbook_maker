@@ -662,6 +662,7 @@ impl <'a> SpellbookWriter<'a>
 		let starting_text_type = *self.current_text_type();
 		let starting_font_variant = *self.current_font_variant();
 		// Set the text type to table body mode
+		// No need to set the font variant, it resets at the start processing each cell
 		self.set_current_text_type(TextType::TableBody);
 		// Get the width of the widest cell in each column
 		let max_column_widths = self.get_max_table_column_widths(&table.column_labels, &table.cells);
@@ -677,14 +678,9 @@ impl <'a> SpellbookWriter<'a>
 		self.get_table_row_lines(&table.column_labels, &column_width_data, FontVariant::Bold);
 		// Split each cell in the table into lines that will fit within the column each cell is in
 		let cell_lines = self.get_table_cells_lines(&table.cells, &column_width_data);
-		// Calculate the height of the column labels plus the margin space below it
-		let labels_height = if column_label_lines.len() > 0
-		{
-			self.calc_table_row_height(&column_label_lines) + if cell_lines.len() > 0
-			{ self.table_vertical_cell_margin() } else { 0.0 }
-		}
-		else { 0.0 };
-		// Calculate the height of the each row in the table
+		// Calculate the height of the column label row
+		let labels_height = self.calc_table_row_height(&column_label_lines);
+		// Calculate the height of the each cell row in the table
 		let row_heights = self.calc_table_row_heights(&cell_lines);
 		// Change the text type and font variant to be in table title mode
 		self.set_current_text_type(TextType::TableTitle);
@@ -697,16 +693,28 @@ impl <'a> SpellbookWriter<'a>
 		self.set_current_font_variant(FontVariant::Bold);
 		// Calculate the height of the title text (if there is any)
 		let title_height =
-		if title_lines.len() > 0 { self.calc_text_height(title_lines.len()) + self.current_newline_amount() }
-		else { 0.0 };
+		if title_lines.len() > 0 { self.calc_text_height(title_lines.len()) } else { 0.0 };
+		// Calculates the height of the whole table to see if it can fit on the current page or even on a single page
+		// Uses if-statements to add margin space between textboxes
+		let table_height =
+		title_height + if labels_height > 0.0 || cell_lines.len() > 0 { self.current_newline_amount() }
+		else { 0.0 } + labels_height + row_heights.iter().sum::<f32>() +
+		(((row_heights.len() - if labels_height > 0.0 {1} else {0}) as f32) * self.table_vertical_cell_margin());
+		// Calculate the height of the entire page to use it to see if the table / title will fit on a single page
+		let page_height = y_max - y_min;
+		// If either the entire table or just the title can fit on a single page but not this page
+		if (self.y - table_height < y_min && table_height <= page_height) ||
+		(self.y - title_height < y_min && title_height <= page_height)
+		{
+			// Make a new page
+			self.make_new_page();
+			self.y = y_max;
+		}
+		self.apply_table(&title_lines, &column_label_lines, &cell_lines, &column_data, labels_height, &row_heights);
 		// TODO
-		// 1. Calculate title height (determines entire table height)
-		// 1. Calculate height of each row (determines row color lines height and vertical placement of single line
-		// cells)
-		// 2. Calculate Entire table height (determine whether table gets place on current page or next page)
-		// 3. Apply title
-		// 4. Apply color lines
-		// 5. Apply table
+		// 1. Apply title
+		// 2. Apply color lines
+		// 3. Apply table
 		self.set_current_text_type(starting_text_type);
 		self.set_current_font_variant(starting_font_variant);
 	}
@@ -943,6 +951,20 @@ impl <'a> SpellbookWriter<'a>
 			max_height = max_height.max(self.calc_text_height(cell.len()));
 		}
 		max_height
+	}
+
+	fn apply_table
+	(
+		&mut self,
+		title_lines: &Vec<TextLine>,
+		column_label_lines: &Vec<Vec<TextLine>>,
+		cell_lines: &Vec<Vec<Vec<TextLine>>>,
+		column_data: &Vec<TableColumnData>,
+		labels_height: f32,
+		row_heights: &Vec<f32>
+	)
+	{
+		todo!()
 	}
 
 	/// Takes a string along with a maximum width for lines to fit into, separates the string into lines of tokens
