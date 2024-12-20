@@ -707,6 +707,49 @@ impl BackgroundImage
 	pub fn transform(&self) -> &ImageTransform { &self.transform }
 }
 
+/// Holds the extra data needed for making tables inside of spellbooks.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TableData
+{
+	horizontal_cell_margin: f32,
+	vertical_cell_margin: f32,
+	outer_horizontal_margin: f32,
+	outer_vertical_margin: f32,
+	off_row_color_lines_y_adjust_scalar: f32,
+	off_row_color_lines_height_scalar: f32,
+	off_row_color: Color
+}
+
+impl From<TableOptions> for TableData
+{
+	/// Allows `TableData`s to be constructed from `TableOptions`
+	fn from(options: TableOptions) -> Self
+	{
+		Self
+		{
+			horizontal_cell_margin: options.horizontal_cell_margin(),
+			vertical_cell_margin: options.vertical_cell_margin(),
+			outer_horizontal_margin: options.outer_horizontal_margin(),
+			outer_vertical_margin: options.outer_vertical_margin(),
+			off_row_color_lines_y_adjust_scalar: options.off_row_color_lines_y_adjust_scalar(),
+			off_row_color_lines_height_scalar: options.off_row_color_lines_height_scalar(),
+			off_row_color: bytes_to_color(&options.off_row_color())
+		}
+	}
+}
+
+impl TableData
+{
+	// Getters
+	pub fn horizontal_cell_margin(&self) -> f32 { self.horizontal_cell_margin }
+	pub fn vertical_cell_margin(&self) -> f32 { self.vertical_cell_margin }
+	pub fn outer_horizontal_margin(&self) -> f32 { self.outer_horizontal_margin }
+	pub fn outer_vertical_margin(&self) -> f32 { self.outer_vertical_margin }
+	pub fn off_row_color_lines_y_adjust_scalar(&self) -> f32 { self.off_row_color_lines_y_adjust_scalar }
+	pub fn off_row_color_lines_height_scalar(&self) -> f32 { self.off_row_color_lines_height_scalar }
+	pub fn off_row_color(&self) -> &Color { &self.off_row_color }
+}
+
 /// Used for returning the result of whether or not a token was a table tag, an escaped table tag, or neither.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TableTagCheckResult

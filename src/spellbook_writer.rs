@@ -53,7 +53,7 @@ pub struct SpellbookWriter<'a>
 	page_size_data: PageSizeData,
 	page_number_data: Option<PageNumberData<'a>>,
 	background: Option<BackgroundImage>,
-	table_options: TableOptions,
+	table_data: TableData,
 	// Stored here so the width of various types of spaces doesn't need to be continually recalculated
 	space_widths: SpaceWidths,
 	// Regex patterns are stored since they consume lots of runtime being reconstructed continutally
@@ -196,6 +196,7 @@ impl <'a> SpellbookWriter<'a>
 		};
 		// Calculate the width of each variation of a space character
 		let space_widths = SpaceWidths::new(&font_data);
+		let table_data = TableData::from(table_options);
 		// Create a regex pattern for escaped font tags (font tags preceeded by backslashes)
 		// Ex: "\<r>", "\\\<bi>", "\\<i>", etc.
 		// Use this regex pattern to remove the first backslash from escaped font tags so that font tags are allowed
@@ -246,7 +247,7 @@ impl <'a> SpellbookWriter<'a>
 			page_number_data: page_number_data,
 			background: background,
 			space_widths: space_widths,
-			table_options: table_options,
+			table_data: table_data,
 			escaped_font_tag_regex: escaped_font_tag_regex,
 			table_tag_regex: table_tag_regex,
 			backslashes_regex: backslashes_regex,
@@ -764,22 +765,24 @@ impl <'a> SpellbookWriter<'a>
 			{
 				// Set the font variant to regular for the start of each cell
 				self.set_current_font_variant(FontVariant::Regular);
-				// Calculate the width of the cell (font switches included)
-				let column_width = self.get_textbox_lines
+				// Get a text line of this cell (or none if its empty)
+				let cell_lines = self.get_textbox_lines
 				(
 					&cells[row_index][column_index],
 					f32::INFINITY,
 					f32::INFINITY
-				)[0].width();
+				);
+				// Calculate the width of the cell (taking font switches into account) or use 0 if its empty
+				let cell_width = if cell_lines.len() > 0 { cell_lines[0].width() } else { 0.0 };
 				// If a max width for this column already exists
 				if column_index < column_widths.len()
 				{
 					// Replace the max width of this column with this cell's width if its bigger than the current max
 					// width of this column
-					column_widths[column_index].1 = column_widths[column_index].1.max(column_width);
+					column_widths[column_index].1 = column_widths[column_index].1.max(cell_width);
 				}
 				// If this is a jagged table and a width hasn't been added for this column yet, push this width
-				else { column_widths.push((column_index, column_width)); }
+				else { column_widths.push((column_index, cell_width)); }
 			}
 		}
 		// Return the column widths and their associated indexes
@@ -993,10 +996,141 @@ impl <'a> SpellbookWriter<'a>
 		self.set_current_font_variant(FontVariant::Bold);
 		// Write the title text to the spellbook
 		self.apply_centered_text_lines(title_lines, x_min, x_max);
+		// If there are no table cells or column labels, do nothing else
+		if cell_lines.len() < 1 && column_label_lines.len() < 1 { return; }
+		// Move the y position down from the title to the top of the table
+		self.y -= self.current_newline_amount();
+		// Go into table body text mode
+		self.set_current_text_type(TextType::TableBody);
+		// Save the current page index and y value so they can be reset after the color lines are applied
+		let starting_page_index = self.current_page_index();
+		let starting_y = self.y;
+		// Apply the off row color lines
+		self.apply_table_color_lines(labels_height, row_heights, x_min, x_max, y_min, y_max);
+		// Set the page index and y value back to what they were at the top of the table
+		// self.current_page_index = starting_page_index;
+		// self.y = starting_y;
 		// TODO
 		// 1. Apply color lines
 		// 2. Apply column labels
 		// 3. Apply cells
+	}
+
+	/// Applies off row color lines in a table to the spellbook.
+	fn apply_table_color_lines
+	(
+		&mut self,
+		labels_height: f32,
+		row_heights: &Vec<f32>,
+		x_min: f32,
+		x_max: f32,
+		y_min: f32,
+		y_max: f32
+	)
+	{
+		// Keeps track of whether the current row is an off row or not
+		let mut off_row = false;
+		if labels_height > 0.0
+		{
+			self.move_past_empty_table_space(labels_height, y_min, y_max);
+			off_row = true;
+		}
+		// Loop through each row height and apply a color line if that row is an off row
+		for row_height in row_heights
+		{
+			// If the current row is an off row, apply a color line
+			if off_row
+			{
+				// Calculate the height of the color line
+				let mut color_line_height = *row_height + self.table_vertical_cell_margin();
+				// If the color line is too big to fit on the page
+				while self.y - color_line_height < y_min
+				{
+					// Calculate the height that is about to be consumed from the color line
+					let height = self.y - y_min;
+					// If the text can fit but the line can't
+					if self.y - color_line_height + self.table_vertical_cell_margin() >= y_min
+					{
+						// Get rid of the extra bottom part of the line
+						color_line_height = height;
+						break;
+					}
+					// Move the y position down to the vertical center of the color line
+					self.y -= height / 2.0;
+					// Apply the color line to the page
+					self.apply_table_color_line(height, x_min, x_max);
+					// Remove the amount of height that was just applied from the remaining height of color line
+					// that still needs to be applied
+					color_line_height -= height;
+					// Go to a new page
+					self.y = y_min - 1.0;
+					self.check_for_new_page();
+					self.y = y_max;
+				}
+				// Move the y position down to the vertical center of the color line
+				let half_line_height = color_line_height / 2.0;
+				self.y -= half_line_height;
+				// Apply the color line to the page
+				self.apply_table_color_line(color_line_height, x_min, x_max);
+				// Move the y position down to the bottom of the color line
+				self.y -= half_line_height;
+			}
+			// If it's not an off row, move past the space to line up the next color line
+			else { self.move_past_empty_table_space(*row_height, y_min, y_max); }
+			// Flip the off row flag for the next row
+			off_row = !off_row;
+		}
+	}
+
+	/// Moves past space in a table that does not have a color line.
+	fn move_past_empty_table_space(&mut self, space: f32, y_min: f32, y_max: f32)
+	{
+		// Keeps track of the amount of space to pass remaining
+		let mut remaining_space = space + self.table_vertical_cell_margin();
+		// If there is more space to pass over than what will fit on the current page
+		while self.y - remaining_space < y_min
+		{
+			// Calculate the amount of space to skip through the rest of this page
+			let height = self.y - y_min;
+			// If the text that will go in the space will fit but the margin space won't
+			if self.y - remaining_space + self.table_vertical_cell_margin() >= y_min
+			{
+				// Remove the margin space
+				remaining_space = height;
+				break;
+			}
+			// Subtract the amount of space that was passed on this page from the reamining total
+			remaining_space -= height;
+			// Move to a new page
+			self.y = y_min - 1.0;
+			self.check_for_new_page();
+			self.y = y_max;
+		}
+		// Move the y value down by the amount of space that was left to pass
+		self.y -= remaining_space;
+	}
+
+	/// Applies a single table color line to the table.
+	fn apply_table_color_line(&mut self, line_height: f32, x_min: f32, x_max: f32)
+	{
+		// Creates the points of each end of the line
+		let points = vec!
+		[
+			(Point::new(Mm(x_min), Mm(self.y)), false),
+			(Point::new(Mm(x_max), Mm(self.y)), false)
+		];
+		// Create the line
+		let line = Line
+		{
+			points: points,
+			is_closed: false
+		};
+		// Set the color of the line
+		self.current_layer().set_outline_color(self.table_off_row_color().clone());
+		// Set the thickness of the line
+		self.current_layer().set_outline_thickness(line_height);
+		// Apply the line to the page
+		self.current_layer().add_line(line);
 	}
 
 	/// Takes a string along with a maximum width for lines to fit into, separates the string into lines of tokens
@@ -1584,7 +1718,7 @@ impl <'a> SpellbookWriter<'a>
 	fn page_size_data(&self) -> &PageSizeData { &self.page_size_data }
 	fn page_number_data(&self) -> &Option<PageNumberData> { &self.page_number_data }
 	fn background(&self) -> &Option<BackgroundImage> { &self.background }
-	fn table_options(&self) -> &TableOptions { &self.table_options }
+	fn table_data(&self) -> &TableData { &self.table_data }
 	fn space_widths(&self) -> &SpaceWidths { &self.space_widths }
 	/// Current x position of the text
 	fn x(&self) -> &f32 { &self.x }
@@ -1807,21 +1941,21 @@ impl <'a> SpellbookWriter<'a>
 	// Table Getters
 
 	/// Space between columns in printpdf Mm.
-	fn table_horizontal_cell_margin(&self) -> f32 { self.table_options.horizontal_cell_margin() }
+	fn table_horizontal_cell_margin(&self) -> f32 { self.table_data.horizontal_cell_margin() }
 	/// Space between rows in printpdf Mm.
-	fn table_vertical_cell_margin(&self) -> f32 { self.table_options.vertical_cell_margin() }
+	fn table_vertical_cell_margin(&self) -> f32 { self.table_data.vertical_cell_margin() }
 	/// Minimum space between sides of table and sides of pages in printpdf Mm.
-	fn table_outer_horizontal_margin(&self) -> f32 { self.table_options.outer_horizontal_margin() }
+	fn table_outer_horizontal_margin(&self) -> f32 { self.table_data.outer_horizontal_margin() }
 	/// Space above and below table from other text / tables in printpdf Mm.
-	fn table_outer_vertical_margin(&self) -> f32 { self.table_options.outer_vertical_margin() }
+	fn table_outer_vertical_margin(&self) -> f32 { self.table_data.outer_vertical_margin() }
 	/// Scalar value to adjust off-row color lines to line up with the rows vertically.
 	fn table_off_row_color_lines_y_adjust_scalar(&self) -> f32
-	{ self.table_options.off_row_color_lines_y_adjust_scalar() }
+	{ self.table_data.off_row_color_lines_y_adjust_scalar() }
 	/// Scalar value to determine the height of off-row color lines.
 	fn table_off_row_color_lines_height_scalar(&self) -> f32
-	{ self.table_options.off_row_color_lines_height_scalar() }
+	{ self.table_data.off_row_color_lines_height_scalar() }
 	// RGB value of the color of the off-row color lines.
-	fn table_off_row_color(&self) -> (u8, u8, u8) { self.table_options.off_row_color() }
+	fn table_off_row_color(&self) -> &Color { self.table_data.off_row_color() }
 
 	// Space Width Getters
 
