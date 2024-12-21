@@ -5,7 +5,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 use std::fs;
-use std::{rc::Rc, cell::{RefCell, Ref}};
 use std::error::Error;
 use std::fmt;
 
@@ -1103,12 +1102,14 @@ pub fn calc_text_height
 (
 	font_size_data: &Font,
 	font_scale: &Scale,
-	font_scalar: f32,
+	font_size: f32,
 	newline_amount: f32,
 	lines: usize
 )
 -> f32
 {
+	// Calculate the value to scale the height of a single line of text by
+	let font_scalar = font_size / 1000.0;
 	// If there are no lines, return 0 for the height
 	if lines == 0 { return 0.0; }
 	// Calculate the amount of space every newline takes up

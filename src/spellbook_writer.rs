@@ -4,13 +4,10 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-use std::fs;
-use std::cell::Ref;
 use std::error::Error;
 use std::ops::Range;
 
 extern crate image;
-use rusttype::point;
 use printpdf::
 {
 	PdfDocumentReference,
@@ -18,7 +15,6 @@ use printpdf::
 	PdfLayerReference,
 	IndirectFontRef,
 	Color,
-	Rgb,
 	Point,
 	Line,
 	PdfPageIndex,
@@ -282,10 +278,10 @@ impl <'a> SpellbookWriter<'a>
 	}
 
 	/// Turns the current page into a title page with the given title.
-	fn make_title_page(&mut self, title: &str)
+	fn make_title_page(&mut self, mut title: &str)
 	{
 		// Use the default spellbook title if none was given
-		if title.is_empty() { let title = DEFAULT_SPELLBOOK_TITLE; }
+		if title.is_empty() { title = DEFAULT_SPELLBOOK_TITLE; }
 		// Create bookmark for title page
 		self.doc.add_bookmark(TITLE_PAGE_NAME, self.pages[self.current_page_index]);
 		// Adds a background image to the page (if they are desired)
@@ -485,8 +481,11 @@ impl <'a> SpellbookWriter<'a>
 			}
 			else
 			{
+				// Determine whether the first token in this paragraph is a table tag or not
 				match self.table_tag_check(first_token, tables.len())
 				{
+					// If the first token is a table tag, apply a table to the page and ignore following tokens in
+					// this paragraph
 					TableTagCheckResult::TableTag(table_index) =>
 					{
 						// If another table was not being processed before, move the y position down an extra
@@ -512,18 +511,19 @@ impl <'a> SpellbookWriter<'a>
 						}
 						// Zero the paragraph flag
 						in_paragraph = false;
-						// Make it so all paragraphs after the first get moved down a newline amount before
-						// being processed
-						paragraph_newline_scalar = 1.0;
+						// Make it so the next paragraph after this doesn't get moved down an extra newline since
+						// tables move the y position down the correct amount already
+						paragraph_newline_scalar = 0.0;
 						// Reset the x position to the left side of the textbox
 						self.x = x_min;
 						// TODO: Add code to put in a table
 						self.write_table(&tables[table_index], x_min, x_max, y_min, y_max);
-						self.apply_text(first_token);
 						// Skip the token loop below and move to the next paragraph
 						continue;
 					},
+					// If this is an escaped table tag, remove the first backslash
 					TableTagCheckResult::EscapedTableTag => first_token = &first_token[1..],
+					// If this is not a table tag, do nothing
 					_ => ()
 				}
 				// If this is a normal text paragraph
@@ -553,7 +553,7 @@ impl <'a> SpellbookWriter<'a>
 				self.get_textbox_lines(paragraph, x_max - self.x, x_max - x_reset)
 			};
 			// Apply the lines of text of this paragraph to the spellbook
-			self.apply_text_lines(&lines, x_reset, y_min);
+			self.apply_text_lines(&lines, x_reset);
 			// Make it so all paragraphs after the first get moved down a newline amount before being processed
 			paragraph_newline_scalar = 1.0;
 			// If this was a paragraph, set the current tab amount to be the normal tab amount so all paragraphs
@@ -563,31 +563,6 @@ impl <'a> SpellbookWriter<'a>
 		// If a table was the last thing that was applied to the page, move down an extra newline amount to keep
 		// whatever comes next more separated from the table (to match the Player's Handbook formatting)
 		if in_table { self.y -= self.current_newline_amount(); }
-	}
-
-	/// Applies lines to a text box so that the text is left aligned.
-	/// `x_reset` is the value that the x position gets reset to after it applies each line.
-	/// `y_min` is the minimum y value on the page.
-	fn apply_text_lines(&mut self, text_lines: &Vec<TextLine>, x_reset: f32, y_min: f32)
-	{
-		// The number of newlines to go down by before each line is printed
-		// Is 0.0 for the first line (so the textbox doesn't get moved down by an extra newline)
-		// Is 1.0 for all other lines
-		let mut newline_scalar = 0.0;
-		// Loop through each line to apply it to the document
-		for line in text_lines
-		{
-			if line.is_empty() { continue; }
-			// Move the y position down by 0 or 1 newline amounts
-			// 0 newlines for the first line (so the textbox doesn't get moved down by an extra newline)
-			// 1 newline for all other lines
-			self.y -= newline_scalar * self.current_newline_amount();
-			// Make it so all lines after the first will move down 1 newline amount before being applied to the page
-			newline_scalar = 1.0;
-			// Apply the line to the page
-			self.apply_text_line(line);
-			self.x = x_reset;
-		}
 	}
 
 	/// Returns whether a token is a table tag, an escaped table tag, or neither. Takes a token and the number of
@@ -725,13 +700,11 @@ impl <'a> SpellbookWriter<'a>
 			&column_label_lines,
 			&cell_lines,
 			&column_data,
-			title_height,
 			labels_height,
 			&row_heights,
 			x_min,
 			x_max,
-			y_min,
-			y_max
+			y_min
 		);
 		// Reset the text type and font variant so it is the same as what it was before the table
 		self.set_current_text_type(starting_text_type);
@@ -982,13 +955,11 @@ impl <'a> SpellbookWriter<'a>
 		column_label_lines: &Vec<Vec<TextLine>>,
 		cell_lines: &Vec<Vec<Vec<TextLine>>>,
 		column_data: &Vec<TableColumnData>,
-		title_height: f32,
 		labels_height: f32,
 		row_heights: &Vec<f32>,
 		x_min: f32,
 		x_max: f32,
-		y_min: f32,
-		y_max: f32
+		y_min: f32
 	)
 	{
 		// Reset font settings in case it changed in the middle of the title
@@ -999,21 +970,19 @@ impl <'a> SpellbookWriter<'a>
 		// If there are no table cells or column labels, do nothing else
 		if cell_lines.len() < 1 && column_label_lines.len() < 1 { return; }
 		// Move the y position down from the title to the top of the table
-		self.y -= self.current_newline_amount();
+		self.y -= self.table_vertical_cell_margin();
 		// Go into table body text mode
 		self.set_current_text_type(TextType::TableBody);
 		// Save the current page index and y value so they can be reset after the color lines are applied
 		let starting_page_index = self.current_page_index();
 		let starting_y = self.y;
 		// Apply the off row color lines
-		self.apply_table_color_lines(labels_height, row_heights, x_min, x_max, y_min, y_max);
+		self.apply_table_color_lines(labels_height, row_heights, x_min, x_max, y_min);
 		// Set the page index and y value back to what they were at the top of the table
-		// self.current_page_index = starting_page_index;
-		// self.y = starting_y;
-		// TODO
-		// 1. Apply color lines
-		// 2. Apply column labels
-		// 3. Apply cells
+		self.current_page_index = starting_page_index;
+		self.y = starting_y;
+		// Apply the text inside the cells to the spellbook
+		self.apply_table_cells(column_label_lines, cell_lines, column_data);
 	}
 
 	/// Applies off row color lines in a table to the spellbook.
@@ -1024,15 +993,16 @@ impl <'a> SpellbookWriter<'a>
 		row_heights: &Vec<f32>,
 		x_min: f32,
 		x_max: f32,
-		y_min: f32,
-		y_max: f32
+		y_min: f32
 	)
 	{
+		// self.y += self.table_vertical_cell_margin();
+		self.y += 5.7;
 		// Keeps track of whether the current row is an off row or not
 		let mut off_row = false;
 		if labels_height > 0.0
 		{
-			self.move_past_empty_table_space(labels_height, y_min, y_max);
+			self.move_past_empty_table_space(labels_height, y_min);
 			off_row = true;
 		}
 		// Loop through each row height and apply a color line if that row is an off row
@@ -1063,9 +1033,8 @@ impl <'a> SpellbookWriter<'a>
 					// that still needs to be applied
 					color_line_height -= height;
 					// Go to a new page
-					self.y = y_min - 1.0;
-					self.check_for_new_page();
-					self.y = y_max;
+					self.move_to_new_page();
+					self.y += 5.7;
 				}
 				// Move the y position down to the vertical center of the color line
 				let half_line_height = color_line_height / 2.0;
@@ -1074,17 +1043,20 @@ impl <'a> SpellbookWriter<'a>
 				self.apply_table_color_line(color_line_height, x_min, x_max);
 				// Move the y position down to the bottom of the color line
 				self.y -= half_line_height;
+				// self.y -= color_line_height;
 			}
 			// If it's not an off row, move past the space to line up the next color line
-			else { self.move_past_empty_table_space(*row_height, y_min, y_max); }
+			else { self.move_past_empty_table_space(*row_height, y_min); }
 			// Flip the off row flag for the next row
 			off_row = !off_row;
 		}
 	}
 
 	/// Moves past space in a table that does not have a color line.
-	fn move_past_empty_table_space(&mut self, space: f32, y_min: f32, y_max: f32)
+	fn move_past_empty_table_space(&mut self, space: f32, y_min: f32)
 	{
+		// If there is no space to move past, do nothing
+		if space == 0.0 { return; }
 		// Keeps track of the amount of space to pass remaining
 		let mut remaining_space = space + self.table_vertical_cell_margin();
 		// If there is more space to pass over than what will fit on the current page
@@ -1102,9 +1074,7 @@ impl <'a> SpellbookWriter<'a>
 			// Subtract the amount of space that was passed on this page from the reamining total
 			remaining_space -= height;
 			// Move to a new page
-			self.y = y_min - 1.0;
-			self.check_for_new_page();
-			self.y = y_max;
+			self.move_to_new_page();
 		}
 		// Move the y value down by the amount of space that was left to pass
 		self.y -= remaining_space;
@@ -1128,9 +1098,133 @@ impl <'a> SpellbookWriter<'a>
 		// Set the color of the line
 		self.current_layer().set_outline_color(self.table_off_row_color().clone());
 		// Set the thickness of the line
-		self.current_layer().set_outline_thickness(line_height);
+		self.current_layer().set_outline_thickness(line_height * self.table_off_row_color_lines_height_scalar());
 		// Apply the line to the page
 		self.current_layer().add_line(line);
+	}
+
+	/// Applies the text within the cells of a table to the spellbook.
+	fn apply_table_cells
+	(
+		&mut self,
+		column_label_lines: &Vec<Vec<TextLine>>,
+		cell_lines: &Vec<Vec<Vec<TextLine>>>,
+		column_data: &Vec<TableColumnData>
+	)
+	{
+		// Makes it so the first line doesn't move down at all at the start
+		let mut row_vertical_adjuster = 0.0;
+		// If there are column labels
+		if column_label_lines.len() > 0
+		{
+			// Apply the column labels to the document
+			self.apply_table_row(column_label_lines, column_data, FontVariant::Bold);
+			// Make it so the next row moves down at the start
+			row_vertical_adjuster = self.table_vertical_cell_margin();
+		}
+		// Loop through each row to apply it
+		for row in cell_lines
+		{
+			// Move down a cell margin (unless this is the first row)
+			self.y -= row_vertical_adjuster;
+			// Make it so all future rows will move down at the start
+			row_vertical_adjuster = self.table_vertical_cell_margin();
+			// Apply to the document
+			self.apply_table_row(&row, column_data, FontVariant::Regular);
+		}
+		// Move the y position down below the table
+		self.y -= self.table_outer_vertical_margin();
+	}
+
+	/// Applies a row of cells from a table to the spellbook.
+	fn apply_table_row
+	(
+		&mut self,
+		row: &Vec<Vec<TextLine>>,
+		column_data: &Vec<TableColumnData>,
+		starting_font_variant: FontVariant
+	)
+	{
+		// Saves the current page index and y position so each cell can reset to it so it can start its text at the
+		// top of the row
+		let row_start_page_index = self.current_page_index;
+		let row_start_y = self.y;
+		// Keeps track of the page and y position of where the row ends so it can be set to there after all the cells
+		// have been applied
+		let mut row_end_page_index = self.current_page_index;
+		let mut row_end_y = self.y;
+		// Loop through each cell to apply them
+		for i in 0..row.len()
+		{
+			// Reset the font variant for this row
+			self.set_current_font_variant(starting_font_variant);
+			// Apply the text in this cell to the document
+			self.apply_table_cell(&row[i], &column_data[i]);
+			// If this cell ended on a new page no cell in this row has been to before
+			if self.current_page_index > row_end_page_index
+			{
+				// Set this position to where the end of the row is
+				row_end_page_index = self.current_page_index;
+				row_end_y = self.y;
+			}
+			// If this cell ended on the same page as the previous longest cell
+			else if self.current_page_index == row_end_page_index
+			{
+				// Set the end of row y position to the greater of the two y positions between the previous end
+				// position and the current y position
+				row_end_y = row_end_y.min(self.y);
+			}
+			// Reset the page and y position back to the start of the row for the next cell
+			self.current_page_index = row_start_page_index;
+			self.y = row_start_y;
+		}
+		// Set the page and y position to the end of the row for the next row
+		self.current_page_index = row_end_page_index;
+		self.y = row_end_y;
+	}
+
+	/// Applies a single cell from a table to the spellbook.
+	fn apply_table_cell(&mut self, cell: &Vec<TextLine>, column_data: &TableColumnData)
+	{
+		// If the column this cell is in is a centered text column
+		if column_data.centered
+		{
+			// Write this cell's text to the document in a centered textbox
+			self.apply_centered_text_lines(cell, column_data.x_min, column_data.x_max);
+		}
+		else
+		{
+			// Set the x position to the left side of the cell
+			self.x = column_data.x_min;
+			// Write this cell's text to the document in a left-aligned textbox
+			self.apply_text_lines(cell, column_data.x_min);
+		}
+	}
+
+	
+	/// Applies lines to a text box so that the text is left aligned.
+	/// `x_reset` is the value that the x position gets reset to after it applies each line.
+	/// `y_min` is the minimum y value on the page.
+	fn apply_text_lines(&mut self, text_lines: &Vec<TextLine>, x_reset: f32)
+	{
+		// The number of newlines to go down by before each line is printed
+		// Is 0.0 for the first line (so the textbox doesn't get moved down by an extra newline)
+		// Is 1.0 for all other lines
+		let mut newline_scalar = 0.0;
+		// Loop through each line to apply it to the document
+		for line in text_lines
+		{
+			if line.is_empty() { continue; }
+			// Move the y position down by 0 or 1 newline amounts
+			// 0 newlines for the first line (so the textbox doesn't get moved down by an extra newline)
+			// 1 newline for all other lines
+			self.y -= newline_scalar * self.current_newline_amount();
+			// Make it so all lines after the first will move down 1 newline amount before being applied to the page
+			newline_scalar = 1.0;
+			// Apply the line to the page
+			self.apply_text_line(line);
+			self.x = x_reset;
+		}
 	}
 
 	/// Takes a string along with a maximum width for lines to fit into, separates the string into lines of tokens
@@ -1508,7 +1602,7 @@ impl <'a> SpellbookWriter<'a>
 		{
 			match &tokens[index]
 			{
-				// If the current token is a font tag
+				// If the current token is a font tag, apply previous text and switch font
 				Token::FontTag(font_variant) =>
 				{
 					// If the font tag is different than the current font
@@ -1530,7 +1624,7 @@ impl <'a> SpellbookWriter<'a>
 						last_index = index + 1;
 					}
 				},
-				Token::Text(text) => ()
+				Token::Text(_) => ()
 			}
 		}
 		// Get a vec of strings of all the previous tokens
@@ -1540,47 +1634,28 @@ impl <'a> SpellbookWriter<'a>
 		self.apply_text(next_line.join(SPACE).as_str());
 	}
 
-	/// Writes a line of text to a page.
-	/// Moves to a new page / creates a new page if the text is below a certain y value.
-	fn apply_text(&mut self, text: &str)
-	{
-		// If there is no text to apply, do nothing
-		if text.is_empty() { return; }
-		// Create a new text section on the page
-		self.layers[self.current_page_index].begin_text_section();
-		// Set the text cursor to the current x and y position of the text
-		self.layers[self.current_page_index].set_text_cursor(Mm(self.x), Mm(self.y));
-		// Set the font and font size of the text
-		self.layers[self.current_page_index].set_font(self.current_font_ref(), self.current_font_size());
-		// Set the text color
-		self.layers[self.current_page_index].set_fill_color(self.current_text_color().clone());
-		// Write the text to the page
-		self.layers[self.current_page_index].write_text(text, self.current_font_ref());
-		// End the text section on the page
-		self.layers[self.current_page_index].end_text_section();
-		// Move the x position to be at the end of the newly applied line
-		self.x += self.calc_text_width(&text);
-	}
-
 	/// Checks if the current layer should move to the next page if the text y position is below given `y_min` value.
 	/// Sets the y position to the top of the page if the function moves the text to a new page.
 	/// Creates a new page if the page index goes beyond the number of layers that exist.
 	fn check_for_new_page(&mut self)
 	{
-		// If the y level is below the bottom of where text is allowed on the page
-		if self.y < self.y_min()
+		// If the y level is below the bottom of where text is allowed on the page, go to a new page
+		if self.y < self.y_min() { self.move_to_new_page(); }
+	}
+
+	// Move to a new page. Sets the y position to the top of the page and creates a new page if needed.
+	fn move_to_new_page(&mut self)
+	{
+		// Increase the current page index to the layer for the next page
+		self.current_page_index += 1;
+		// If the index is beyond the number of layers in the document
+		if self.current_page_index >= self.layers.len()
 		{
-			// Increase the current page index to the layer for the next page
-			self.current_page_index += 1;
-			// If the index is beyond the number of layers in the document
-			if self.current_page_index >= self.layers.len()
-			{
-				// Create a new page
-				self.make_new_page();
-			}
-			// Move the y position of the text to the top of the page
-			self.y = self.y_max();
+			// Create a new page
+			self.make_new_page();
 		}
+		// Move the y position of the text to the top of the page
+		self.y = self.y_max();
 	}
 
 	/// Adds a new page to the pdf document, including the background image and page number if options for those were
@@ -1673,6 +1748,28 @@ impl <'a> SpellbookWriter<'a>
 		};
 	}
 
+	/// Writes a line of text to a page.
+	/// Moves to a new page / creates a new page if the text is below a certain y value.
+	fn apply_text(&mut self, text: &str)
+	{
+		// If there is no text to apply, do nothing
+		if text.is_empty() { return; }
+		// Create a new text section on the page
+		self.layers[self.current_page_index].begin_text_section();
+		// Set the text cursor to the current x and y position of the text
+		self.layers[self.current_page_index].set_text_cursor(Mm(self.x), Mm(self.y));
+		// Set the font and font size of the text
+		self.layers[self.current_page_index].set_font(self.current_font_ref(), self.current_font_size());
+		// Set the text color
+		self.layers[self.current_page_index].set_fill_color(self.current_text_color().clone());
+		// Write the text to the page
+		self.layers[self.current_page_index].write_text(text, self.current_font_ref());
+		// End the text section on the page
+		self.layers[self.current_page_index].end_text_section();
+		// Move the x position to be at the end of the newly applied line
+		self.x += self.calc_text_width(&text);
+	}
+
 	/// Calculates the width of some text using the current state of this object's font data field.
 	fn calc_text_width(&self, text: &str) -> f32
 	{
@@ -1687,7 +1784,7 @@ impl <'a> SpellbookWriter<'a>
 		(
 			self.current_size_data(),
 			self.current_font_scale(),
-			self.current_scalar(),
+			self.current_font_size(),
 			self.current_newline_amount(),
 			lines
 		)
