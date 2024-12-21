@@ -996,8 +996,8 @@ impl <'a> SpellbookWriter<'a>
 		y_min: f32
 	)
 	{
-		// self.y += self.table_vertical_cell_margin();
-		self.y += 5.7;
+		// Moves the y position by a bit when a line is applied
+		let y_adjuster = self.current_font_size() * self.table_off_row_color_lines_y_adjust_scalar();
 		// Keeps track of whether the current row is an off row or not
 		let mut off_row = false;
 		if labels_height > 0.0
@@ -1028,19 +1028,18 @@ impl <'a> SpellbookWriter<'a>
 					// Move the y position down to the vertical center of the color line
 					self.y -= height / 2.0;
 					// Apply the color line to the page
-					self.apply_table_color_line(height, x_min, x_max);
+					self.apply_table_color_line(height, x_min, x_max, y_adjuster);
 					// Remove the amount of height that was just applied from the remaining height of color line
 					// that still needs to be applied
 					color_line_height -= height;
 					// Go to a new page
 					self.move_to_new_page();
-					self.y += 5.7;
 				}
 				// Move the y position down to the vertical center of the color line
 				let half_line_height = color_line_height / 2.0;
 				self.y -= half_line_height;
 				// Apply the color line to the page
-				self.apply_table_color_line(color_line_height, x_min, x_max);
+				self.apply_table_color_line(color_line_height, x_min, x_max, y_adjuster);
 				// Move the y position down to the bottom of the color line
 				self.y -= half_line_height;
 				// self.y -= color_line_height;
@@ -1081,13 +1080,14 @@ impl <'a> SpellbookWriter<'a>
 	}
 
 	/// Applies a single table color line to the table.
-	fn apply_table_color_line(&mut self, line_height: f32, x_min: f32, x_max: f32)
+	fn apply_table_color_line(&mut self, line_height: f32, x_min: f32, x_max: f32, y_adjust: f32)
 	{
-		// Creates the points of each end of the line
+		// Creates the points of each end of the line (a bit higher than normal to compensate for all lines being a
+		// bit off vertically)
 		let points = vec!
 		[
-			(Point::new(Mm(x_min), Mm(self.y)), false),
-			(Point::new(Mm(x_max), Mm(self.y)), false)
+			(Point::new(Mm(x_min), Mm(self.y + y_adjust)), false),
+			(Point::new(Mm(x_max), Mm(self.y + y_adjust)), false)
 		];
 		// Create the line
 		let line = Line

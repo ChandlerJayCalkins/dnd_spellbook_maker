@@ -362,7 +362,7 @@ fn default_spellbook_options() ->
 		..Default::default()
 	};
 	// Parameters for table margins / padding and off-row color / scaling
-	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.1075, 2.825, (213, 209, 224))
+	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.465, 2.825, (213, 209, 224))
 		.expect("Failed to create table options.");
 	// Return all options
 	(
