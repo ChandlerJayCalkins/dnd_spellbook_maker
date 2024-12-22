@@ -1097,12 +1097,30 @@ pub fn calc_text_width(text: &str, font_size_data: &Font, font_scale: &Scale, fo
 	width * font_scalar
 }
 
+// /// Calculates the height of some text based on given font data.
+// pub fn calc_text_height
+// (
+// 	font_size_data: &Font,
+// 	font_scale: &Scale,
+// 	font_size: f32,
+// 	newline_amount: f32,
+// 	lines: usize
+// )
+// -> f32
+// {
+// 	// If there are no lines, return 0 for the height
+// 	if lines == 0 { return 0.0; }
+// 	// Calculate the amount of space every newline takes up
+// 	let newlines_height = ((lines - 1) as f32) * newline_amount;
+// 	// Calculate the height of a single line
+// 	let line_height = line_height(font_size_data, font_scale, font_size);
+// 	// Return the amount of space the newlines take up plus the space a single line takes up
+// 	newlines_height + line_height
+// }
+
 /// Calculates the height of some text based on given font data.
 pub fn calc_text_height
 (
-	font_size_data: &Font,
-	font_scale: &Scale,
-	font_size: f32,
 	newline_amount: f32,
 	lines: usize
 )
@@ -1111,11 +1129,8 @@ pub fn calc_text_height
 	// If there are no lines, return 0 for the height
 	if lines == 0 { return 0.0; }
 	// Calculate the amount of space every newline takes up
-	let newlines_height = ((lines - 1) as f32) * newline_amount;
-	// Calculate the height of a single line
-	let line_height = line_height(font_size_data, font_scale, font_size);
-	// Return the amount of space the newlines take up plus the space a single line takes up
-	newlines_height + line_height
+	let newlines_height = (lines as f32) * newline_amount;
+	newlines_height
 }
 
 /// Calculates the height of a single line of text using a certain font, scale, and size.

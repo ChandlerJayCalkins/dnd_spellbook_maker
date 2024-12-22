@@ -429,13 +429,13 @@ impl <'a> SpellbookWriter<'a>
 		// Loop through each paragraph
 		for paragraph in paragraphs
 		{
+			// If a table was just being processed, move down an extra newline amount to keep the table separated
+			// (to match the Player's Handbook Formatting)
+			if in_table { self.y -= self.table_outer_vertical_margin(); }
 			// Move the y position down by 0 or 1 newline amounts
 			// 0 newlines for the first paragraph (so the entire textbox doesn't get moved down by an extra newline)
 			// 1 newline for all other paragraphs
-			self.y -= paragraph_newline_scalar * self.current_newline_amount();
-			// If a table was just being processed, move down an extra newline amount to keep the table separated
-			// (to match the Player's Handbook Formatting)
-			if in_table { self.y -= self.current_newline_amount(); }
+			else { self.y -= paragraph_newline_scalar * self.current_newline_amount(); }
 			let (mut first_token, rest_of_paragraph) = match paragraph.split_once(char::is_whitespace)
 			{
 				Some((token_1, token_2)) => (token_1, token_2.trim()),
@@ -664,10 +664,14 @@ impl <'a> SpellbookWriter<'a>
 		self.get_table_row_lines(&table.column_labels, &column_width_data, FontVariant::Bold);
 		// Split each cell in the table into lines that will fit within the column each cell is in
 		let cell_lines = self.get_table_cells_lines(&table.cells, &column_width_data);
+		// Count the number of text lines in the column labels
+		let label_line_count = self.get_line_count_for_row(&column_label_lines);
+		// Count the number of text lines in each row in the table
+		let cell_line_counts = self.get_table_row_line_counts(&cell_lines);
 		// Calculate the height of the column label row
-		let labels_height = self.calc_table_row_height(&column_label_lines);
+		let labels_height = self.calc_text_height(label_line_count);
 		// Calculate the height of the each cell row in the table
-		let row_heights = self.calc_table_row_heights(&cell_lines);
+		let row_heights = self.calc_table_row_heights(&cell_line_counts);
 		// Change the text type and font variant to be in table title mode
 		self.set_current_text_type(TextType::TableTitle);
 		self.set_current_font_variant(FontVariant::Bold);
@@ -700,11 +704,10 @@ impl <'a> SpellbookWriter<'a>
 			&column_label_lines,
 			&cell_lines,
 			&column_data,
-			labels_height,
-			&row_heights,
+			label_line_count,
+			&cell_line_counts,
 			x_min,
-			x_max,
-			y_min
+			x_max
 		);
 		// Reset the text type and font variant so it is the same as what it was before the table
 		self.set_current_text_type(starting_text_type);
@@ -920,29 +923,37 @@ impl <'a> SpellbookWriter<'a>
 		lines
 	}
 
-	/// Calculates the height of each row in a table and returns the height for each of those rows.
-	fn calc_table_row_heights(&self, cells: &Vec<Vec<Vec<TextLine>>>) -> Vec<f32>
+	fn get_table_row_line_counts(&self, cells: &Vec<Vec<Vec<TextLine>>>) -> Vec<usize>
 	{
-		// Keeps track of the height of each row
-		let mut row_heights = Vec::with_capacity(cells.len());
-		// Add the height of each row to the return vec
+		let mut row_line_counts = Vec::with_capacity(cells.len());
 		for row in cells
 		{
-			row_heights.push(self.calc_table_row_height(row));
+			row_line_counts.push(self.get_line_count_for_row(row));
 		}
-		row_heights
+		row_line_counts
 	}
 
-	/// Calculates the height of a row of cells in a table.
-	fn calc_table_row_height(&self, row: &Vec<Vec<TextLine>>) -> f32
+	fn get_line_count_for_row(&self, row: &Vec<Vec<TextLine>>) -> usize
 	{
-		// Returns the height of the tallest cell in the row
-		let mut max_height: f32 = 0.0;
+		let mut max_lines = 0;
 		for cell in row
 		{
-			max_height = max_height.max(self.calc_text_height(cell.len()));
+			max_lines = std::cmp::max(cell.len(), max_lines);
 		}
-		max_height
+		max_lines
+	}
+
+	/// Calculates the height of each row in a table and returns the height for each of those rows.
+	fn calc_table_row_heights(&self, row_line_counts: &Vec<usize>) -> Vec<f32>
+	{
+		// Keeps track of the height of each row
+		let mut row_heights = Vec::with_capacity(row_line_counts.len());
+		// Add the height of each row to the return vec
+		for line_count in row_line_counts
+		{
+			row_heights.push(self.calc_text_height(*line_count));
+		}
+		row_heights
 	}
 
 	/// Applies a parsed table to the spellbook.
@@ -953,11 +964,10 @@ impl <'a> SpellbookWriter<'a>
 		column_label_lines: &Vec<Vec<TextLine>>,
 		cell_lines: &Vec<Vec<Vec<TextLine>>>,
 		column_data: &Vec<TableColumnData>,
-		labels_height: f32,
-		row_heights: &Vec<f32>,
+		label_line_count: usize,
+		row_line_counts: &Vec<usize>,
 		x_min: f32,
-		x_max: f32,
-		y_min: f32
+		x_max: f32
 	)
 	{
 		// If there's no column data, no nothing
@@ -979,7 +989,7 @@ impl <'a> SpellbookWriter<'a>
 		let starting_page_index = self.current_page_index();
 		let starting_y = self.y;
 		// Apply the off row color lines
-		self.apply_table_color_lines(labels_height, row_heights, color_line_x_min, color_line_x_max, y_min);
+		self.apply_table_color_lines(label_line_count, row_line_counts, color_line_x_min, color_line_x_max);
 		// Set the page index and y value back to what they were at the top of the table
 		self.current_page_index = starting_page_index;
 		self.y = starting_y;
@@ -987,105 +997,59 @@ impl <'a> SpellbookWriter<'a>
 		self.apply_table_cells(column_label_lines, cell_lines, column_data);
 	}
 
-	/// Applies off row color lines in a table to the spellbook.
 	fn apply_table_color_lines
 	(
 		&mut self,
-		labels_height: f32,
-		row_heights: &Vec<f32>,
+		label_line_count: usize,
+		row_line_counts: &Vec<usize>,
 		x_min: f32,
-		x_max: f32,
-		y_min: f32
+		x_max: f32
 	)
 	{
-		// Move the y position up above where the text will be by a little bit
-		self.y += self.table_vertical_cell_margin() / 2.0;
+		let mut off_row = false;
 		// Moves the y position by a bit when a line is applied
 		let y_adjuster = self.current_font_size() * self.table_off_row_color_lines_y_adjust_scalar();
-		// Keeps track of whether the current row is an off row or not
-		let mut off_row = false;
-		// If there are column labels, move past the space they will take up and make it so the next row will have a
-		// color line
-		if labels_height > 0.0
+		let mut newline_scalar = 0.0;
+		self.x = x_min;
+		if label_line_count > 0
 		{
-			self.move_past_empty_table_space(labels_height, y_min);
+			for _ in 0..label_line_count
+			{
+				self.y -= self.current_newline_amount() * newline_scalar;
+				newline_scalar = 1.0;
+				self.check_for_new_page();
+				println!("Down a newline");
+			}
+			self.y -= self.table_vertical_cell_margin();
+			println!("Down a cell margin");
 			off_row = true;
 		}
-		// Loop through each row height and apply a color line if that row is an off row
-		for row_height in row_heights
+		for line_count in row_line_counts
 		{
-			// If the current row is an off row, apply a color line
+			newline_scalar = 0.0;
 			if off_row
 			{
-				// Calculate the height of the color line
-				let mut color_line_height = *row_height + self.table_vertical_cell_margin();
-				// If the color line is too big to fit on the page
-				while self.y - color_line_height < y_min - self.table_vertical_cell_margin()
+				for _ in 0..*line_count
 				{
-					// Calculate the height that is about to be consumed from the color line
-					let height = self.y - y_min;
-					// If the text can fit but the line can't
-					if self.y - color_line_height >= y_min
-					{
-						// Get rid of the extra bottom part of the line
-						color_line_height = height;
-						break;
-					}
-					// Move the y position down to the vertical center of the color line
-					self.y -= height / 2.0;
-					// Apply the color line to the page
-					self.apply_table_color_line(height, x_min, x_max, y_adjuster);
-					// Remove the amount of height that was just applied from the remaining height of color line
-					// that still needs to be applied
-					color_line_height -= height;
-					// Go to a new page
-					self.move_to_new_page();
-					// Move the y position to the very top bound of the page (above the y position where text can go)
-					self.y = self.y_max();
+					self.y -= self.current_newline_amount() * newline_scalar;
+					newline_scalar = 1.0;
+					self.check_for_new_page();
+					self.apply_table_color_line(self.current_newline_amount(), x_min, x_max, y_adjuster);
+					//self.apply_text("AAAAA");
 				}
-				// Move the y position down to the vertical center of the color line
-				let half_line_height = color_line_height / 2.0;
-				self.y -= half_line_height;
-				// Apply the color line to the page
-				self.apply_table_color_line(color_line_height, x_min, x_max, y_adjuster);
-				// Move the y position down to the bottom of the color line
-				self.y -= half_line_height;
 			}
-			// If it's not an off row, move past the space to line up the next color line
-			else { self.move_past_empty_table_space(*row_height, y_min); }
-			// Flip the off row flag for the next row
+			else
+			{
+				for _ in 0..*line_count
+				{
+					self.y -= self.current_newline_amount() * newline_scalar;
+					newline_scalar = 1.0;
+					self.check_for_new_page();
+				}
+			}
+			self.y -= self.table_vertical_cell_margin();
 			off_row = !off_row;
 		}
-	}
-
-	/// Moves past space in a table that does not have a color line.
-	fn move_past_empty_table_space(&mut self, space: f32, y_min: f32)
-	{
-		// If there is no space to move past, do nothing
-		if space == 0.0 { return; }
-		// Keeps track of the amount of space to pass remaining
-		let mut remaining_space = space + self.table_vertical_cell_margin();
-		// If there is more space to pass over than what will fit on the current page
-		while self.y - remaining_space < y_min - self.table_vertical_cell_margin()
-		{
-			// Calculate the amount of space to skip through the rest of this page
-			let height = self.y - y_min;
-			// If the text that will go in the space will fit but the margin space won't
-			if self.y - remaining_space >= y_min
-			{
-				// Remove the margin space
-				remaining_space = height;
-				break;
-			}
-			// Subtract the amount of space that was passed on this page from the reamining total
-			remaining_space -= height;
-			// Move to a new page
-			self.move_to_new_page();
-			// Move the y position to the very top bound of the page (above the y position where text can go)
-			self.y = self.y_max();
-		}
-		// Move the y value down by the amount of space that was left to pass
-		self.y -= remaining_space;
 	}
 
 	/// Applies a single table color line to the table.
@@ -1791,9 +1755,6 @@ impl <'a> SpellbookWriter<'a>
 	{
 		calc_text_height
 		(
-			self.current_size_data(),
-			self.current_font_scale(),
-			self.current_font_size(),
 			self.current_newline_amount(),
 			lines
 		)
@@ -1898,9 +1859,9 @@ impl <'a> SpellbookWriter<'a>
 	/// Top
 	fn y_max(&self) -> f32 { self.page_size_data.y_max() }
 	/// The highest point text with the current font state can be on a page.
-	fn y_top(&self) -> f32 { self.y_max() - self.half_line_height() }
+	fn y_top(&self) -> f32 { self.y_max() - self.current_newline_amount() / 2.0 }
 	/// The lowest point text with the current font state can be on a page.
-	fn y_bottom(&self) -> f32 { self.y_min() + self.half_line_height() }
+	fn y_bottom(&self) -> f32 { self.y_min() + self.current_newline_amount() / 2.0  }
 	// Dimensions that text can fit inside
 	pub fn text_width(&self) -> f32 { self.page_size_data.text_width() }
 	pub fn text_height(&self) -> f32 { self.page_size_data.text_height() }

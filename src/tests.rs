@@ -344,7 +344,7 @@ fn default_spellbook_options() ->
 		table_body_color: (0, 0, 0)
 	};
 	// Parameters for determining the size of the page and the text margins on the page
-	let page_size_options = PageSizeOptions::new(210.0, 297.0, 10.0, 10.0, 10.0, 10.0)
+	let page_size_options = PageSizeOptions::new(210.0, 297.0, 10.0, 10.0, 6.0, 10.0)
 		.expect("Failed to create page size options.");
 	// Parameters for determining page number behavior
 	let page_number_options = PageNumberOptions::new
@@ -362,7 +362,7 @@ fn default_spellbook_options() ->
 		..Default::default()
 	};
 	// Parameters for table margins / padding and off-row color / scaling
-	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.13, 2.825, (213, 209, 224))
+	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.12, 4.4, (213, 209, 224))
 		.expect("Failed to create table options.");
 	// Return all options
 	(
