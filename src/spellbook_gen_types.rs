@@ -1108,15 +1108,24 @@ pub fn calc_text_height
 )
 -> f32
 {
-	// Calculate the value to scale the height of a single line of text by
-	let font_scalar = font_size / 1000.0;
 	// If there are no lines, return 0 for the height
 	if lines == 0 { return 0.0; }
 	// Calculate the amount of space every newline takes up
 	let newlines_height = ((lines - 1) as f32) * newline_amount;
+	// Calculate the height of a single line
+	let line_height = line_height(font_size_data, font_scale, font_size);
+	// Return the amount of space the newlines take up plus the space a single line takes up
+	newlines_height + line_height
+}
+
+/// Calculates the height of a single line of text using a certain font, scale, and size.
+pub fn line_height(font_size_data: &Font, font_scale: &Scale, font_size: f32) -> f32
+{
+	// Calculate the value to scale the height of a single line of text by
+	let font_scalar = font_size / 1000.0;
 	// Calculate the height of a the lower half and the upper half of a line of text in this font
 	let v_metrics = font_size_data.v_metrics(*font_scale);
 	let line_height = (v_metrics.ascent - v_metrics.descent) * font_scalar;
-	// Return the amount of space the newlines take up plus the space a single line takes up
-	newlines_height + line_height
+	// Return the height of the line
+	line_height
 }

@@ -290,7 +290,7 @@ impl <'a> SpellbookWriter<'a>
 		let page_number_data = self.page_number_data.clone();
 		self.page_number_data = None;
 		// Write the title to the page
-		self.write_centered_textbox(title, self.x_min(), self.x_max(), self.y_min(), self.y_max());
+		self.write_centered_textbox(title, self.x_min(), self.x_max(), self.y_bottom(), self.y_top());
 		// Reset the page number data to what it was before
 		self.page_number_data = page_number_data;
 	}
@@ -304,12 +304,12 @@ impl <'a> SpellbookWriter<'a>
 		self.doc.add_bookmark(spell.name.clone(), self.pages[self.current_page_index]);
 
 		// Writes the spell name to the document
-		self.x = self.x_min();
-		self.y = self.y_max();
 		self.set_current_text_type(TextType::Header);
 		self.set_current_font_variant(FontVariant::Regular);
+		self.x = self.x_min();
+		self.y = self.y_top();
 		self.write_textbox
-		(&spell.name, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false, &spell.tables);
+		(&spell.name, self.x_min(), self.x_max(), self.y_bottom(), self.y_top(), false, &spell.tables);
 
 		// Writes the level and school of the spell to the document
 		self.y -= self.current_newline_amount();
@@ -321,8 +321,8 @@ impl <'a> SpellbookWriter<'a>
 			&spell.get_level_school_text(),
 			self.x_min(),
 			self.x_max(),
-			self.y_min(),
-			self.y_max(),
+			self.y_bottom(),
+			self.y_top(),
 			false,
 			&spell.tables
 		);
@@ -333,7 +333,7 @@ impl <'a> SpellbookWriter<'a>
 		self.set_current_font_variant(FontVariant::Bold);
 		let casting_time = format!("Casting Time: <r> {}", spell.get_casting_time_text());
 		self.write_textbox
-		(&casting_time, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false, &spell.tables);
+		(&casting_time, self.x_min(), self.x_max(), self.y_bottom(), self.y_top(), false, &spell.tables);
 
 		// Writes the range to the document
 		self.y -= self.font_data.current_newline_amount();
@@ -341,7 +341,7 @@ impl <'a> SpellbookWriter<'a>
 		self.set_current_font_variant(FontVariant::Bold);
 		let range = format!("Range: <r> {}", spell.range.to_string());
 		self.write_textbox
-		(&range, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false, &spell.tables);
+		(&range, self.x_min(), self.x_max(), self.y_bottom(), self.y_top(), false, &spell.tables);
 
 		// Writes the components to the document
 		self.y -= self.font_data.current_newline_amount();
@@ -349,7 +349,7 @@ impl <'a> SpellbookWriter<'a>
 		self.set_current_font_variant(FontVariant::Bold);
 		let components = format!("Components: <r> {}", spell.get_component_string());
 		self.write_textbox
-		(&components, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false, &spell.tables);
+		(&components, self.x_min(), self.x_max(), self.y_bottom(), self.y_top(), false, &spell.tables);
 
 		// Writes the duration to the document
 		self.y -= self.font_data.current_newline_amount();
@@ -357,14 +357,14 @@ impl <'a> SpellbookWriter<'a>
 		self.set_current_font_variant(FontVariant::Bold);
 		let duration = format!("Duration: <r> {}", &spell.duration.to_string());
 		self.write_textbox
-		(&duration, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false, &spell.tables);
+		(&duration, self.x_min(), self.x_max(), self.y_bottom(), self.y_top(), false, &spell.tables);
 		
 		// Writes the description to the document
 		self.y -= self.font_data.get_newline_amount_for(TextType::Header);
 		self.x = self.x_min();
 		self.set_current_font_variant(FontVariant::Regular);
 		self.write_textbox
-		(&spell.description, self.x_min(), self.x_max(), self.y_min(), self.y_max(), false, &spell.tables);
+		(&spell.description, self.x_min(), self.x_max(), self.y_bottom(), self.y_top(), false, &spell.tables);
 
 		// Writes the upcast description to the document if there is one
 		if let Some(upcast_description) = &spell.upcast_description
@@ -374,7 +374,7 @@ impl <'a> SpellbookWriter<'a>
 			self.set_current_font_variant(FontVariant::BoldItalic);
 			let upcast_description = format!("Using a Higher-Level Spell Slot. <r> {}", &upcast_description);
 			self.write_textbox
-			(&upcast_description, self.x_min(), self.x_max(), self.y_min(), self.y_max(), true, &spell.tables);
+			(&upcast_description, self.x_min(), self.x_max(), self.y_bottom(), self.y_top(), true, &spell.tables);
 		}
 	}
 
@@ -653,7 +653,7 @@ impl <'a> SpellbookWriter<'a>
 		// Get the width of the widest cell in each column
 		let max_column_widths = self.get_max_table_column_widths(&table.column_labels, &table.cells);
 		// Calculate and assign widths to each column (as well as whether each column is centered or not)
-		let column_width_data = self.get_table_column_width_data(&max_column_widths, x_min, x_max, y_min, y_max);
+		let column_width_data = self.get_table_column_width_data(&max_column_widths, x_min, x_max);
 		// Calculate the width of the entire table
 		let table_width = self.get_table_width(&column_width_data);
 		// Get a vec of all data about columns needed for writing the table to the spellbook (computes x_min and
@@ -769,9 +769,7 @@ impl <'a> SpellbookWriter<'a>
 		&self,
 		max_column_widths: &Vec<(usize, f32)>,
 		x_min: f32,
-		x_max: f32,
-		y_min: f32,
-		y_max: f32
+		x_max: f32
 	)
 	-> Vec<(f32, bool)>
 	{
@@ -789,7 +787,7 @@ impl <'a> SpellbookWriter<'a>
 		let mut sorted_max_widths = max_column_widths.clone();
 		sorted_max_widths.sort_by(|(_, a), (_, b)| a.partial_cmp(&b).expect(format!
 		(
-			"Failed to compare 2 `f32`s in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::get_column_widths`: {} and {}",
+			"Failed to compare 2 `f32`s in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::get_column_width_data`: {} and {}",
 			a, b
 		).as_str()));
 		// Calculate the maximum width of a table within the given x and y boundries along with the outer margin
@@ -962,6 +960,10 @@ impl <'a> SpellbookWriter<'a>
 		y_min: f32
 	)
 	{
+		// If there's no column data, no nothing
+		if column_data.len() < 1 { return; }
+		let color_line_x_min = column_data[0].x_min - self.table_outer_horizontal_margin();
+		let color_line_x_max = column_data[column_data.len() - 1].x_max + self.table_outer_horizontal_margin();
 		// Reset font settings in case it changed in the middle of the title
 		self.set_current_text_type(TextType::TableTitle);
 		self.set_current_font_variant(FontVariant::Bold);
@@ -977,7 +979,7 @@ impl <'a> SpellbookWriter<'a>
 		let starting_page_index = self.current_page_index();
 		let starting_y = self.y;
 		// Apply the off row color lines
-		self.apply_table_color_lines(labels_height, row_heights, x_min, x_max, y_min);
+		self.apply_table_color_lines(labels_height, row_heights, color_line_x_min, color_line_x_max, y_min);
 		// Set the page index and y value back to what they were at the top of the table
 		self.current_page_index = starting_page_index;
 		self.y = starting_y;
@@ -996,10 +998,14 @@ impl <'a> SpellbookWriter<'a>
 		y_min: f32
 	)
 	{
+		// Move the y position up above where the text will be by a little bit
+		self.y += self.table_vertical_cell_margin() / 2.0;
 		// Moves the y position by a bit when a line is applied
 		let y_adjuster = self.current_font_size() * self.table_off_row_color_lines_y_adjust_scalar();
 		// Keeps track of whether the current row is an off row or not
 		let mut off_row = false;
+		// If there are column labels, move past the space they will take up and make it so the next row will have a
+		// color line
 		if labels_height > 0.0
 		{
 			self.move_past_empty_table_space(labels_height, y_min);
@@ -1014,12 +1020,12 @@ impl <'a> SpellbookWriter<'a>
 				// Calculate the height of the color line
 				let mut color_line_height = *row_height + self.table_vertical_cell_margin();
 				// If the color line is too big to fit on the page
-				while self.y - color_line_height < y_min
+				while self.y - color_line_height < y_min - self.table_vertical_cell_margin()
 				{
 					// Calculate the height that is about to be consumed from the color line
 					let height = self.y - y_min;
 					// If the text can fit but the line can't
-					if self.y - color_line_height + self.table_vertical_cell_margin() >= y_min
+					if self.y - color_line_height >= y_min
 					{
 						// Get rid of the extra bottom part of the line
 						color_line_height = height;
@@ -1034,6 +1040,8 @@ impl <'a> SpellbookWriter<'a>
 					color_line_height -= height;
 					// Go to a new page
 					self.move_to_new_page();
+					// Move the y position to the very top bound of the page (above the y position where text can go)
+					self.y = self.y_max();
 				}
 				// Move the y position down to the vertical center of the color line
 				let half_line_height = color_line_height / 2.0;
@@ -1042,7 +1050,6 @@ impl <'a> SpellbookWriter<'a>
 				self.apply_table_color_line(color_line_height, x_min, x_max, y_adjuster);
 				// Move the y position down to the bottom of the color line
 				self.y -= half_line_height;
-				// self.y -= color_line_height;
 			}
 			// If it's not an off row, move past the space to line up the next color line
 			else { self.move_past_empty_table_space(*row_height, y_min); }
@@ -1059,12 +1066,12 @@ impl <'a> SpellbookWriter<'a>
 		// Keeps track of the amount of space to pass remaining
 		let mut remaining_space = space + self.table_vertical_cell_margin();
 		// If there is more space to pass over than what will fit on the current page
-		while self.y - remaining_space < y_min
+		while self.y - remaining_space < y_min - self.table_vertical_cell_margin()
 		{
 			// Calculate the amount of space to skip through the rest of this page
 			let height = self.y - y_min;
 			// If the text that will go in the space will fit but the margin space won't
-			if self.y - remaining_space + self.table_vertical_cell_margin() >= y_min
+			if self.y - remaining_space >= y_min
 			{
 				// Remove the margin space
 				remaining_space = height;
@@ -1074,6 +1081,8 @@ impl <'a> SpellbookWriter<'a>
 			remaining_space -= height;
 			// Move to a new page
 			self.move_to_new_page();
+			// Move the y position to the very top bound of the page (above the y position where text can go)
+			self.y = self.y_max();
 		}
 		// Move the y value down by the amount of space that was left to pass
 		self.y -= remaining_space;
@@ -1655,7 +1664,7 @@ impl <'a> SpellbookWriter<'a>
 			self.make_new_page();
 		}
 		// Move the y position of the text to the top of the page
-		self.y = self.y_max();
+		self.y = self.y_top();
 	}
 
 	/// Adds a new page to the pdf document, including the background image and page number if options for those were
@@ -1790,6 +1799,15 @@ impl <'a> SpellbookWriter<'a>
 		)
 	}
 
+	/// Returns half the height of a single line with the current text / font state.
+	fn half_line_height(&self) -> f32 { self.line_height() / 2.0 }
+
+	/// Returns the height of a single line with the current text / font state.
+	fn line_height(&self) -> f32
+	{
+		line_height(self.current_size_data(), self.current_font_scale(), self.current_font_size())
+	}
+
 	/// Calculates the text width of a page number.
 	fn calc_page_number_width(&self, page_number_text: &str) -> f32
 	{
@@ -1879,6 +1897,10 @@ impl <'a> SpellbookWriter<'a>
 	fn y_min(&self) -> f32 { self.page_size_data.y_min() }
 	/// Top
 	fn y_max(&self) -> f32 { self.page_size_data.y_max() }
+	/// The highest point text with the current font state can be on a page.
+	fn y_top(&self) -> f32 { self.y_max() - self.half_line_height() }
+	/// The lowest point text with the current font state can be on a page.
+	fn y_bottom(&self) -> f32 { self.y_min() + self.half_line_height() }
 	// Dimensions that text can fit inside
 	pub fn text_width(&self) -> f32 { self.page_size_data.text_width() }
 	pub fn text_height(&self) -> f32 { self.page_size_data.text_height() }
