@@ -923,6 +923,7 @@ impl <'a> SpellbookWriter<'a>
 		lines
 	}
 
+	/// Returns the number of lines in each row in a table. Used for calculating the height of a row.
 	fn get_table_row_line_counts(&self, cells: &Vec<Vec<Vec<TextLine>>>) -> Vec<usize>
 	{
 		let mut row_line_counts = Vec::with_capacity(cells.len());
@@ -933,6 +934,7 @@ impl <'a> SpellbookWriter<'a>
 		row_line_counts
 	}
 
+	/// Returns the number of lines in a row.
 	fn get_line_count_for_row(&self, row: &Vec<Vec<TextLine>>) -> usize
 	{
 		let mut max_lines = 0;
@@ -997,6 +999,7 @@ impl <'a> SpellbookWriter<'a>
 		self.apply_table_cells(column_label_lines, cell_lines, column_data);
 	}
 
+	/// Applies background color lines to every other row in a table.
 	fn apply_table_color_lines
 	(
 		&mut self,
@@ -1006,48 +1009,73 @@ impl <'a> SpellbookWriter<'a>
 		x_max: f32
 	)
 	{
+		// Keeps track of whether or not to put a line on this row (true to put a line)
 		let mut off_row = false;
 		// Moves the y position by a bit when a line is applied
 		let y_adjuster = self.current_font_size() * self.table_off_row_color_lines_y_adjust_scalar();
+		// Makes the y position move down each time a new line is being traversed
+		// Makes it so the y position doesn't go down on the first line but goes down every row after that
 		let mut newline_scalar = 0.0;
-		self.x = x_min;
+		// If there are column labels, loop through each line in the column labels to pass over the space it will use
 		if label_line_count > 0
 		{
+			// Move over the space that the label row will take up
+			// Note: Tried applying 1 large line for each row, but there were positioning and sizing issues that
+			// happened whenever a row spanned multiple pages.
+			// Positioning issues likely has to do with subtracting too much space from remaining space to pass over
+			// or apply color to.
 			for _ in 0..label_line_count
 			{
-				self.y -= self.current_newline_amount() * newline_scalar;
-				newline_scalar = 1.0;
+				// Check to see if a new page needs to be made
 				self.check_for_new_page();
-				println!("Down a newline");
+				// Move the y position down a newline amount (unless its the first row)
+				self.y -= self.current_newline_amount() * newline_scalar;
+				// Make it so the y position goes down every line after the first
+				newline_scalar = 1.0;
 			}
+			// Move the y position down by the amount of space between rows
 			self.y -= self.table_vertical_cell_margin();
-			println!("Down a cell margin");
+			// Make it so the next row will have a color line
 			off_row = true;
 		}
+		// Loop through each row to pass over space or apply color lines
 		for line_count in row_line_counts
 		{
+			// Make it so the first line in each row doesn't make the y position move down at all
 			newline_scalar = 0.0;
+			// If this is an off row, apply the color line
 			if off_row
 			{
+				// Loop through each line in the row and apply a color line for that line
 				for _ in 0..*line_count
 				{
-					self.y -= self.current_newline_amount() * newline_scalar;
-					newline_scalar = 1.0;
+					// Check to see if a new page needs to be made
 					self.check_for_new_page();
+					// Mve the y position down a newline amount (unless its the first row)
+					self.y -= self.current_newline_amount() * newline_scalar;
+					// Make it so the y position goes down every line after the first
+					newline_scalar = 1.0;
+					// Apply a color line
 					self.apply_table_color_line(self.current_newline_amount(), x_min, x_max, y_adjuster);
-					//self.apply_text("AAAAA");
 				}
 			}
+			// If this is not an off row, pass over the space this row will use
 			else
 			{
+				// Loop through each line in the row to pass over that space
 				for _ in 0..*line_count
 				{
-					self.y -= self.current_newline_amount() * newline_scalar;
-					newline_scalar = 1.0;
+					// Check to see if a new page needs to be made
 					self.check_for_new_page();
+					// Mve the y position down a newline amount (unless its the first row)
+					self.y -= self.current_newline_amount() * newline_scalar;
+					// Make it so the y position goes down every line after the first
+					newline_scalar = 1.0;
 				}
 			}
+			// Move the y position down by the amount of space between rows
 			self.y -= self.table_vertical_cell_margin();
+			// Make it so the next row will get the opposite of what this row got
 			off_row = !off_row;
 		}
 	}
