@@ -1,9 +1,0 @@
-name: Protection from Energy
-level: 3
-school: abjuration
-casting_time: actions 1
-range: touch
-has_v_component
-has_s_component
-duration: hours 1 concentration
-description: "For the duration, the willing creature you touch has resistance to one damage type of your choice: acid, cold, fire, lightning, or thunder."

@@ -96,9 +96,9 @@ impl std::fmt::Display for SpellFileNameReadError
 // Makes the struct officially an error
 impl Error for SpellFileNameReadError {}
 
-/// Returns a vec of spells from every spell file in a folder.
+/// Returns a vec of spells from every json spell file in a folder.
 ///
-/// It only uses files that end in the `.spell` extension.
+/// It attempts to parse every `.json` file in the folder.
 /// 
 /// # Parameters
 ///
@@ -109,49 +109,6 @@ impl Error for SpellFileNameReadError {}
 /// - `Ok` Returns a vec of spell objects that can be inputted into `generate_spellbook()`.
 /// - `Err` Returns any errors that occurred.
 pub fn get_all_spells_in_folder(folder_path: &str) -> Result<Vec<spells::Spell>, Box<dyn std::error::Error>>
-{
-	// Gets a list of every file in the folder
-	let file_paths = fs::read_dir(folder_path)?;
-	// Create a list of the spells that will be returned
-	// Can't figure out how to count the number of files in file_paths to build vec with exact capacity
-	let mut spell_list = Vec::new();
-	// Loop through each file in the folder
-	for file_path in file_paths
-	{
-		// Attempt to get a path to the file in an option
-		let file_name_option = file_path?.path();
-		// Attempt to turn the path into a string
-		let file_name = match file_name_option.to_str()
-		{
-			// If an str of the path was retrieved successfully, obtain it
-			Some(name) => name,
-			// If an str of the path could not be gotten, return an error
-			None => return Err(Box::new(SpellFileNameReadError))
-		};
-		// If the file is a spell file
-		if file_name.ends_with(".spell")
-		{
-			// Read the file, turn it into a spell, and push it to the spell_list vec
-			spell_list.push(spells::Spell::from_file(file_name)?);
-		}
-	}
-	// Return the list of spells
-	Ok(spell_list)
-}
-
-/// Returns a vec of spells from every json spell file in a folder.
-///
-/// It only uses files that end in the `.json` extension.
-/// 
-/// # Parameters
-///
-/// - `folder_path` The file path to the folder to extract every spell from.
-/// 
-/// # Output
-///
-/// - `Ok` Returns a vec of spell objects that can be inputted into `generate_spellbook()`.
-/// - `Err` Returns any errors that occurred.
-pub fn get_all_json_spells_in_folder(folder_path: &str) -> Result<Vec<spells::Spell>, Box<dyn std::error::Error>>
 {
 	// Gets a list of every file in the folder
 	let file_paths = fs::read_dir(folder_path)?;

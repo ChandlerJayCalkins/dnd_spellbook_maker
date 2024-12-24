@@ -1,9 +1,0 @@
-name: Greater Invisibility
-level: 4
-school: illusion
-casting_time: actions 1
-range: touch
-has_v_component
-has_s_component
-duration: minutes 1 concentration
-description: "You or a creature you touch becomes invisible until the spell ends. Anything the target is wearing or carrying is invisible as long as it is on the target's person."
