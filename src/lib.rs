@@ -16,4 +16,4 @@ pub mod utils;
 // TODO
 // 1. Add all 2024 Player's Handbook spells
 // 2. Make it so spells can have stat blocks in them
-// 3. Make it so multiple tables can be placed next to each other horizontally
+// 3. Make it so multiple tables / stat blocks can be placed next to each other horizontally
