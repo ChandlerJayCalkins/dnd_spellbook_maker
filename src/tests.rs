@@ -588,37 +588,3 @@ fn json_file_test(spell_list: &Vec<(spells::Spell, &str)>, compress: bool, outpu
 		assert_eq!(real_spell_bytes, test_spell_bytes);
 	}
 }
-
-// #[test]
-// // Creates json files for every existing spell file except the spells in the necronomicon and test folders
-// fn convert_to_json()
-// {
-// 	let spell_folders =
-//	[
-//		"spells/players_handbook_2014",
-//		"spells/strixhaven",
-//		"spells/tashas_cauldron_of_everything",
-//		"spells/xanathars_guide_to_everything"
-//	];
-// 	for folder in spell_folders
-// 	{
-// 		// Gets a list of every file in the folder
-// 		let file_paths = fs::read_dir(folder).unwrap();
-// 		// Loop through each file in the folder
-// 		for file_path in file_paths
-// 		{
-// 			// Attempt to get a path to the file
-// 			let file_name = file_path.unwrap().path();
-// 			let file_name = file_name.to_str().unwrap();
-// 			// If the file is a spell file
-// 			if file_name.ends_with(".spell")
-// 			{
-// 				let spell = spells::Spell::from_file(file_name).unwrap();
-// 				let mut json_file_name = String::from(file_name);
-// 				json_file_name.truncate(json_file_name.len() - 5);
-// 				json_file_name += "json";
-// 				let _ = spell.to_json_file(&json_file_name, false);
-// 			}
-// 		}
-// 	}
-// }
