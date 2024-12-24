@@ -986,7 +986,7 @@ impl <'a> SpellbookWriter<'a>
 		// If there are no table cells or column labels, do nothing else
 		if cell_lines.len() < 1 && column_label_lines.len() < 1 { return; }
 		// Move the y position down from the title to the top of the table
-		self.y -= self.table_vertical_cell_margin();
+		else if title_lines.len() > 0 { self.y -= self.table_vertical_cell_margin(); }
 		// Go into table body text mode
 		self.set_current_text_type(TextType::TableBody);
 		// Save the current page index and y value so they can be reset after the color lines are applied
@@ -1135,8 +1135,6 @@ impl <'a> SpellbookWriter<'a>
 			// Apply to the document
 			self.apply_table_row(&row, column_data, FontVariant::Regular);
 		}
-		// Move the y position down below the table
-		self.y -= self.table_outer_vertical_margin();
 	}
 
 	/// Applies a row of cells from a table to the spellbook.
