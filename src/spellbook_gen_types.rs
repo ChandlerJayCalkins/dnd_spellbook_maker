@@ -271,49 +271,49 @@ impl <'a> FontData<'a>
 	pub fn current_text_type(&self) -> &TextType { &self.current_text_type }
 	pub fn bytes(&self) -> &FontBytes { &self.font_bytes }
 	pub fn all_font_refs(&self) -> &FontRefs { &self.font_refs }
-	pub fn all_font_sizes(&self) -> &FontSizes { &self.font_sizes }
+	// pub fn all_font_sizes(&self) -> &FontSizes { &self.font_sizes }
 	pub fn all_scalars(&self) -> &FontScalars { &self.scalars }
-	pub fn all_size_data(&self) -> &FontSizeData { &self.size_data }
-	pub fn all_scales(&self) -> &FontScales { &self.scales }
-	pub fn all_spacing_options(&self) -> &SpacingOptions { &self.spacing_options }
-	pub fn all_text_colors(&self) -> &TextColors { &self.text_colors }
+	// pub fn all_size_data(&self) -> &FontSizeData { &self.size_data }
+	// pub fn all_scales(&self) -> &FontScales { &self.scales }
+	// pub fn all_spacing_options(&self) -> &SpacingOptions { &self.spacing_options }
+	// pub fn all_text_colors(&self) -> &TextColors { &self.text_colors }
 	pub fn tab_amount(&self) -> f32 { self.spacing_options.tab_amount() }
 
-	/// Returns a vec of bytes that were used to construct certain fields for a specific font variant.
-	pub fn get_bytes_for(&self, font_variant: FontVariant) -> &Vec<u8>
-	{
-		match font_variant
-		{
-			FontVariant::Regular => &self.font_bytes.regular,
-			FontVariant::Bold => &self.font_bytes.bold,
-			FontVariant::Italic => &self.font_bytes.italic,
-			FontVariant::BoldItalic => &self.font_bytes.bold_italic
-		}
-	}
+	// /// Returns a vec of bytes that were used to construct certain fields for a specific font variant.
+	// pub fn get_bytes_for(&self, font_variant: FontVariant) -> &Vec<u8>
+	// {
+	// 	match font_variant
+	// 	{
+	// 		FontVariant::Regular => &self.font_bytes.regular,
+	// 		FontVariant::Bold => &self.font_bytes.bold,
+	// 		FontVariant::Italic => &self.font_bytes.italic,
+	// 		FontVariant::BoldItalic => &self.font_bytes.bold_italic
+	// 	}
+	// }
 
-	/// Returns a vec of bytes that were used to construct certain fields for the current font variant.
-	pub fn current_bytes(&self) -> &Vec<u8>
-	{
-		match self.current_font_variant
-		{
-			FontVariant::Regular => &self.font_bytes.regular,
-			FontVariant::Bold => &self.font_bytes.bold,
-			FontVariant::Italic => &self.font_bytes.italic,
-			FontVariant::BoldItalic => &self.font_bytes.bold_italic
-		}
-	}
+	// /// Returns a vec of bytes that were used to construct certain fields for the current font variant.
+	// pub fn current_bytes(&self) -> &Vec<u8>
+	// {
+	// 	match self.current_font_variant
+	// 	{
+	// 		FontVariant::Regular => &self.font_bytes.regular,
+	// 		FontVariant::Bold => &self.font_bytes.bold,
+	// 		FontVariant::Italic => &self.font_bytes.italic,
+	// 		FontVariant::BoldItalic => &self.font_bytes.bold_italic
+	// 	}
+	// }
 
-	/// Returns the font ref for a specific font variant.
-	pub fn get_font_ref_for(&self, font_variant: FontVariant) -> &IndirectFontRef
-	{
-		match font_variant
-		{
-			FontVariant::Regular => &self.font_refs.regular,
-			FontVariant::Bold => &self.font_refs.bold,
-			FontVariant::Italic => &self.font_refs.italic,
-			FontVariant::BoldItalic => &self.font_refs.bold_italic
-		}
-	}
+	// /// Returns the font ref for a specific font variant.
+	// pub fn get_font_ref_for(&self, font_variant: FontVariant) -> &IndirectFontRef
+	// {
+	// 	match font_variant
+	// 	{
+	// 		FontVariant::Regular => &self.font_refs.regular,
+	// 		FontVariant::Bold => &self.font_refs.bold,
+	// 		FontVariant::Italic => &self.font_refs.italic,
+	// 		FontVariant::BoldItalic => &self.font_refs.bold_italic
+	// 	}
+	// }
 
 	/// Returns the font ref to the current font variant bring used.
 	pub fn current_font_ref(&self) -> &IndirectFontRef
@@ -327,18 +327,18 @@ impl <'a> FontData<'a>
 		}
 	}
 
-	/// Returns the font size of a specific text type.
-	pub fn get_font_size_for(&self, text_type: TextType) -> f32
-	{
-		match text_type
-		{
-			TextType::Title => self.font_sizes.title_font_size(),
-			TextType::Header => self.font_sizes.header_font_size(),
-			TextType::Body => self.font_sizes.body_font_size(),
-			TextType::TableTitle => self.font_sizes.table_title_font_size(),
-			TextType::TableBody => self.font_sizes.table_body_font_size()
-		}
-	}
+	// /// Returns the font size of a specific text type.
+	// pub fn get_font_size_for(&self, text_type: TextType) -> f32
+	// {
+	// 	match text_type
+	// 	{
+	// 		TextType::Title => self.font_sizes.title_font_size(),
+	// 		TextType::Header => self.font_sizes.header_font_size(),
+	// 		TextType::Body => self.font_sizes.body_font_size(),
+	// 		TextType::TableTitle => self.font_sizes.table_title_font_size(),
+	// 		TextType::TableBody => self.font_sizes.table_body_font_size()
+	// 	}
+	// }
 
 	/// Returns the font size of the current text type bring used.
 	pub fn current_font_size(&self) -> f32
@@ -453,18 +453,18 @@ impl <'a> FontData<'a>
 		}
 	}
 
-	/// Returns the font the RGB values for the font color of a specific text type.
-	pub fn get_text_color_for(&self, text_type: TextType) -> &Color
-	{
-		match text_type
-		{
-			TextType::Title => &self.text_colors.title_color,
-			TextType::Header => &self.text_colors.header_color,
-			TextType::Body => &self.text_colors.body_color,
-			TextType::TableTitle => &self.text_colors.table_title_color,
-			TextType::TableBody => &self.text_colors.table_body_color
-		}
-	}
+	// /// Returns the font the RGB values for the font color of a specific text type.
+	// pub fn get_text_color_for(&self, text_type: TextType) -> &Color
+	// {
+	// 	match text_type
+	// 	{
+	// 		TextType::Title => &self.text_colors.title_color,
+	// 		TextType::Header => &self.text_colors.header_color,
+	// 		TextType::Body => &self.text_colors.body_color,
+	// 		TextType::TableTitle => &self.text_colors.table_title_color,
+	// 		TextType::TableBody => &self.text_colors.table_body_color
+	// 	}
+	// }
 
 	/// Returns the RGB values for the font color of the current text type being used.
 	pub fn current_text_color(&self) -> &Color
@@ -542,9 +542,9 @@ impl PageSizeData
 		pub fn y_min(&self) -> f32 { self.y_min }
 		/// Top
 		pub fn y_max(&self) -> f32 { self.y_max }
-		// Dimensions that text can fit inside
-		pub fn text_width(&self) -> f32 { self.text_width }
-		pub fn text_height(&self) -> f32 { self.text_height }
+		// // Dimensions that text can fit inside
+		// pub fn text_width(&self) -> f32 { self.text_width }
+		// pub fn text_height(&self) -> f32 { self.text_height }
 }
 
 /// Holds all page number data needed for writing them into spellbooks.
@@ -646,15 +646,15 @@ impl <'a> PageNumberData<'a>
 
 	// Getters
 
-	pub fn starting_side(&self) -> HSide { self.options.starting_side() }
+	// pub fn starting_side(&self) -> HSide { self.options.starting_side() }
 	pub fn flips_sides(&self) -> bool { self.options.flips_sides() }
-	pub fn starting_num(&self) -> i64 { self.options.starting_num() }
-	pub fn font_variant(&self) -> FontVariant { self.options.font_variant() }
+	// pub fn starting_num(&self) -> i64 { self.options.starting_num() }
+	// pub fn font_variant(&self) -> FontVariant { self.options.font_variant() }
 	pub fn font_size(&self) -> f32 { self.options.font_size() }
-	pub fn newline_amount(&self) -> f32 { self.options.newline_amount() }
+	// pub fn newline_amount(&self) -> f32 { self.options.newline_amount() }
 	pub fn side_margin(&self) -> f32 { self.options.side_margin() }
 	pub fn bottom_margin(&self) -> f32 { self.options.bottom_margin() }
-	pub fn options(&self) -> &PageNumberOptions { &self.options }
+	// pub fn options(&self) -> &PageNumberOptions { &self.options }
 	pub fn current_side(&self) -> HSide { self.current_side }
 	pub fn font_ref(&self) -> &IndirectFontRef { &self.font_ref }
 	pub fn font_scalar(&self) -> f32 { self.font_scalar }
@@ -808,16 +808,16 @@ pub struct TextToken
 
 impl TextToken
 {
-	/// Creates a new text token from a string and font data. Calculates width automatically.
-	pub fn new(text: &str, font_size_data: &Font, font_scale: &Scale, font_scalar: f32) -> Self
-	{
-		let width = calc_text_width(text, font_size_data, font_scale, font_scalar);
-		Self
-		{
-			text: String::from(text),
-			width: width
-		}
-	}
+	// /// Creates a new text token from a string and font data. Calculates width automatically.
+	// pub fn new(text: &str, font_size_data: &Font, font_scale: &Scale, font_scalar: f32) -> Self
+	// {
+	// 	let width = calc_text_width(text, font_size_data, font_scale, font_scalar);
+	// 	Self
+	// 	{
+	// 		text: String::from(text),
+	// 		width: width
+	// 	}
+	// }
 
 	/// Creates a new text token from a string and a precalculated width of that string. Does not check to make sure
 	/// the given width is correct.
@@ -844,8 +844,8 @@ impl TextToken
 
 	/// Returns the text this object is holding.
 	pub fn text(&self) -> &str {&self.text.as_str() }
-	/// Returns the width of the text his object is holding.
-	pub fn width(&self) -> f32 { self.width }
+	// /// Returns the width of the text his object is holding.
+	// pub fn width(&self) -> f32 { self.width }
 }
 
 impl fmt::Display for TextToken
@@ -881,11 +881,11 @@ impl std::ops::Index<usize> for TextLine
 
 impl TextLine
 {
-	/// Creates a new empty text line.
-	pub fn new(text_type: TextType, current_font_variant: FontVariant) -> Self
-	{
-		Self::with_capacity(0, text_type, current_font_variant)
-	}
+	// /// Creates a new empty text line.
+	// pub fn new(text_type: TextType, current_font_variant: FontVariant) -> Self
+	// {
+	// 	Self::with_capacity(0, text_type, current_font_variant)
+	// }
 
 	/// Creates a new text line with a given capacity for its vec of tokens.
 	pub fn with_capacity(size: usize, text_type: TextType, current_font_variant: FontVariant) -> Self
@@ -902,18 +902,18 @@ impl TextLine
 
 	// Setters
 
-	/// Adds a token to the line.
-	pub fn add_token(&mut self, token: Token, width: f32, space_widths: &SpaceWidths)
-	{
-		match token
-		{
-			Token::Text(text) => self.add_text(text, space_widths),
-			Token::FontTag(tag) => self.add_font_tag(tag, space_widths)
-		}
-	}
+	// /// Adds a token to the line.
+	// pub fn add_token(&mut self, token: Token, space_widths: &SpaceWidths)
+	// {
+	// 	match token
+	// 	{
+	// 		Token::Text(text) => self.add_text(text, space_widths),
+	// 		Token::FontTag(tag) => self.add_font_tag(tag)
+	// 	}
+	// }
 
 	/// Adds a font tag to the line.
-	pub fn add_font_tag(&mut self, tag: FontVariant, space_widths: &SpaceWidths)
+	pub fn add_font_tag(&mut self, tag: FontVariant)
 	{
 		if self.tokens.len() > 0
 		{
@@ -945,8 +945,8 @@ impl TextLine
 		self.tokens.push(Token::Text(text));
 	}
 
-	/// Adds extra width to the line (usually used for adding the width of a space character to the line).
-	pub fn add_width(&mut self, width: f32) { self.width += width; }
+	// /// Adds extra width to the line (usually used for adding the width of a space character to the line).
+	// pub fn add_width(&mut self, width: f32) { self.width += width; }
 	/// Shrinks the capacity of the vec of tokens to fit its size.
 	pub fn shrink_to_fit(&mut self) { self.tokens.shrink_to_fit(); }
 
@@ -956,12 +956,12 @@ impl TextLine
 	pub fn tokens(&self) -> &Vec<Token> { &self.tokens }
 	/// Returns the width of the line.
 	pub fn width(&self) -> f32 { self.width }
-	/// Returns the number of tokens in the line
-	pub fn len(&self) -> usize { self.tokens.len() }
+	// /// Returns the number of tokens in the line
+	// pub fn len(&self) -> usize { self.tokens.len() }
 	/// Returns whether or not the vec of tokens in this line is empty.
 	pub fn is_empty(&self) -> bool { self.tokens.is_empty() }
-	/// Returns whether or not the vec of tokens in this line is not empty.
-	pub fn not_empty(&self) -> bool { self.tokens.len() > 0 }
+	// /// Returns whether or not the vec of tokens in this line is not empty.
+	// pub fn not_empty(&self) -> bool { self.tokens.len() > 0 }
 
 	/// Returns the space width using the font data of the previous token
 	pub fn get_last_space_width(&self, space_widths: &SpaceWidths) -> f32
@@ -1071,8 +1071,8 @@ impl SpaceWidths
 		self.widths[text_type as usize][font_variant as usize]
 	}
 
-	/// Gives all space width values in an unlabeled 2D array.
-	pub fn all_widths(&self) -> &[[f32; FONTVARIANT_VARIANTS]; TEXTTYPE_VARIANTS] { &self.widths }
+	// /// Gives all space width values in an unlabeled 2D array.
+	// pub fn all_widths(&self) -> &[[f32; FONTVARIANT_VARIANTS]; TEXTTYPE_VARIANTS] { &self.widths }
 }
 
 /// Holds data about a column in a table in a spellbook.
@@ -1112,14 +1112,14 @@ pub fn calc_text_height
 	newlines_height
 }
 
-/// Calculates the height of a single line of text using a certain font, scale, and size.
-pub fn line_height(font_size_data: &Font, font_scale: &Scale, font_size: f32) -> f32
-{
-	// Calculate the value to scale the height of a single line of text by
-	let font_scalar = font_size / 1000.0;
-	// Calculate the height of a the lower half and the upper half of a line of text in this font
-	let v_metrics = font_size_data.v_metrics(*font_scale);
-	let line_height = (v_metrics.ascent - v_metrics.descent) * font_scalar;
-	// Return the height of the line
-	line_height
-}
+// /// Calculates the height of a single line of text using a certain font, scale, and size.
+// pub fn line_height(font_size_data: &Font, font_scale: &Scale, font_size: f32) -> f32
+// {
+// 	// Calculate the value to scale the height of a single line of text by
+// 	let font_scalar = font_size / 1000.0;
+// 	// Calculate the height of a the lower half and the upper half of a line of text in this font
+// 	let v_metrics = font_size_data.v_metrics(*font_scale);
+// 	let line_height = (v_metrics.ascent - v_metrics.descent) * font_scalar;
+// 	// Return the height of the line
+// 	line_height
+// }

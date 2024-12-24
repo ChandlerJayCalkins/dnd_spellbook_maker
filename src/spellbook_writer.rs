@@ -36,6 +36,10 @@ const ITALIC_FONT_TAG: &str = "<i>";
 const BOLD_ITALIC_FONT_TAG: &str = "<bi>";
 const ITALIC_BOLD_FONT_TAG: &str = "<ib>";
 
+const DOT: &str = "•";
+const DOT_SPACE: &str = "• ";
+const DASH: &str = "-";
+
 /// All data needed to write spells to a pdf document.
 // Can't derive clone or debug unfortunately.
 pub struct SpellbookWriter<'a>
@@ -160,7 +164,7 @@ impl <'a> SpellbookWriter<'a>
 		Self::create_new_doc(title, page_size_options.width(), page_size_options.height());
 
 		// Combined data for all font options along with font references to the pdf doc
-		let mut font_data = FontData::new
+		let font_data = FontData::new
 		(
 			&doc,
 			font_paths,
@@ -427,7 +431,7 @@ impl <'a> SpellbookWriter<'a>
 		// If there is text and the x position is beyond the x_max, reset the x position to x_min and go to a new line
 		else if self.x > x_max { self.x = x_min; self.y -= self.current_newline_amount(); }
 		// Loop through each paragraph
-		for paragraph in paragraphs
+		for mut paragraph in paragraphs
 		{
 			// If a table was just being processed, move down an extra newline amount to keep the table separated
 			// (to match the Player's Handbook Formatting)
@@ -436,13 +440,13 @@ impl <'a> SpellbookWriter<'a>
 			// 0 newlines for the first paragraph (so the entire textbox doesn't get moved down by an extra newline)
 			// 1 newline for all other paragraphs
 			else { self.y -= paragraph_newline_scalar * self.current_newline_amount(); }
-			let (mut first_token, rest_of_paragraph) = match paragraph.split_once(char::is_whitespace)
+			let (first_token, rest_of_paragraph) = match paragraph.split_once(char::is_whitespace)
 			{
 				Some((token_1, token_2)) => (token_1, token_2.trim()),
 				None => (paragraph, "")
 			};
 			// If the paragraph starts with a bullet point symbol
-			let lines = if first_token == "•" || first_token == "-"
+			let lines = if first_token == DOT || first_token == DASH
 			{
 				// If this is the start of a bullet list (not currently in a bullet list and this is the first
 				// bullet point)
@@ -453,7 +457,7 @@ impl <'a> SpellbookWriter<'a>
 					// Zero the paragraph flag
 					in_paragraph = false;
 					// Set the value that the x position resets to so it lines up after the bullet point
-					x_reset = self.calc_text_width("• ") + x_min;
+					x_reset = self.calc_text_width(DOT_SPACE) + x_min;
 					// If a table was being processed before, zero the table flag and don't go down annother extra
 					// newline since that was already done above
 					if in_table { in_table = false; }
@@ -466,14 +470,12 @@ impl <'a> SpellbookWriter<'a>
 						self.y -= paragraph_newline_scalar * self.current_newline_amount();
 					}
 				}
-				// If the bullet point symbol is a dash, make it a dot
-				if first_token == "-" { first_token = "•"; }
 				// Reset the x position to the left side of the text box
 				self.x = x_min;
 				// Checks to see if the text should be applied to the next page or if a new page should be created.
 				self.check_for_new_page();
-				// Applies a bullet point to the page
-				self.apply_text("• ");
+				// Applies a bullet point to the page (using a dot even if a dash was used in the string)
+				self.apply_text(DOT_SPACE);
 				// Calculate the width that the rest of the text in the bullet point will have to fit inside
 				let width = x_max - x_reset;
 				// Get lines of the rest of the text in this bullet point
@@ -522,7 +524,7 @@ impl <'a> SpellbookWriter<'a>
 						continue;
 					},
 					// If this is an escaped table tag, remove the first backslash
-					TableTagCheckResult::EscapedTableTag => first_token = &first_token[1..],
+					TableTagCheckResult::EscapedTableTag => paragraph = &paragraph[1..],
 					// If this is not a table tag, do nothing
 					_ => ()
 				}
@@ -1261,22 +1263,22 @@ impl <'a> SpellbookWriter<'a>
 				// calculated correctly for the following tokens
 				REGULAR_FONT_TAG =>
 				{
-					line.add_font_tag(FontVariant::Regular, self.space_widths());
+					line.add_font_tag(FontVariant::Regular,);
 					self.set_current_font_variant(FontVariant::Regular);
 				},
 				BOLD_FONT_TAG =>
 				{
-					line.add_font_tag(FontVariant::Bold, self.space_widths());
+					line.add_font_tag(FontVariant::Bold,);
 					self.set_current_font_variant(FontVariant::Bold);
 				},
 				ITALIC_FONT_TAG =>
 				{
-					line.add_font_tag(FontVariant::Italic, self.space_widths());
+					line.add_font_tag(FontVariant::Italic);
 					self.set_current_font_variant(FontVariant::Italic);
 				},
 				BOLD_ITALIC_FONT_TAG | ITALIC_BOLD_FONT_TAG =>
 				{
-					line.add_font_tag(FontVariant::BoldItalic, self.space_widths());
+					line.add_font_tag(FontVariant::BoldItalic);
 					self.set_current_font_variant(FontVariant::BoldItalic);
 				},
 				// If it's not a special token, calculate its width and determine what to do from there
@@ -1284,6 +1286,8 @@ impl <'a> SpellbookWriter<'a>
 				{
 					// If the token is an escaped font tag, remove the first backslash at the start
 					if self.is_escaped_font_tag(tokens[i]) { tokens[i] = &tokens[i][1..]; }
+					// Declare a width variable that will be calculated when the tokens is hyphenated
+					#[allow(unused_assignments)]
 					let mut width = 0.0;
 					// Hyphenate the token if it's too long to fit on a line and compute its width
 					(tokens[i], width) = self.hyphenate_token
@@ -1355,12 +1359,12 @@ impl <'a> SpellbookWriter<'a>
 	}
 
 	/// Constructs and returns a text token without a precalculated width.
-	fn get_text_token(&self, token: &str, font_variant: FontVariant) -> TextToken
-	{
-		let font_size_data = self.font_data.get_size_data_for(font_variant);
-		let scalar = self.font_data.get_scalar_for(font_variant);
-		TextToken::new(token, font_size_data, self.current_font_scale(), scalar)
-	}
+	// fn get_text_token(&self, token: &str, font_variant: FontVariant) -> TextToken
+	// {
+	// 	let font_size_data = self.font_data.get_size_data_for(font_variant);
+	// 	let scalar = self.font_data.get_scalar_for(font_variant);
+	// 	TextToken::new(token, font_size_data, self.current_font_scale(), scalar)
+	// }
 
 	/// Returns whether or not a token / string is an escaped font tag (font tag with any amount of backslashes
 	/// before it).
@@ -1501,6 +1505,7 @@ impl <'a> SpellbookWriter<'a>
 	fn get_hyphen_str(&self, text: &str, token_width: f32, textbox_width: f32) -> (TextToken, usize)
 	{
 		// Keeps track of the last hyphenated part of the text that was measured
+		#[allow(unused_assignments)]
 		let mut hyphenated_string = String::new();
 		// Keeps track of the width of the hyphenated part of the text
 		let mut hyphen_str_width = token_width;
@@ -1511,14 +1516,13 @@ impl <'a> SpellbookWriter<'a>
 		let mut upper_bound = text.len();
 		// The current index being tested
 		let mut index = upper_bound / 2;
-		let mut last_index = index;
 		// Do - While loop until index and last_index are equal
 		// Binary search for the index where the text plus a hyphen at the end is as long as possible without going
 		// outside the textbox
 		while
 		{
-			// Store index in last index
-			last_index = index;
+			// Store index in last index so the loop can know when to end
+			let last_index = index;
 			// Get a string of the start of the text up to the index with a hyphen at the end
 			hyphenated_string = format!("{}-", &text[0..index]);
 			// Calculate the width of the hyphenated string
@@ -1788,14 +1792,14 @@ impl <'a> SpellbookWriter<'a>
 		)
 	}
 
-	/// Returns half the height of a single line with the current text / font state.
-	fn half_line_height(&self) -> f32 { self.line_height() / 2.0 }
+	// /// Returns half the height of a single line with the current text / font state.
+	// fn half_line_height(&self) -> f32 { self.line_height() / 2.0 }
 
-	/// Returns the height of a single line with the current text / font state.
-	fn line_height(&self) -> f32
-	{
-		line_height(self.current_size_data(), self.current_font_scale(), self.current_font_size())
-	}
+	// /// Returns the height of a single line with the current text / font state.
+	// fn line_height(&self) -> f32
+	// {
+	// 	line_height(self.current_size_data(), self.current_font_scale(), self.current_font_size())
+	// }
 
 	/// Calculates the text width of a page number.
 	fn calc_page_number_width(&self, page_number_text: &str) -> f32
@@ -1813,21 +1817,21 @@ impl <'a> SpellbookWriter<'a>
 
 	// General Field Getters
 
-	fn document(&self) -> &PdfDocumentReference { &self.doc }
-	fn layers(&self) -> &Vec<PdfLayerReference> { &self.layers }
-	fn pages(&self) -> &Vec<PdfPageIndex> { &self.pages }
+	// fn document(&self) -> &PdfDocumentReference { &self.doc }
+	// fn layers(&self) -> &Vec<PdfLayerReference> { &self.layers }
+	// fn pages(&self) -> &Vec<PdfPageIndex> { &self.pages }
 	fn current_page_index(&self) -> usize { self.current_page_index }
-	fn current_page_num(&self) -> i64 { self.current_page_num }
-	fn font_data(&self) -> &FontData { &self.font_data }
-	fn page_size_data(&self) -> &PageSizeData { &self.page_size_data }
-	fn page_number_data(&self) -> &Option<PageNumberData> { &self.page_number_data }
-	fn background(&self) -> &Option<BackgroundImage> { &self.background }
-	fn table_data(&self) -> &TableData { &self.table_data }
+	// fn current_page_num(&self) -> i64 { self.current_page_num }
+	// fn font_data(&self) -> &FontData { &self.font_data }
+	// fn page_size_data(&self) -> &PageSizeData { &self.page_size_data }
+	// fn page_number_data(&self) -> &Option<PageNumberData> { &self.page_number_data }
+	// fn background(&self) -> &Option<BackgroundImage> { &self.background }
+	// fn table_data(&self) -> &TableData { &self.table_data }
 	fn space_widths(&self) -> &SpaceWidths { &self.space_widths }
-	/// Current x position of the text
-	fn x(&self) -> &f32 { &self.x }
-	/// Current y position of the text
-	fn y(&self) -> &f32 { &self.y }
+	// /// Current x position of the text
+	// fn x(&self) -> &f32 { &self.x }
+	// /// Current y position of the text
+	// fn y(&self) -> &f32 { &self.y }
 
 	// Layer Getters
 
@@ -1842,20 +1846,20 @@ impl <'a> SpellbookWriter<'a>
 	fn current_font_variant(&self) -> &FontVariant { self.font_data.current_font_variant() }
 	/// The current type of text being written.
 	fn current_text_type(&self) -> &TextType { self.font_data.current_text_type() }
-	/// `IndirectFontRefs` for each font variant (regular, bold, italic, bold-italic).
-	fn all_font_refs(&self) -> &FontRefs { self.font_data.all_font_refs() }
-	/// Font sizes for each type of text.
-	fn all_font_sizes(&self) -> &FontSizes { self.font_data.all_font_sizes() }
-	/// Scalar values for each font variant (regular, bold, italic, bold-italic).
-	fn all_scalars(&self) -> &FontScalars { self.font_data.all_scalars() }
-	/// Size data for each font variant (regular, bold, italic, bold-italic).
-	fn all_size_data(&self) -> &FontSizeData { self.font_data.all_size_data() }
-	/// Font scale sizing data for each type of text.
-	fn all_scales(&self) -> &FontScales { self.font_data.all_scales() }
-	/// All spacing options that were originally passed to this object.
-	fn all_spacing_options(&self) -> &SpacingOptions { self.font_data.all_spacing_options() }
-	/// RGB color values for each type of text.
-	fn all_text_colors(&self) -> &TextColors { self.font_data.all_text_colors() }
+	// /// `IndirectFontRefs` for each font variant (regular, bold, italic, bold-italic).
+	// fn all_font_refs(&self) -> &FontRefs { self.font_data.all_font_refs() }
+	// /// Font sizes for each type of text.
+	// fn all_font_sizes(&self) -> &FontSizes { self.font_data.all_font_sizes() }
+	// /// Scalar values for each font variant (regular, bold, italic, bold-italic).
+	// fn all_scalars(&self) -> &FontScalars { self.font_data.all_scalars() }
+	// /// Size data for each font variant (regular, bold, italic, bold-italic).
+	// fn all_size_data(&self) -> &FontSizeData { self.font_data.all_size_data() }
+	// /// Font scale sizing data for each type of text.
+	// fn all_scales(&self) -> &FontScales { self.font_data.all_scales() }
+	// /// All spacing options that were originally passed to this object.
+	// fn all_spacing_options(&self) -> &SpacingOptions { self.font_data.all_spacing_options() }
+	// /// RGB color values for each type of text.
+	// fn all_text_colors(&self) -> &TextColors { self.font_data.all_text_colors() }
 	/// Tab size in pringpdf Mm.
 	fn tab_amount(&self) -> f32 { self.font_data.tab_amount() }
 	/// The font object for the current font variant being used.
@@ -1890,121 +1894,121 @@ impl <'a> SpellbookWriter<'a>
 	fn y_top(&self) -> f32 { self.y_max() - self.current_newline_amount() / 2.0 }
 	/// The lowest point text with the current font state can be on a page.
 	fn y_bottom(&self) -> f32 { self.y_min() + self.current_newline_amount() / 2.0  }
-	// Dimensions that text can fit inside
-	pub fn text_width(&self) -> f32 { self.page_size_data.text_width() }
-	pub fn text_height(&self) -> f32 { self.page_size_data.text_height() }
+	// // Dimensions that text can fit inside
+	// pub fn text_width(&self) -> f32 { self.page_size_data.text_width() }
+	// pub fn text_height(&self) -> f32 { self.page_size_data.text_height() }
 
 	// Page Number Getters
 
-	/// The side of the page (left or right) the page number starts on.
-	fn starting_page_number_side(&self) -> Option<HSide>
-	{
-		match &self.page_number_data
-		{
-			Some(data) => Some(data.starting_side()),
-			None => None
-		}
-	}
+	// /// The side of the page (left or right) the page number starts on.
+	// fn starting_page_number_side(&self) -> Option<HSide>
+	// {
+	// 	match &self.page_number_data
+	// 	{
+	// 		Some(data) => Some(data.starting_side()),
+	// 		None => None
+	// 	}
+	// }
 
-	/// Whether or not the page number flips sides every page.
-	fn page_number_flips_sides(&self) -> Option<bool>
-	{
-		match &self.page_number_data
-		{
-			Some(data) => Some(data.flips_sides()),
-			None => None
-		}
-	}
+	// /// Whether or not the page number flips sides every page.
+	// fn page_number_flips_sides(&self) -> Option<bool>
+	// {
+	// 	match &self.page_number_data
+	// 	{
+	// 		Some(data) => Some(data.flips_sides()),
+	// 		None => None
+	// 	}
+	// }
 
-	/// The starting page number.
-	fn starting_page_number(&self) -> Option<i64>
-	{
-		match &self.page_number_data
-		{
-			Some(data) => Some(data.starting_num()),
-			None => None
-		}
-	}
+	// /// The starting page number.
+	// fn starting_page_number(&self) -> Option<i64>
+	// {
+	// 	match &self.page_number_data
+	// 	{
+	// 		Some(data) => Some(data.starting_num()),
+	// 		None => None
+	// 	}
+	// }
 
-	/// The font variant the page numbers use.
-	fn page_number_font_variant(&self) -> Option<FontVariant>
-	{
-		match &self.page_number_data
-		{
-			Some(data) => Some(data.font_variant()),
-			None => None
-		}
-	}
+	// /// The font variant the page numbers use.
+	// fn page_number_font_variant(&self) -> Option<FontVariant>
+	// {
+	// 	match &self.page_number_data
+	// 	{
+	// 		Some(data) => Some(data.font_variant()),
+	// 		None => None
+	// 	}
+	// }
 
-	/// The font size of the page numbers.
-	fn page_number_font_size(&self) -> Option<f32>
-	{
-		match &self.page_number_data
-		{
-			Some(data) => Some(data.font_size()),
-			None => None
-		}
-	}
+	// /// The font size of the page numbers.
+	// fn page_number_font_size(&self) -> Option<f32>
+	// {
+	// 	match &self.page_number_data
+	// 	{
+	// 		Some(data) => Some(data.font_size()),
+	// 		None => None
+	// 	}
+	// }
 
-	/// The amount of space between newlines for page numbers in case of overflow.
-	fn page_number_newline_amount(&self) -> Option<f32>
-	{
-		match &self.page_number_data
-		{
-			Some(data) => Some(data.newline_amount()),
-			None => None
-		}
-	}
+	// /// The amount of space between newlines for page numbers in case of overflow.
+	// fn page_number_newline_amount(&self) -> Option<f32>
+	// {
+	// 	match &self.page_number_data
+	// 	{
+	// 		Some(data) => Some(data.newline_amount()),
+	// 		None => None
+	// 	}
+	// }
 
-	/// The amount of space between the side of the page and the page number in printpdf Mm.
-	fn page_number_side_margin(&self) -> Option<f32>
-	{
-		match &self.page_number_data
-		{
-			Some(data) => Some(data.side_margin()),
-			None => None
-		}
-	}
+	// /// The amount of space between the side of the page and the page number in printpdf Mm.
+	// fn page_number_side_margin(&self) -> Option<f32>
+	// {
+	// 	match &self.page_number_data
+	// 	{
+	// 		Some(data) => Some(data.side_margin()),
+	// 		None => None
+	// 	}
+	// }
 	
-	/// The amount of space between the bottom of the page and the page number in printpdf Mm.
-	fn page_number_bottom_margin(&self) -> Option<f32>
-	{
-		match &self.page_number_data
-		{
-			Some(data) => Some(data.bottom_margin()),
-			None => None
-		}
-	}
+	// /// The amount of space between the bottom of the page and the page number in printpdf Mm.
+	// fn page_number_bottom_margin(&self) -> Option<f32>
+	// {
+	// 	match &self.page_number_data
+	// 	{
+	// 		Some(data) => Some(data.bottom_margin()),
+	// 		None => None
+	// 	}
+	// }
 
-	/// All of the original page number options that were inputted.
-	fn page_number_options(&self) -> Option<&PageNumberOptions>
-	{
-		match &self.page_number_data
-		{
-			Some(data) => Some(data.options()),
-			None => None
-		}
-	}
+	// /// All of the original page number options that were inputted.
+	// fn page_number_options(&self) -> Option<&PageNumberOptions>
+	// {
+	// 	match &self.page_number_data
+	// 	{
+	// 		Some(data) => Some(data.options()),
+	// 		None => None
+	// 	}
+	// }
 
-	/// The current side of the page (left or right) the page number is on.
-	fn current_page_number_side(&self) -> Option<HSide>
-	{
-		match &self.page_number_data
-		{
-			Some(data) => Some(data.current_side()),
-			None => None
-		}
-	}
+	// /// The current side of the page (left or right) the page number is on.
+	// fn current_page_number_side(&self) -> Option<HSide>
+	// {
+	// 	match &self.page_number_data
+	// 	{
+	// 		Some(data) => Some(data.current_side()),
+	// 		None => None
+	// 	}
+	// }
 
-	/// Returns the font ref to the current font type bring used for page numbers.
-	fn page_number_font_ref(&self) -> Option<&IndirectFontRef>
-	{
-		match &self.page_number_data
-		{
-			Some(data) => Some(data.font_ref()),
-			None => None
-		}
-	}
+	// /// Returns the font ref to the current font type bring used for page numbers.
+	// fn page_number_font_ref(&self) -> Option<&IndirectFontRef>
+	// {
+	// 	match &self.page_number_data
+	// 	{
+	// 		Some(data) => Some(data.font_ref()),
+	// 		None => None
+	// 	}
+	// }
 
 	/// Returns the scalar value of the font type being used for page numbers.
 	fn page_number_font_scalar(&self) -> Option<f32>
@@ -2036,15 +2040,15 @@ impl <'a> SpellbookWriter<'a>
 		}
 	}
 
-	// The text color of the page number.
-	fn page_number_color(&self) -> Option<&Color>
-	{
-		match &self.page_number_data
-		{
-			Some(data) => Some(data.color()),
-			None => None
-		}
-	}
+	// /// The text color of the page number.
+	// fn page_number_color(&self) -> Option<&Color>
+	// {
+	// 	match &self.page_number_data
+	// 	{
+	// 		Some(data) => Some(data.color()),
+	// 		None => None
+	// 	}
+	// }
 
 	// Table Getters
 
@@ -2067,8 +2071,8 @@ impl <'a> SpellbookWriter<'a>
 
 	// Space Width Getters
 
-	fn get_current_space_width(&self) -> f32
-	{ self.space_widths.get_width_for(*self.current_text_type(), *self.current_font_variant()) }
+	// fn get_current_space_width(&self) -> f32
+	// { self.space_widths.get_width_for(*self.current_text_type(), *self.current_font_variant()) }
 
 	// Font Setters
 
@@ -2080,13 +2084,13 @@ impl <'a> SpellbookWriter<'a>
 
 	// Page Number Setters
 
-	/// Flips the side of the page that page numbers appear on.
-	fn flip_page_number_side(&mut self)
-	{
-		match &mut self.page_number_data
-		{
-			Some(ref mut data) => data.flip_side(),
-			None => ()
-		}
-	}
+	// /// Flips the side of the page that page numbers appear on.
+	// fn flip_page_number_side(&mut self)
+	// {
+	// 	match &mut self.page_number_data
+	// 	{
+	// 		Some(ref mut data) => data.flip_side(),
+	// 		None => ()
+	// 	}
+	// }
 }

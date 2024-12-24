@@ -2139,7 +2139,7 @@ impl Spell
 	pub fn get_level_school_text(&self) -> String
 	{
 		// Gets a string of the level and the school from the spell
-		let mut text = match &self.level
+		let text = match &self.level
 		{
 			// If the spell is a cantrip, make the school come first and then the level
 			SpellField::Controlled(Level::Cantrip) => format!("{} {}", &self.school, &self.level),
