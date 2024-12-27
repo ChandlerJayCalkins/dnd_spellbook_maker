@@ -513,7 +513,7 @@ Moving to a new paragraph only requires a newline character.
 This description
 
 ```json
-"description": "This text will appear in the first paragraph.\\nThis text will appear in the second paragraph. It can go on for a while in order to showcase line wrapping of paragraph text in this example. Here are some fun facts about D&D from The Fact Site by Jennifer Anyabuine (January 9, 2024) (https://www.thefactsite.com/dungeons-and-dragons-facts/). As of 2024, the longest running D&D campaign has been going on since 1982. The largest Dunegons & Dragons game featured 1,227 players. It only cost $2,000 to make the first Dungeons & Dragons game set. Gary Gygax's children helped him perfect Dungeons & Dragons and chose its name. Marvel made a Dungeons & Dragons cartoon.\\nThis is the text of the third paragraph.
+"description": "This text will appear in the first paragraph.\\nThis text will appear in the second paragraph. It can go on for a while in order to showcase line wrapping of paragraph text in this example. Here are some fun facts about D&D from The Fact Site by Jennifer Anyabuine (January 9, 2024) (https://www.thefactsite.com/dungeons-and-dragons-facts/). As of 2024, the longest running D&D campaign has been going on since 1982. The largest Dunegons & Dragons game featured 1,227 players. It only cost $2,000 to make the first Dungeons & Dragons game set. Gary Gygax's children helped him perfect Dungeons & Dragons and chose its name. Marvel made a Dungeons & Dragons cartoon.\\nThis is the text of the third paragraph."
 ```
 
 will look similar to this in the spell book:
