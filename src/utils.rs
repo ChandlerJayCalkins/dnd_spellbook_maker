@@ -98,7 +98,7 @@ impl Error for SpellFileNameReadError {}
 
 /// Returns a vec of spells from every json spell file in a folder.
 ///
-/// It attempts to parse every `.json` file in the folder.
+/// It attempts to parse every `.json` file in the folder into a vec of spells.
 /// 
 /// # Parameters
 ///
