@@ -125,7 +125,7 @@ fn main()
 }
 ```
 
-It is recommended to use the font files in the (fonts)[fonts] folder in this repository along with the font scalar values in this example. Different font scalar values will be needed if use different font files are used.
+It is recommended to use the font files in the (fonts)[fonts/] folder in this repository along with the font scalar values in this example. Different font scalar values will be needed if use different font files are used.
 
 See documentation to better understand this code.
 
