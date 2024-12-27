@@ -1,0 +1,84 @@
+{
+	"name": "Name",
+	"level":
+	{
+		"Controlled": "Level1"
+	},
+	"school":
+	{
+		"Controlled": "Evocation"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Dist":
+			{
+				"Feet": 120
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled": "Instant"
+	},
+	"description": "Description",
+	"upcast_description": null,
+	"tables":
+	[
+		{
+			"title": "",
+			"column_labels":
+			[
+				"d8",
+				"Damage Type"
+			],
+			"cells":
+			[
+				[
+					"1",
+					"Acid"
+				],
+				[
+					"2",
+					"Cold"
+				],
+				[
+					"3",
+					"Fire"
+				],
+				[
+					"4",
+					"Force"
+				],
+				[
+					"5",
+					"Lightning"
+				],
+				[
+					"6",
+					"Poison"
+				],
+				[
+					"7",
+					"Psychic"
+				],
+				[
+					"8",
+					"Thunder"
+				]
+			]
+		}
+	]
+}

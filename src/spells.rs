@@ -236,7 +236,7 @@ impl Distance
 	/// Returns a string of the distance in the format of "d-u" where
 	/// d is the distance value and u is the unit of measurement.
 	///
-	/// Used in displaying distances for AOEs.
+	/// Used in displaying distances for Aoe.
 	pub fn get_aoe_string(&self) -> String
 	{
 		match self
@@ -264,7 +264,7 @@ impl fmt::Display for Distance
 /// Area of Effect.
 /// The volumnetric shape in which a spell's effect(s) take place.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum AOE
+pub enum Aoe
 {
 	/// Distance defines length of line (width should be in spell description).
 	Line(Distance),
@@ -272,16 +272,18 @@ pub enum AOE
 	Cone(Distance),
 	/// Distance defines the length of the edges of the cube.
 	Cube(Distance),
-	/// Distance defines radius of sphere.
+	/// Distance defines radius of sphere (same thing functionally as emanation in game rules).
 	Sphere(Distance),
+	/// Distance defines radius of emanation (same thing functionally as emanation in game rules).
+	Emanation(Distance),
 	/// Distance defines radius of hemisphere.
 	Hemisphere(Distance),
 	/// Distances define radius and height of cylinder (respectively).
 	Cylinder(Distance, Distance),
 }
 
-// Converts AOEs into strings
-impl fmt::Display for AOE
+// Converts Aoes into strings
+impl fmt::Display for Aoe
 {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
 	{
@@ -291,6 +293,7 @@ impl fmt::Display for AOE
 			Self::Cone(l) => format!("{} cone", l.get_aoe_string()),
 			Self::Cube(l) => format!("{} cube", l.get_aoe_string()),
 			Self::Sphere(r) => format!("{} radius", r.get_aoe_string()),
+			Self::Emanation(r) => format!("{} emanation", r.get_aoe_string()),
 			Self::Hemisphere(r) => format!("{} radius hemisphere", r.get_aoe_string()),
 			Self::Cylinder(r, h) => format!("{} radius, {} height cylinder", r.get_aoe_string(), h.get_aoe_string())
 		};
@@ -302,9 +305,9 @@ impl fmt::Display for AOE
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Range
 {
-	/// The AOE option in this variant is for spells that have areas of effect that come from the spellcaster.
+	/// The Aoe option in this variant is for spells that have areas of effect that come from the spellcaster.
 	/// Ex: "Burning Hands" has a range of "Self (15-foot cone)".
-	Yourself(Option<AOE>),
+	Yourself(Option<Aoe>),
 	Touch,
 	/// This variant is for plain distance ranges like "60 feet" or "5 miles".
 	Dist(Distance),
