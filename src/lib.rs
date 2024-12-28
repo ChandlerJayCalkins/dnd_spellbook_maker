@@ -13,6 +13,9 @@ mod tests;
 
 pub mod utils;
 
+pub use spellbook_options::*;
+pub use utils::*;
+
 // TODO
 // 1. Add all 2024 Player's Handbook spells
 // 2. Make it so spells can have stat blocks in them

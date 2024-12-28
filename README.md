@@ -59,7 +59,7 @@ fn main()
 		spell_list.push(dnd_spellbook_maker::spells::Spell::from_json_file(path).unwrap());
 	}
 	// File paths to the fonts needed
-	let font_paths = FontPaths
+	let font_paths = dnd_spellbook_maker::FontPaths
 	{
 		regular: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Regular.otf"),
 		bold: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-Bold.otf"),
@@ -67,16 +67,16 @@ fn main()
 		bold_italic: String::from("fonts/TeX-Gyre-Bonum/TeX-Gyre-Bonum-BoldItalic.otf")
 	};
 	// Parameters for determining font sizes
-	let font_sizes = FontSizes::new(32.0, 24.0, 12.0, 16.0, 12.0)
+	let font_sizes = dnd_spellbook_maker::FontSizes::new(32.0, 24.0, 12.0, 16.0, 12.0)
 		.expect("Failed to create font sizes.");
 	// Scalars used to convert the size of fonts from rusttype font units to printpdf millimeters (Mm)
-	let font_scalars = FontScalars::new(0.475, 0.51, 0.48, 0.515)
+	let font_scalars = dnd_spellbook_maker::FontScalars::new(0.475, 0.51, 0.48, 0.515)
 		.expect("Failed to create font scalars.");
 	// Parameters for determining tab and newline sizes
-	let spacing_options = SpacingOptions::new(7.5, 12.0, 8.0, 5.0, 6.4, 5.0)
+	let spacing_options = dnd_spellbook_maker::SpacingOptions::new(7.5, 12.0, 8.0, 5.0, 6.4, 5.0)
 		.expect("Failed to create spacing options.");
 	// Colors for each type of text
-	let text_colors = TextColorOptions
+	let text_colors = dnd_spellbook_maker::TextColorOptions
 	{
 		title_color: (0, 0, 0),
 		header_color: (115, 26, 26),
@@ -85,30 +85,30 @@ fn main()
 		table_body_color: (0, 0, 0)
 	};
 	// Parameters for determining the size of the page and the text margins on the page
-	let page_size_options = PageSizeOptions::new(210.0, 297.0, 10.0, 10.0, 6.0, 10.0)
+	let page_size_options = dnd_spellbook_maker::PageSizeOptions::new(210.0, 297.0, 10.0, 10.0, 6.0, 10.0)
 		.expect("Failed to create page size options.");
 	// Parameters for determining page number behavior
-	let page_number_options = PageNumberOptions::new
-	(HSide::Left, false, 1, FontVariant::Regular, 12.0, 5.0, (0, 0, 0), 5.0, 4.0)
+	let page_number_options = dnd_spellbook_maker::PageNumberOptions::new
+	(dnd_spellbook_maker::HSide::Left, false, 1, dnd_spellbook_maker::FontVariant::Regular, 12.0, 5.0, (0, 0, 0), 5.0, 4.0)
 		.expect("Failed to create page number options.");
 	// File path to the background image
 	let background_path = String::from("img/parchment.jpg");
 	// Image transform data for the background image
-	let background_transform = ImageTransform
+	let background_transform = dnd_spellbook_maker::ImageTransform
 	{
-		translate_x: Some(Mm(0.0)),
-		translate_y: Some(Mm(0.0)),
+		translate_x: Some(dnd_spellbook_maker::Mm(0.0)),
+		translate_y: Some(dnd_spellbook_maker::Mm(0.0)),
 		scale_x: Some(1.95),
 		scale_y: Some(2.125),
 		..Default::default()
 	};
 	// Parameters for table margins / padding and off-row color / scaling
-	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.12, 4.4, (213, 209, 224))
+	let table_options = dnd_spellbook_maker::TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.12, 4.4, (213, 209, 224))
 		.expect("Failed to create table options.");
 	// Creates the spellbook
-	let (doc, _, _) = create_spellbook
+	let (doc, _, _) = dnd_spellbook_maker::create_spellbook
 	(
-		spellbook_name_1,
+		spellbook_name,
 		&spell_list,
 		font_paths.clone(),
 		font_sizes,
@@ -121,7 +121,7 @@ fn main()
 		table_options
 	).unwrap();
 	// Saves the spellbook to a file
-	let _ = save_spellbook(doc, "Spellbook.pdf").unwrap();
+	let _ = dnd_spellbook_maker::save_spellbook(doc, "Spellbook.pdf").unwrap();
 }
 ```
 
