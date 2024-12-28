@@ -376,7 +376,19 @@ impl <'a> SpellbookWriter<'a>
 			self.y -= self.font_data.current_newline_amount();
 			self.x = self.x_min() + self.tab_amount();
 			self.set_current_font_variant(FontVariant::BoldItalic);
-			let upcast_description = format!("Using a Higher-Level Spell Slot. <r> {}", &upcast_description);
+			// Use different text before the upcast description based on whether the spell is a cantrip or not
+			let cantrip_upcast_prefix = "Cantrip Upgrade";
+			let leveled_upcast_prefix = "Using a Higher-Level Spell Slot";
+			let upcast_prefix = match &spell.level
+			{
+				spells::SpellField::Controlled(level) => match level
+				{
+					spells::Level::Cantrip => cantrip_upcast_prefix,
+					_ => leveled_upcast_prefix
+				},
+				_ => leveled_upcast_prefix
+			};
+			let upcast_description = format!("{}. <r> {}", upcast_prefix, &upcast_description);
 			self.write_textbox
 			(&upcast_description, self.x_min(), self.x_max(), self.y_bottom(), self.y_top(), true, &spell.tables);
 		}

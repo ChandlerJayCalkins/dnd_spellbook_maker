@@ -503,8 +503,9 @@ pub struct Spell
 	///
 	/// See spell file documentation for more information (<https://github.com/ChandlerJayCalkins/dnd_spellbook_maker>).
 	pub description: String,
-	/// Optional text that describes the benefits a spell gains from being upcast
-	/// (being cast at a level higher than its base level).
+	/// Optional text that describes the benefits a spell gains from being upcast (being cast at a level higher than
+	/// its base level if it's a non-cantrip or being cast by a character higher than a certain level if its a
+	/// cantrip).
 	pub upcast_description: Option<String>,
 	/// Any tables that the spell might have in its description
 	pub tables: Vec<Table>
