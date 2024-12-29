@@ -1,12 +1,12 @@
 {
-	"name": "Name",
+	"name": "Blade Ward",
 	"level":
 	{
-		"Controlled": "Level1"
+		"Controlled": "Cantrip"
 	},
 	"school":
 	{
-		"Controlled": "Evocation"
+		"Controlled": "Abjuration"
 	},
 	"is_ritual": false,
 	"casting_time":
@@ -20,10 +20,7 @@
 	{
 		"Controlled":
 		{
-			"Dist":
-			{
-				"Feet": 120
-			}
+			"Yourself": null
 		}
 	},
 	"has_v_component": true,
@@ -33,10 +30,10 @@
 	{
 		"Controlled":
 		{
-			"Hours": [1, false]
+			"Minutes": [1, true]
 		}
 	},
-	"description": "Description",
+	"description": "Whenever a creature makes an attack roll against you before the spell ends, the attacker subtracts 1d4 from the attack roll.",
 	"upcast_description": null,
 	"tables": []
 }
