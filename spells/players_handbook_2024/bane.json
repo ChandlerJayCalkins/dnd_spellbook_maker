@@ -1,0 +1,42 @@
+{
+	"name": "Bane",
+	"level":
+	{
+		"Controlled": "Level1"
+	},
+	"school":
+	{
+		"Controlled": "Enchantment"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Dist":
+			{
+				"Feet": 30
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": "a drop of blood",
+	"duration":
+	{
+		"Controlled":
+		{
+			"Minutes": [1, true]
+		}
+	},
+	"description": "Up to three creatures of your choice that you can see within range must each make a Charisma saving throw. Whenever a target that fails this save makes an attack roll or a saving throw before the spell ends, the target must subtract 1d4 from the attack roll or save.",
+	"upcast_description": "You can target one additional creature for each spell slot level above 1.",
+	"tables": []
+}

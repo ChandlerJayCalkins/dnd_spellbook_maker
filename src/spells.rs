@@ -184,12 +184,18 @@ pub enum CastingTime
 {
 	Seconds(u16),
 	Actions(u16),
-	BonusAction,
+	/// String is the circumstance in which the bonus action can be triggered.
+	/// Leave empty for no specific circumstance.
+	/// Ex: "which you take when you or a creature within 60 feet of you falls" or
+	/// "which you take when you see a creature within 60 feet of you casting a spell".
+	///
+	/// Note: if this string is non-empty, it will come after the string "Bonus action, " on the spell page.
+	BonusAction(String),
 	/// String is the circumstance in which the reaction can be triggered.
 	/// Ex: "which you take when you or a creature within 60 feet of you falls" or
 	/// "which you take when you see a creature within 60 feet of you casting a spell".
 	///
-	/// Note: whatever you put for this, it will come after the string "1 reaction, " on the spell page.
+	/// Note: if this string is non-empty, it will come after the string "Reaction, " on the spell page.
 	Reaction(String),
 	Minutes(u16),
 	Hours(u16),
@@ -213,8 +219,16 @@ impl fmt::Display for CastingTime
 				if *t == 1 { String::from("Action") }
 				else { format!("{} actions", t) }
 			},
-			Self::BonusAction => String::from("Bonus action"),
-			Self::Reaction(e) => format!("Reaction, {}", *e),
+			Self::BonusAction(e) =>
+			{
+				if e.is_empty() { String::from("Bonus action") }
+				else { format!("Bonus action, {}", *e) }
+			},
+			Self::Reaction(e) =>
+			{
+				if e.is_empty() { String::from("Reaction") }
+				else { format!("Reaction, {}", *e) }
+			},
 			Self::Minutes(t) => get_amount_string(*t, "minute"),
 			Self::Hours(t) => get_amount_string(*t, "hour"),
 			Self::Days(t) => get_amount_string(*t, "day"),

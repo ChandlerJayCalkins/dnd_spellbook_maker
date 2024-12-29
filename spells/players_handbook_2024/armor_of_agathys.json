@@ -11,7 +11,10 @@
 	"is_ritual": false,
 	"casting_time":
 	{
-		"Controlled": "BonusAction"
+		"Controlled":
+		{
+			"BonusAction": ""
+		}
 	},
 	"range":
 	{
