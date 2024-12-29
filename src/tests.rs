@@ -69,7 +69,8 @@ fn default_spellbook_options() ->
 		..Default::default()
 	};
 	// Parameters for table margins / padding and off-row color / scaling
-	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.12, 4.4, (213, 209, 224))
+	// 2014 Player's Handbook off-row RGB: (213, 209, 224)
+	let table_options = TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.12, 4.4, (215, 223, 224))
 		.expect("Failed to create table options.");
 	// Return all options
 	(

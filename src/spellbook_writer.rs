@@ -362,21 +362,11 @@ impl <'a> SpellbookWriter<'a>
 		let duration = format!("Duration: <r> {}", &spell.duration.to_string());
 		self.write_textbox
 		(&duration, self.x_min(), self.x_max(), self.y_bottom(), self.y_top(), false, &spell.tables);
-		
-		// Writes the description to the document
-		self.y -= self.font_data.get_newline_amount_for(TextType::Header);
-		self.x = self.x_min();
-		self.set_current_font_variant(FontVariant::Regular);
-		self.write_textbox
-		(&spell.description, self.x_min(), self.x_max(), self.y_bottom(), self.y_top(), false, &spell.tables);
 
-		// Writes the upcast description to the document if there is one
-		if let Some(upcast_description) = &spell.upcast_description
+		// Get the upcast description prepared if there is one
+		let upcast_description = if let Some(upcast_description) = &spell.upcast_description
 		{
-			self.y -= self.font_data.current_newline_amount();
-			self.x = self.x_min() + self.tab_amount();
-			self.set_current_font_variant(FontVariant::BoldItalic);
-			// Use different text before the upcast description based on whether the spell is a cantrip or not
+			// Adds different text at the start based on whether the spell is a cantrip or not
 			let cantrip_upcast_prefix = "Cantrip Upgrade";
 			let leveled_upcast_prefix = "Using a Higher-Level Spell Slot";
 			let upcast_prefix = match &spell.level
@@ -388,10 +378,20 @@ impl <'a> SpellbookWriter<'a>
 				},
 				_ => leveled_upcast_prefix
 			};
-			let upcast_description = format!("{}. <r> {}", upcast_prefix, &upcast_description);
-			self.write_textbox
-			(&upcast_description, self.x_min(), self.x_max(), self.y_bottom(), self.y_top(), true, &spell.tables);
+			// Create the upcast description with a newline and font tags
+			format!("\n<bi> {}. <r> {}", upcast_prefix, &upcast_description)
 		}
+		else { String::new() };
+
+		// Add the upcast description to the end of the rest of the spell description
+		let description = format!("{}{}", &spell.description, upcast_description);
+		
+		// Writes the description to the document
+		self.y -= self.font_data.get_newline_amount_for(TextType::Header);
+		self.x = self.x_min();
+		self.set_current_font_variant(FontVariant::Regular);
+		self.write_textbox
+		(&description, self.x_min(), self.x_max(), self.y_bottom(), self.y_top(), false, &spell.tables);
 	}
 
 	/// Writes text to the current page inside the given dimensions, starting at the x_min value and current y value.
