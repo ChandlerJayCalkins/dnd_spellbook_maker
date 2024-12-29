@@ -1,0 +1,39 @@
+{
+	"name": "Commune with Nature",
+	"level":
+	{
+		"Controlled": "Level5"
+	},
+	"school":
+	{
+		"Controlled": "Divination"
+	},
+	"is_ritual": true,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Minutes": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Yourself": null
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled":
+		{
+			"Minutes": [1, false]
+		}
+	},
+	"description": "You commune with nature spirits and gain knowledge of the surrounding area. In the outdoors, the spell gives you knowledge of the area within 3 miles of you. In caves and other natural underground settings, the radius is limited to 300 feet. The spell doesn't function where nature has been replaced by construction, such as in castles and settlements.\nChoose three of the following facts; you learn those facts as they pertain to the spell's area:\n- Locations of settlements\n- Locations of portals to other planes of existence\n- Location of one Challenge Rating 10+ creature (DM's choice) that is a Celestial, an Elemental, a Fey, a Fiend, or an Undead\n- The most prevalent kind of plant, mineral, or Beast (you choose which to learn)\n- Locations of bodies of water\nFor example, you could determine the location of a powerful monster in the area, the locations of bodies of water, and the locations of any towns.",
+	"upcast_description": null,
+	"tables": []
+}

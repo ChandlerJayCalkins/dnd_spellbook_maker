@@ -1,0 +1,42 @@
+{
+	"name": "Cone of Cold",
+	"level":
+	{
+		"Controlled": "Level5"
+	},
+	"school":
+	{
+		"Controlled": "Evocation"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Yourself":
+			{
+				"Cone":
+				{
+					"Feet": 60
+				}
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": "a small crystal or glass cone",
+	"duration":
+	{
+		"Controlled": "Instant"
+	},
+	"description": "You unleash a blast of cold air. Each creature in a 60-foot Cone originating from you makes a Constitution saving throw, taking 8d8 Cold damage on a failed save or half as much damage on a successful one. A creature killed by this spell becomes a frozen statue until it thaws.",
+	"upcast_description": "The damage increases by 1d8 for each spell slot level above 5.",
+	"tables": []
+}
