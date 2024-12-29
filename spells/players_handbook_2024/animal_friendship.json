@@ -1,0 +1,42 @@
+{
+	"name": "Animal Friendship",
+	"level":
+	{
+		"Controlled": "Level1"
+	},
+	"school":
+	{
+		"Controlled": "Enchantment"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Dist":
+			{
+				"Feet": 30
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": "a morself of food",
+	"duration":
+	{
+		"Controlled":
+		{
+			"Hours": [24, false]
+		}
+	},
+	"description": "Target a Beast that you can see within range. The target must succeed on a Wisdom saving throw or have the Charmed condition for the duration. If you or one of your allies deals damage to the target, the spells ends.",
+	"upcast_description": "You can target one additional Beast for each spell slot level above 1.",
+	"tables": []
+}

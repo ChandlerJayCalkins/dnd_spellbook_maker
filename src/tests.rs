@@ -86,9 +86,52 @@ fn default_spellbook_options() ->
 	)
 }
 
+// Create a spellbook with every spell from the xanathar's guide to everything source book
+#[test]
+fn players_handbook_2024()
+{
+	// Spellbook's name
+	let spellbook_name =
+	"Every Sepll in the 2024 Dungeons & Dragons 5th Edition Player's Handbook";
+	// List of every spell in this folder
+	let spell_list = get_all_spells_in_folder("spells/players_handbook_2024")
+		.expect("Failed to collect spells from folder.");
+	// Get default spellbook options
+	let
+	(
+		font_paths,
+		font_sizes,
+		font_scalars,
+		spacing_options,
+		text_colors,
+		page_size_options,
+		page_number_options,
+		background_path,
+		background_transform,
+		table_options
+	) = default_spellbook_options();
+	// Create the spellbook
+	let (doc, _, _) = create_spellbook
+	(
+		spellbook_name,
+		&spell_list,
+		font_paths,
+		font_sizes,
+		font_scalars,
+		spacing_options,
+		text_colors,
+		page_size_options,
+		Some(page_number_options),
+		Some((&background_path, background_transform)),
+		table_options
+	).unwrap();
+	// Save the spellbook to a file
+	let _ = save_spellbook(doc, "Player's Handbook 2024 Spells.pdf").unwrap();
+}
+
 // Creates 2 spellbooks that combined contain every spell from the official d&d 5e player's handbook
 #[test]
-fn players_handbook()
+fn players_handbook_2014()
 {
 	// Spellbook names
 	let spellbook_name_1 = "Every Sepll in the 2014 Dungeons & Dragons 5th Edition Player's Handbook: Part 1";

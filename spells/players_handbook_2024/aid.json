@@ -1,0 +1,42 @@
+{
+	"name": "Aid",
+	"level":
+	{
+		"Controlled": "Level2"
+	},
+	"school":
+	{
+		"Controlled": "Abjuration"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Dist":
+			{
+				"Feet": 30
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": "a strip of white cloth",
+	"duration":
+	{
+		"Controlled":
+		{
+			"Hours": [8, false]
+		}
+	},
+	"description": "Choose up to three creatures within range. Each target's Hit Point maximum and current Hit Points increase by 5 for the duration.",
+	"upcast_description": "Each target's Hit Points increase by 5 for each spell slot level above 2.",
+	"tables": []
+}

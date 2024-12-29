@@ -31,7 +31,10 @@
 	"m_components": null,
 	"duration":
 	{
-		"Controlled": "Instant"
+		"Controlled":
+		{
+			"Hours": [8, false]
+		}
 	},
 	"description": "Description",
 	"upcast_description": null,

@@ -452,6 +452,7 @@ impl <'a> SpellbookWriter<'a>
 			// 0 newlines for the first paragraph (so the entire textbox doesn't get moved down by an extra newline)
 			// 1 newline for all other paragraphs
 			else { self.y -= paragraph_newline_scalar * self.current_newline_amount(); }
+			// Extract the first token from the paragraph to see if this paragraph is a bullet point or a table
 			let (first_token, rest_of_paragraph) = match paragraph.split_once(char::is_whitespace)
 			{
 				Some((token_1, token_2)) => (token_1, token_2.trim()),

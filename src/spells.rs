@@ -208,9 +208,13 @@ impl fmt::Display for CastingTime
 		let text = match self
 		{
 			Self::Seconds(t) => get_amount_string(*t, "second"),
-			Self::Actions(t) => get_amount_string(*t, "action"),
-			Self::BonusAction => String::from("1 bonus action"),
-			Self::Reaction(e) => format!("1 reaction, {}", *e),
+			Self::Actions(t) =>
+			{
+				if *t == 1 { String::from("Action") }
+				else { format!("{} actions", t) }
+			},
+			Self::BonusAction => String::from("Bonus action"),
+			Self::Reaction(e) => format!("Reaction, {}", *e),
 			Self::Minutes(t) => get_amount_string(*t, "minute"),
 			Self::Hours(t) => get_amount_string(*t, "hour"),
 			Self::Days(t) => get_amount_string(*t, "day"),
