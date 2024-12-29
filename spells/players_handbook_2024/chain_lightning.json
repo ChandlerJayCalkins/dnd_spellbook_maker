@@ -1,0 +1,39 @@
+{
+	"name": "Chain Lightning",
+	"level":
+	{
+		"Controlled": "Level6"
+	},
+	"school":
+	{
+		"Controlled": "Evocation"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Dist":
+			{
+				"Feet": 150
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": "three silver pins",
+	"duration":
+	{
+		"Controlled": "Instant"
+	},
+	"description": "You launch a lightning bolt toward a target you can see within range. Three bolts then leap from that target to as many as three other targets of your choice, each of which must be within 30 feet of the first target. A target can be a creature or an object and can be targeted by only one of the bolts.\nEach target makes a Dexterity saving throw, taking 10d8 Lightning damage on a failed save or half as much damage on a successful one.",
+	"upcast_description": "One additional bolt leaps from the first target to another target for each spell slot level above 6.",
+	"tables": []
+}
