@@ -1,0 +1,33 @@
+{
+	"name": "Cure Wounds",
+	"level":
+	{
+		"Controlled": "Level1"
+	},
+	"school":
+	{
+		"Controlled": "Abjuration"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled": "Touch"
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled": "Instant"
+	},
+	"description": "A creature you touch regains a number of Hit Points equal to 2d8 plus your spellcasting ability modifier.",
+	"upcast_description": "The healing increases by 2d8 for each spell slot level above 1.",
+	"tables": []
+}

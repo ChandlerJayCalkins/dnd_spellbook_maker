@@ -1,0 +1,45 @@
+{
+	"name": "Crusader's Mantle",
+	"level":
+	{
+		"Controlled": "Level3"
+	},
+	"school":
+	{
+		"Controlled": "Evocation"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Yourself":
+			{
+				"Emanation":
+				{
+					"Feet": 30
+				}
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": false,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled":
+		{
+			"Minutes": [1, true]
+		}
+	},
+	"description": "You radiate a magical aura in a 30-foot Emanation. While in the aura, you and your allies each deal an extra 1d4 Radiant damage when hitting with a weapon or an Unarmed Strike.",
+	"upcast_description": null,
+	"tables": []
+}

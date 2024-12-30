@@ -1,0 +1,39 @@
+{
+	"name": "Counterspell",
+	"level":
+	{
+		"Controlled": "Level3"
+	},
+	"school":
+	{
+		"Controlled": "Abjuration"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Reaction": "which you take when you see a creature within 60 feet of yourself casting a spell with Verbal, Somantic, or Material components"
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Dist":
+			{
+				"Feet": 60
+			}
+		}
+	},
+	"has_v_component": false,
+	"has_s_component": true,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled": "Instant"
+	},
+	"description": "You attempt to interrupt a creature in the process of casting a spell. The creature makes a Constitution saving throw. On a failed save, the spell dissipates with no effect, and the action, Bonus Action, or Reaction used to cast it is wasted. If that spell was cast with a spell slot, the slot isn't expended.",
+	"upcast_description": null,
+	"tables": []
+}
