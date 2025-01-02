@@ -1,0 +1,36 @@
+{
+	"name": "Darkvision",
+	"level":
+	{
+		"Controlled": "Level2"
+	},
+	"school":
+	{
+		"Controlled": "Transmutation"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled": "Touch"
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": "a dried carrot",
+	"duration":
+	{
+		"Controlled":
+		{
+			"Hours": [8, false]
+		}
+	},
+	"description": "For the duration, a willing creature you touch has Darkvision with a range of 150 feet.",
+	"upcast_description": null,
+	"tables": []
+}

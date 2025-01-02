@@ -1,0 +1,42 @@
+{
+	"name": "Destructive Wave",
+	"level":
+	{
+		"Controlled": "Level5"
+	},
+	"school":
+	{
+		"Controlled": "Evocation"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Yourself":
+			{
+				"Sphere":
+				{
+					"Feet": 30
+				}
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": false,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled": "Instant"
+	},
+	"description": "Destructive energy ripples outward from you in a 30-foot Emanation. Each creature you choose in the Emanation makes a Constitution saving throw. On a failed save, a target takes 5d6 Thunder damage and 5d6 Radiant or Necrotic damage (your choice) and has the Prone condition. On a successful save, a target takes half as much damage only.",
+	"upcast_description": null,
+	"tables": []
+}

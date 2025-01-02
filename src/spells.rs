@@ -185,18 +185,19 @@ pub enum CastingTime
 	Seconds(u16),
 	Actions(u16),
 	/// String is the circumstance in which the bonus action can be triggered.
-	/// Leave empty for no specific circumstance.
-	/// Ex: "which you take when you or a creature within 60 feet of you falls" or
+	/// Use `None` for no specific circumstance.
+	/// Circumstance Examples: "which you take when you or a creature within 60 feet of you falls" or
 	/// "which you take when you see a creature within 60 feet of you casting a spell".
 	///
-	/// Note: if this string is non-empty, it will come after the string "Bonus action, " on the spell page.
-	BonusAction(String),
+	/// Note: if this value is `Some`, its string will come after the string "Bonus action, " on the spell page.
+	BonusAction(Option<String>),
 	/// String is the circumstance in which the reaction can be triggered.
-	/// Ex: "which you take when you or a creature within 60 feet of you falls" or
+	/// Use `None` for no specific circumstance.
+	/// Circumstance Examples: "which you take when you or a creature within 60 feet of you falls" or
 	/// "which you take when you see a creature within 60 feet of you casting a spell".
 	///
-	/// Note: if this string is non-empty, it will come after the string "Reaction, " on the spell page.
-	Reaction(String),
+	/// Note: if this value is `Some`, its string will come after the string "Reaction, " on the spell page.
+	Reaction(Option<String>),
 	Minutes(u16),
 	Hours(u16),
 	Days(u16),
@@ -211,6 +212,16 @@ impl fmt::Display for CastingTime
 {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
 	{
+		fn action_type_circumstance_string(circumstance: &Option<String>, action_type_str: String) -> String
+		{
+			match circumstance
+			{
+				Some(circumstance_str) => format!("{}, {}", action_type_str, circumstance_str),
+				None => action_type_str
+			}
+		}
+		let bonus_action_str = String::from("Bonus action");
+		let reaction_str = String::from("Reaction");
 		let text = match self
 		{
 			Self::Seconds(t) => get_amount_string(*t, "second"),
@@ -219,15 +230,13 @@ impl fmt::Display for CastingTime
 				if *t == 1 { String::from("Action") }
 				else { format!("{} actions", t) }
 			},
-			Self::BonusAction(e) =>
+			Self::BonusAction(circumstance) =>
 			{
-				if e.is_empty() { String::from("Bonus action") }
-				else { format!("Bonus action, {}", *e) }
+				action_type_circumstance_string(circumstance, bonus_action_str)
 			},
-			Self::Reaction(e) =>
+			Self::Reaction(circumstance) =>
 			{
-				if e.is_empty() { String::from("Reaction") }
-				else { format!("Reaction, {}", *e) }
+				action_type_circumstance_string(circumstance, reaction_str)
 			},
 			Self::Minutes(t) => get_amount_string(*t, "minute"),
 			Self::Hours(t) => get_amount_string(*t, "hour"),

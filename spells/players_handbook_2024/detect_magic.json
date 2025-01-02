@@ -1,0 +1,45 @@
+{
+	"name": "Detect Magic",
+	"level":
+	{
+		"Controlled": "Level1"
+	},
+	"school":
+	{
+		"Controlled": "Divination"
+	},
+	"is_ritual": true,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Yourself":
+			{
+				"Sphere":
+				{
+					"Feet": 30
+				}
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled":
+		{
+			"Minutes": [10, true]
+		}
+	},
+	"description": "For the duration, you sense the presence of magical effects within 30 feet of yourself. If you sense such effects, you can take the Magic action to see a faint aura around any visible creature or object in the area that bears the magic, and if an effect was created by a spell, you learn the spell's school of magic.\nThe spell is blocked by 1 foot of stone, dirt, or wood; 1 inch of metal; or a thin sheet of lead.",
+	"upcast_description": null,
+	"tables": []
+}

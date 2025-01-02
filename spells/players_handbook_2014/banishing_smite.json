@@ -9,7 +9,7 @@
   "is_ritual": false,
   "casting_time": {
     "Controlled": {
-	  "BonusAction": ""
+	  "BonusAction": null
     }
   },
   "range": {

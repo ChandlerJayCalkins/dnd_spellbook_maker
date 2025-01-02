@@ -1,0 +1,45 @@
+{
+	"name": "Detect Poison and Disease",
+	"level":
+	{
+		"Controlled": "Level1"
+	},
+	"school":
+	{
+		"Controlled": "Divination"
+	},
+	"is_ritual": true,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Yourself":
+			{
+				"Sphere":
+				{
+					"Feet": 30
+				}
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": "a yew leaf",
+	"duration":
+	{
+		"Controlled":
+		{
+			"Minutes": [10, true]
+		}
+	},
+	"description": "For the duration, you sense the location of poisons, poisonous or venomous creatures, and magical contagions within 30 feet of yourself. You sense the kind of poison, creature, or contagion in each case.\nThe spell is blocked by 1 foot of stone, dirt, or wood; 1 inch of metal; or a thin sheet of lead.",
+	"upcast_description": null,
+	"tables": []
+}
