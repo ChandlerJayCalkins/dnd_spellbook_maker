@@ -1,0 +1,39 @@
+{
+	"name": "Ice Storm",
+	"level":
+	{
+		"Controlled": "Level4"
+	},
+	"school":
+	{
+		"Controlled": "Evocation"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Dist":
+			{
+				"Feet": 300
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": "a mitten",
+	"duration":
+	{
+		"Controlled": "Instant"
+	},
+	"description": "Hail falls in a 20-foot-radius, 40-foot-high Cylinder centered on a point within range. Each creature in the Cylinder makes a Dexterity saving throw. A creature takes 2d10 Bludgeoning damage and 4d6 Cold damage on a failed save or half as much damage on a successful one.\nHailstones turn ground in the Cylinder into Difficult Terrain until the end of your next turn.",
+	"upcast_description": "The Bludgeoning damage increases by 1d10 for each spell slot level above 4.",
+	"tables": []
+}

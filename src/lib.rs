@@ -19,9 +19,12 @@ pub use utils::*;
 // TODO
 //	1. Add all 2024 Player's Handbook spells
 //	2. Make it so spells can have stat blocks in them
+//		- Animate Dead
 //		- Animate Objects
+//		- Awaken
 //		- Create Undead
 //		- Find Steed
 //		- Finger of Death
 //		- Giant Insect
 //	3. Make it so multiple tables / stat blocks can be placed next to each other horizontally
+//	4. Make it so font tags don't have to be their own token separated by whitespace

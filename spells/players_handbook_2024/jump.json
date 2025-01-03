@@ -1,0 +1,36 @@
+{
+	"name": "Jump",
+	"level":
+	{
+		"Controlled": "Level1"
+	},
+	"school":
+	{
+		"Controlled": "Transmutation"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"BonusAction": null
+		}
+	},
+	"range":
+	{
+		"Controlled": "Touch"
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": "a grasshopper's hind leg",
+	"duration":
+	{
+		"Controlled":
+		{
+			"Minutes": [1, false]
+		}
+	},
+	"description": "You touch a willing creature. Once on each of its turns until the spell ends, that creature can jump up to 30 feet by spending 10 feet of movement.",
+	"upcast_description": "You can target one additional creature for each spell slot level above 1.",
+	"tables": []
+}
