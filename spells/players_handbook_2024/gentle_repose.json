@@ -1,0 +1,36 @@
+{
+	"name": "Gentle Repose",
+	"level":
+	{
+		"Controlled": "Level2"
+	},
+	"school":
+	{
+		"Controlled": "Necromancy"
+	},
+	"is_ritual": true,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled": "Touch"
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": "2 Copper Pieces, which the spell consumes",
+	"duration":
+	{
+		"Controlled":
+		{
+			"Days": [10, false]
+		}
+	},
+	"description": "You touch a corpse or other remains. For the duration, the target is protected from decay and can't become Undead.\nThe spell also effectively extends the time limit on raising the target from the dead, since days spent under the influence of this spell don't count against the time limit of spells such as Raise Dead.",
+	"upcast_description": null,
+	"tables": []
+}

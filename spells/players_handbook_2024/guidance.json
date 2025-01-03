@@ -1,0 +1,36 @@
+{
+	"name": "Guidance",
+	"level":
+	{
+		"Controlled": "Cantrip"
+	},
+	"school":
+	{
+		"Controlled": "Divination"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled": "Touch"
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled":
+		{
+			"Minutes": [1, true]
+		}
+	},
+	"description": "You touch a willing creature and choose a skill. Until the spell ends, the creature adds 1d4 to any ability check using the chosen skill.",
+	"upcast_description": null,
+	"tables": []
+}

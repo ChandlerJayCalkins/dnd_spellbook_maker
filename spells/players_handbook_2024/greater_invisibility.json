@@ -1,0 +1,36 @@
+{
+	"name": "Greater Invisibility",
+	"level":
+	{
+		"Controlled": "Level4"
+	},
+	"school":
+	{
+		"Controlled": "Illusion"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled": "Touch"
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled":
+		{
+			"Minutes": [1, true]
+		}
+	},
+	"description": "A creature you touch has the Invisible condition until the spell ends.",
+	"upcast_description": null,
+	"tables": []
+}

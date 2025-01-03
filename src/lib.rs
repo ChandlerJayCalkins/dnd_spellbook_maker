@@ -23,4 +23,5 @@ pub use utils::*;
 //		- Create Undead
 //		- Find Steed
 //		- Finger of Death
+//		- Giant Insect
 //	3. Make it so multiple tables / stat blocks can be placed next to each other horizontally
