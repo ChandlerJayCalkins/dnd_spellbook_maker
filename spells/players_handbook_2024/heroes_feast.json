@@ -1,0 +1,42 @@
+{
+	"name": "Heroes' Feast",
+	"level":
+	{
+		"Controlled": "Level6"
+	},
+	"school":
+	{
+		"Controlled": "Conjuration"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Minutes": 10
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Yourself":
+			{
+				"Cube":
+				{
+					"Feet": 10
+				}
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": "a gem-encrusted bowl worth 1,000+ GP, which the spell consumes",
+	"duration":
+	{
+		"Controlled": "Instant"
+	},
+	"description": "You conjure a feast that appears on a surface in an unoccupied 10-foot Cube next to you. The feast takes 1 hour to consume and disappears at the end of that time, and the beneficial effects don't set in until this hour is over. Up to twelve creatures can partake of the feast.\nA creature that partakes gains several benefits, which last for 24 hours. The creature has Resistance to Poison damage, and it has Immunity to the Frightened and Poisoned conditions. Its Hit Point maximum also increases by 2d10, and it gains the same number of Hit Points.",
+	"upcast_description": null,
+	"tables": []
+}

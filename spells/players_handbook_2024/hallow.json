@@ -1,0 +1,36 @@
+{
+	"name": "Hallow",
+	"level":
+	{
+		"Controlled": "Level5"
+	},
+	"school":
+	{
+		"Controlled": "Abjuration"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Hours": 24
+		}
+	},
+	"range":
+	{
+		"Controlled": "Touch"
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": "incese worth 1,000+ GP, which the spell consumes",
+	"duration":
+	{
+		"Controlled":
+		{
+			"UntilDispelled": false
+		}
+	},
+	"description": "You touch a point and infuse an area around it with holy or unholy power. The area can have a radius up to 60 feet, and the spell fails if the radius includes an area already under the effect of Hallow. The affected area has the following effects.\n<bi> Hallowed Ward. <r> Choose any of these creature types: Aberration, Celestial, Elemental, Fey, Fiend, or Undead. Creatures of the chosen types can't willingly enter the area, and any creature that is possessed by or that has the Charmed or Frightened condition from such creatures isn't possessed, Charmed, or Frightened by them while in the area.\n<bi> Extra Effect. <r> You bind an extra effect to the area from the list below:\n\n<bi> Courage. <r> Creatures of any types you choose can't gain the Frightened condition while in the area.\n<bi> Darkness. <r> Darkness fills the area. Normal light, as well as magical light created by spells of a level lower than this spell, can't illuminate the area.\n<bi> Daylight. <r> Bright light fills the area. Magical Darkness created by spells of a level lower than this spell can't extinguish the light.\n<bi> Peaceful Rest. <r> Dead bodies interred in the area can't be turned into Undead.\n<bi> Extradimensional Interference. <r> Creatures of any types you choose can't enter or exit the area using teleportation or interplanar travel.\n<bi> Fear. <r> Creatures of any types you choose have the Frightened condition while in the area.\n<bi> Resistance. <r> Creatures of any types you choose have Resistance to one damage type of your choice while in the area.\n<bi> Silence. <r> No sound can emanate from within the area, and no sound can reach into it.\n<bi> Tongues. <r> Creatures of any types you choose can communicate with any other creature in the area even if they don't share a common language.\n<bi> Vulnerability. <r> Creatures of any types you choose have Vulnerability to one damage type of your choice while in the area.",
+	"upcast_description": null,
+	"tables": []
+}
