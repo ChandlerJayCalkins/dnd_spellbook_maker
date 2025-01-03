@@ -189,7 +189,10 @@ or `Controlled` value with a `CastingTime`.
 ```json
 "casting_time":
 {
-	"Controlled": "BonusAction"
+	"Controlled":
+	{
+		"BonusAction": null
+	}
 }
 ```
 
@@ -229,7 +232,53 @@ pub enum CastingTime
 }
 ```
 
-`Reaction` variant will have the text "Reaction, " put before the text in its string when written to the spell book. For example, the `Reaction` example above will become "Reaction, which you take when you sense something that triggers a reaction" in the spell book.
+`BonusAction` and `Reaction` variants can have either a `None` / `null` value
+
+```json
+"casting_time":
+{
+	"Controlled":
+	{
+		"BonusAction": null
+	}
+}
+```
+
+```json
+"casting_time":
+{
+	"Controlled":
+	{
+		"Reaction": null
+	}
+}
+```
+
+or a `Some` value with a string.
+
+```json
+"casting_time":
+{
+	"Controlled":
+	{
+		"BonusAction": "which you take when you make a melee attack"
+	}
+}
+```
+
+```json
+"casting_time":
+{
+	"Controlled":
+	{
+		"Reaction": "which you take when a creature makes a ranged attack against you"
+	}
+}
+```
+
+`BonusAction` variant will appear as either "Bonus action" in the spellbook if it has a null value, or as something like "Bonus action, which you take when you make a melee attack" in the spellbook if it has a string value.
+
+`Reaction` variant will appear as either "Reaction" in the spellbook if it has a null value, or as something like "Reaction, which you take when a creature makes a ranged attack against you" in the spellbook if it has a string value.
 
 # `range` Field
 ---
@@ -284,6 +333,41 @@ or `Controlled` value with a `Range`.
 ```json
 "range":
 {
+    "Controlled": "Touch"
+}
+```
+
+Here is the definition of all possible `Range` variants:
+
+```rs
+pub enum Range
+{
+	Yourself(Option<AOE>),
+	Touch,
+	Dist(Distance),
+	Sight,
+	Unlimited,
+	Special
+}
+```
+
+`Yourself` variant can have either a `None` / `null` value
+
+```json
+"range":
+{
+    "Controlled":
+	{
+		"Yourself": null
+	}
+}
+```
+
+or a `Some` value with an AOE
+
+```json
+"range":
+{
     "Controlled":
 	{
 		"Yourself":
@@ -318,28 +402,7 @@ or `Controlled` value with a `Range`.
 }
 ```
 
-```json
-"range":
-{
-    "Controlled": "Touch"
-}
-```
-
-Here is the definition of all possible `Range` variants:
-
-```rs
-pub enum Range
-{
-	Yourself(Option<AOE>),
-	Touch,
-	Dist(Distance),
-	Sight,
-	Unlimited,
-	Special
-}
-```
-
-`Yourself` variant can have either a `Some` value with an `Aoe` or a `None` value. It will appear as either just "Self" if the spell book if the `None` variant is used for its value, or as "Self \(15-foot cone\)", "Self \(30-foot radius, 10-foot height cylinder\)", etc. based on its `Aoe` value if the `Some` variant is used. `Sphere` and `Emanation` variants are functionally the same in the game rules, this field just allows for both to support both old and new versions of this spell field.
+`Yourself` variant will appear as either "Self" in the spellbook if it has a null value, or as something like "Self (10-foot emanation)", "Self (50-foot radius, 1-mile height cylinder)", etc. in the spellbook if it has an AOE value.
 
 Here is the defintion of all possible `Aoe` variants:
 
@@ -355,6 +418,8 @@ pub enum AOE
 	Cylinder(Distance, Distance),
 }
 ```
+
+(Note: the `Sphere` and `Emanation` variants are functionally the same in the game rules. Both are included here however to support both modern and legacy formatting for this spell field.)
 
 `Dist` variant will appear as "30 feet", "1 mile", etc. based on its `Distance` value.
 
@@ -409,7 +474,7 @@ or `Some` value with any string.
 "m_components": "Material component"
 ```
 
-`Some` variant with a string will have the text "M \(" and "\)" put around the text in the string when written to the spell book. For example, the `Some` example above will become "M \(Material component\)" in the spell book.
+`Some` variant with a string will have the text "M \(" and "\)" put around the text in the string when written to the spell book if it has a `Some` value. For example, the `Some` example above will become "M \(Material component\)" in the spell book.
 
 # `duration` Field
 ---
@@ -437,11 +502,7 @@ or `Controlled` value with a `Duration`.
 {
     "Controlled":
 	{
-		"Seconds":
-		[
-			30,
-			false
-		]
+		"Seconds": [30, false]
 	}
 }
 ```
@@ -451,11 +512,7 @@ or `Controlled` value with a `Duration`.
 {
     "Controlled":
 	{
-		"Minutes":
-		[
-			1,
-			true
-		]
+		"Minutes": [1, true]
 	}
 }
 ```
@@ -491,7 +548,7 @@ pub enum Duration
 }
 ```
 
-All `u16` values are the numeric values for the unit of time that their spell can last (the 1 in "1 action" or the 5 in "5 minutes", etc.). All `bool` values determine whether the duration is dependent on concentration or not. A bool value of `true` will have the text "Concentration, up to " put before the rest of the duration text in the spell book. For example, the `Minutes` example from above will become "Concentration, up to 1 minute" in the spell book while the `Seconds` example from above will become just "30 seconds" in the spell book.
+All `u16` values in this enum are the numeric values for the unit of time that their spell can last (the 1 in "1 action" or the 5 in "5 minutes", etc.). All `bool` values in this enum determine whether the duration is dependent on concentration or not. A bool value of `true` will have the text "Concentration, up to " put before the rest of the duration text in the spell book. For example, the `Minutes` example from above will become "Concentration, up to 1 minute" in the spell book while the `Seconds` example from above will become just "30 seconds" in the spell book.
 
 # `description` Field
 ---
