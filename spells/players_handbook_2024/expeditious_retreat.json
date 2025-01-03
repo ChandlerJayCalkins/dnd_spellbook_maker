@@ -1,0 +1,39 @@
+{
+	"name": "Expeditious Retreat",
+	"level":
+	{
+		"Controlled": "Level1"
+	},
+	"school":
+	{
+		"Controlled": "Transmutation"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"BonusAction": null
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Yourself": null
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled":
+		{
+			"Minutes": [10, true]
+		}
+	},
+	"description": "You take the Dash action, and until the spell ends, you can take that action again as a Bonus Action.",
+	"upcast_description": null,
+	"tables": []
+}

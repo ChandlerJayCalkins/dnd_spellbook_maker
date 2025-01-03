@@ -1,0 +1,39 @@
+{
+	"name": "Eyebite",
+	"level":
+	{
+		"Controlled": "Level6"
+	},
+	"school":
+	{
+		"Controlled": "Necromancy"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Yourself": null
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled":
+		{
+			"Minutes": [1, true]
+		}
+	},
+	"description": "For the duration, your eyes become an inky void. One creature of your choice within 60 feet of you that you can see must succeed on a Wisdom saving throw or be affected by one of the following effects of your choice for the duration.\nOn each of your turns until the spell ends, you can take a Magic action to target another creature but can't target a creature again if it has succeeded on a save against this casting of the spell.\n<bi> Asleep. <r> The target has the Unconscious condition. It wakes up if it takes any damage or if another creature takes an action to shake it awake.\n<bi> Panicked. <r> The target has the Frightened condition. On each of its turns, the Frightened target must take the Dash action and move away from you by the safest and shortest route available. If the target moves to a space at least 60 feet away from you where it can't see you, this effect ends.\n<bi> Sickened. <r> The target has the Poisoned condition.",
+	"upcast_description": null,
+	"tables": []
+}
