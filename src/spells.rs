@@ -62,13 +62,11 @@ impl fmt::Display for Level
 {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
 	{
+		let level_str = "Level ";
 		let text = match self
 		{
-			Self::Cantrip => String::from("cantrip"),
-			Self::Level1 => String::from("1st-Level"),
-			Self::Level2 => String::from("2nd-Level"),
-			Self::Level3 => String::from("3rd-Level"),
-			_ => format!("{}th-Level", u8::from(*self))
+			Self::Cantrip => String::from("Cantrip"),
+			_ => format!("{}{}", level_str, u8::from(self))
 		};
 		write!(f, "{}", text)
 	}
@@ -99,9 +97,9 @@ impl TryFrom<u8> for Level
 }
 
 // Converts spell levels into integers (u8)
-impl From<Level> for u8
+impl From<&Level> for u8
 {
-	fn from(level: Level) -> Self
+	fn from(level: &Level) -> Self
 	{
 		match level
 		{
@@ -116,6 +114,14 @@ impl From<Level> for u8
 			Level::Level8 => 8,
 			Level::Level9 => 9
 		}
+	}
+}
+
+impl From<Level> for u8
+{
+	fn from(level: Level) -> Self
+	{
+		u8::from(&level)
 	}
 }
 
@@ -630,19 +636,8 @@ impl Spell
 		{
 			// If the spell is a cantrip, make the school come first and then the level
 			SpellField::Controlled(Level::Cantrip) => format!("{} {}", &self.school, &self.level),
-			// If the spell is any other level or a custom value
-			_ =>
-			{
-				let school_text = match &self.school
-				{
-					// If the spell's school is a controlled value, get a lowercase string of it
-					SpellField::Controlled(school) => school.to_string().to_lowercase(),
-					// If the spell's school has a custom value, just use that string untouched
-					SpellField::Custom(s) => s.clone()
-				};
-				// Make the level come before the school
-				format!("{} {}", &self.level, school_text)
-			}
+			// If the spell is any other level or a custom value, make the level come before the school
+			_ => format!("{} {}", &self.level, &self.school)
 		};
 		// Return the string
 		text

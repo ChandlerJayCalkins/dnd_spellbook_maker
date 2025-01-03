@@ -1,0 +1,39 @@
+{
+	"name": "Flame Blade",
+	"level":
+	{
+		"Controlled": "Level2"
+	},
+	"school":
+	{
+		"Controlled": "Evocation"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"BonusAction": null
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Yourself": null
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": "a sumac leaf",
+	"duration":
+	{
+		"Controlled":
+		{
+			"Minutes": [10, true]
+		}
+	},
+	"description": "You evoke a fiery blade in your free hand. The blade is similar in size and shape to a scimitar, and it lasts for the duration. If you let go of the blade, it disappears, but you can evoke it again as a Bonus Action.\nAs a Magic action, you can make a melee spell attack with the fiery blade. On a hit, the target takes Fire damage equal to 3d6 plus your spellcasting ability modifier.\nThe flaming blade sheds Bright Light in a 10-foot radius and Dim Light for an additional 10 feet.",
+	"upcast_description": "The damage increases by 1d6 for each spell slot level above 2.",
+	"tables": []
+}

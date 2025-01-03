@@ -1,0 +1,39 @@
+{
+	"name": "Finger of Death",
+	"level":
+	{
+		"Controlled": "Level7"
+	},
+	"school":
+	{
+		"Controlled": "Necromancy"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Dist":
+			{
+				"Feet": 60
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled": "Instant"
+	},
+	"description": "You unleash negative energy toward a creature you can see within range. The target makes a Constitution saving throw, taking 7d8 + 30 Necrotic damage on a failed save or half as much damage on a successful one.\nA Humanoid killed by this spell rises at the start of your next turn as a <b> Zombie <r> that follows your verbal orders.",
+	"upcast_description": null,
+	"tables": []
+}
