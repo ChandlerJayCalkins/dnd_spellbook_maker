@@ -1,0 +1,42 @@
+{
+	"name": "Polymorph",
+	"level":
+	{
+		"Controlled": "Level4"
+	},
+	"school":
+	{
+		"Controlled": "Transmutation"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Dist":
+			{
+				"Feet": 60
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": "a caterpillar cocoon",
+	"duration":
+	{
+		"Controlled":
+		{
+			"Hours": [1, true]
+		}
+	},
+	"description": "You attempt to transform a creature that you can see within range into a Beast. The target must succeed on a Wisdom saving throw or shape-shift into Beast form for the duration. That form can be any Beast you choose that has a Challenge Rating equal to or less than the target's (or the target's level if it doesn't have a Challenge Rating). The target's game statistics are replaced by the stat block of the chosen Beast, but the target retains its alignment, personality, creature type, Hit Points, and Hit Point Dice.\nThe target gains a number of Temporary Hit Points equal to the Hit Points of the Beast form. The spell ends early on the target if it has no Temporary Hit Points left.\nThe target is limited in the actions it can perform by the anatomy of its new form, and it can't speak or cast spells.\nThe target's gear melds into the new form. The creature can't use or otherwise benefit from any of that equipment.",
+	"upcast_description": null,
+	"tables": []
+}

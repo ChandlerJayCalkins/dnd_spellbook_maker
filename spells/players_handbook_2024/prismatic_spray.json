@@ -1,0 +1,87 @@
+{
+	"name": "Prismatic Spray",
+	"level":
+	{
+		"Controlled": "Level7"
+	},
+	"school":
+	{
+		"Controlled": "Evocation"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Yourself":
+			{
+				"Cone":
+				{
+					"Feet": 60
+				}
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled": "Instant"
+	},
+	"description": "Eight rays of light flash from you in a 60-foot Cone. Each creature in the Cone makes a Dexterity saving throw. For each target, roll 1d8 to determine which color ray affects it, consulting the Prismatic Rays table.\n[table][0]",
+	"upcast_description": null,
+	"tables":
+	[
+		{
+			"title": "Prismatic Rays",
+			"column_labels":
+			[
+				"1d8",
+				"Ray"
+			],
+			"cells":
+			[
+				[
+					"1",
+					"<b> Red. <i> Failed Save: <r> 12d6 Fire damage. <i> Successful Save: <r> Half as much damage."
+				],
+				[
+					"2",
+					"<b> Orange. <i> Failed Save: <r> 12d6 Acid damage. <i> Successful Save: <r> Half as much damage."
+				],
+				[
+					"3",
+					"<b> Yellow. <i> Failed Save: <r> 12d6 Lightning damage. <i> Successful Save: <r> Half as much damage."
+				],
+				[
+					"4",
+					"<b> Green. <i> Failed Save: <r> 12d6 Poison damage. <i> Successful Save: <r> Half as much damage."
+				],
+				[
+					"5",
+					"<b> Blue. <i> Failed Save: <r> 12d6 Cold damage. <i> Successful Save: <r> Half as much damage."
+				],
+				[
+					"6",
+					"<b> Indigo. <i> Failed Save: <r> The target has the Restrained condition and makes a Constitution saving throw at the end of each of its turns. If it successfully saves three times, the condition ends. If it fails three times, it has the Petrified condition until it is freed by an effect like the <i> Greater Restoration <r> spell. The successes and failures needn't be consecutive; keep track of both until the target collects three of a kind."
+				],
+				[
+					"7",
+					"<b> Violet. <i> Failed Save: <r> The target has the Blinded condition and makes a Wisdom saving throw at the start of your next turn. On a successful save, the condition ends. On a failed save, the condition ends, and the creature teleports to another plane of existence (DM's choice)."
+				],
+				[
+					"8",
+					"<b> Special. <r> The target is struck by two rays. Roll twice, rerolling any 8."
+				]
+			]
+		}
+	]
+}

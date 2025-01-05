@@ -1,0 +1,45 @@
+{
+	"name": "Pass without Trace",
+	"level":
+	{
+		"Controlled": "Level2"
+	},
+	"school":
+	{
+		"Controlled": "Abjuration"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Yourself":
+			{
+				"Emanation":
+				{
+					"Feet": 30
+				}
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": "ashes from burned mistletoe",
+	"duration":
+	{
+		"Controlled":
+		{
+			"Hours": [1, true]
+		}
+	},
+	"description": "You radiate a concealing aura in a 30-foot Emanation for the duration. While in the aura, you and each creature you choose have a +10 bonus to Dexterity (Stealth) checks and leave no tracks.",
+	"upcast_description": null,
+	"tables": []
+}

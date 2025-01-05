@@ -1,0 +1,42 @@
+{
+	"name": "Prestidigitation",
+	"level":
+	{
+		"Controlled": "Cantrip"
+	},
+	"school":
+	{
+		"Controlled": "Transmutation"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Dist":
+			{
+				"Feet": 10
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled":
+		{
+			"Hours": [1, false]
+		}
+	},
+	"description": "You create a magical effect within range. Choose the effect from the options below. If you cast this spell multiple times, you can have up to three of its non-instantaneous effects active at a time.\n<bi> Sensory Effect. <r> You create an instantaneous, harmless sensory effect, such as a shower of sparks, a puff of wind, faint musical notes, or an odd odor.\n<bi> Fire Play. <r> You instantaneously light or snuff out a candle, a torch, or a small campfire.\n<bi> Clean or Soil. <r> You instantaneously clean or soil an object no larger than 1 cubic foot.\n<bi> Minor Sensation. <r> You chill, warm, or flavor up to 1 cubic foot of nonliving material for 1 hour.\n<bi> Magic Mark. <r> You make a color, a small mark, or a symbol appear on an object or a surface for 1 hour.\n<bi> Minor Creation. <r> You create a nonmagical trinket or an illusory image that can fit in your hand. It lasts until the end of your next turn. A trinket can deal no damage and has no monetary worth.",
+	"upcast_description": null,
+	"tables": []
+}
