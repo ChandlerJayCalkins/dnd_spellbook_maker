@@ -1,0 +1,42 @@
+{
+	"name": "Sanctuary",
+	"level":
+	{
+		"Controlled": "Level1"
+	},
+	"school":
+	{
+		"Controlled": "Abjuration"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"BonusAction": null
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Dist":
+			{
+				"Feet": 30
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": "a shard of glass from a mirror",
+	"duration":
+	{
+		"Controlled":
+		{
+			"Minutes": [1, false]
+		}
+	},
+	"description": "You ward a creature within range. Until the spell ends, any creature who targets the warded creature with an attack roll or a damaging spell must succeed on a Wisdom saving throw or either choose a new target or lose the attack or spell. This spell doesn't protect the warded creature from areas of effect.\nThe spell ends if the warded creature makes an attack roll, casts a spell, or deals damage.",
+	"upcast_description": null,
+	"tables": []
+}

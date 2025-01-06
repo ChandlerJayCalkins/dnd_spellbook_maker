@@ -1,0 +1,42 @@
+{
+	"name": "Shield of Faith",
+	"level":
+	{
+		"Controlled": "Level1"
+	},
+	"school":
+	{
+		"Controlled": "Abjuration"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"BonusAction": null
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Dist":
+			{
+				"Feet": 60
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": "a prayer scroll",
+	"duration":
+	{
+		"Controlled":
+		{
+			"Minutes": [10, true]
+		}
+	},
+	"description": "A shimmering field surrounds a creature of your choice within range, granting it a +2 bonus to AC for the duration.",
+	"upcast_description": null,
+	"tables": []
+}

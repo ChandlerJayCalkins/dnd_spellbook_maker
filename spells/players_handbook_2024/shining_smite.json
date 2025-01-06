@@ -1,0 +1,39 @@
+{
+	"name": "Shining Smite",
+	"level":
+	{
+		"Controlled": "Level2"
+	},
+	"school":
+	{
+		"Controlled": "Transmutation"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"BonusAction": "which you take immediately after hitting a creature with a Melee weapon or Unarmed Strike"
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Yourself": null
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": false,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled":
+		{
+			"Minutes": [1, true]
+		}
+	},
+	"description": "The target hit by the strike takes an extra 2d6 Radiant damage from the attack. Until the spell ends, the target sheds Bright Light in a 5-foot radius, attack rolls against it have Advantage, and it can't benefit from the Invisible condition.",
+	"upcast_description": "The damage increases by 1d6 for each spell slot level above 2.",
+	"tables": []
+}

@@ -1,0 +1,39 @@
+{
+	"name": "Spare the Dying",
+	"level":
+	{
+		"Controlled": "Cantrip"
+	},
+	"school":
+	{
+		"Controlled": "Necromancy"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Dist":
+			{
+				"Feet": 15
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled": "Instant"
+	},
+	"description": "Choose a creature within range that has 0 Hit Points and isn't dead. The creature becomes Stable.",
+	"upcast_description": "The range doubles when you reach levels 5 (30 feet), 11 (60 feet), and 17 (120 feet).",
+	"tables": []
+}

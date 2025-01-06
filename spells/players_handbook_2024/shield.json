@@ -1,0 +1,39 @@
+{
+	"name": "Shield",
+	"level":
+	{
+		"Controlled": "Level1"
+	},
+	"school":
+	{
+		"Controlled": "Abjuration"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Reaction": "which you take when you are hit by an attack roll or targeted by the <i> Magic Missile <r> spell"
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Yourself": null
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled":
+		{
+			"Rounds": [1, false]
+		}
+	},
+	"description": "An imperceptible barrier of magical force protects you. Until the start of your next turn, you have a +5 bonus to AC, including against the triggering attack, and you take no damage from <i> Magic Missile. <r>",
+	"upcast_description": null,
+	"tables": []
+}

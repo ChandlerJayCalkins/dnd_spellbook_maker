@@ -1,0 +1,42 @@
+{
+	"name": "Sleet Storm",
+	"level":
+	{
+		"Controlled": "Level3"
+	},
+	"school":
+	{
+		"Controlled": "Conjuration"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Dist":
+			{
+				"Feet": 150
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": "a miniature umbrella",
+	"duration":
+	{
+		"Controlled":
+		{
+			"Minutes": [1, true]
+		}
+	},
+	"description": "Until the spell ends, sleet falls in a 40-foot-tall, 20-foot-radius Cylinder centered on a point you choose within range. The area is Heavily Obscured, and exposed flames in the area are doused.\nGround in the Cylinder is Difficult Terrain. When a creature enters the Cylinder for the first time on a turn or starts its turn there, it must succeed on a Dexterity saving throw or have the Prone condition and lose Concentration.",
+	"upcast_description": null,
+	"tables": []
+}

@@ -130,6 +130,72 @@ fn players_handbook_2024()
 	let _ = save_spellbook(doc, "Player's Handbook 2024 Spells.pdf").unwrap();
 }
 
+// Create 2 spellbooks that combined contain every spell in the 2024 player's handbook
+// Use this test instead of the players_handbook_2024 test if you are unable to view pdf documents larger than 2GB
+#[test]
+fn players_handbook_2024_split()
+{
+	// Spellbook's names
+	let spellbook_name_1 =
+	"Every Sepll in the 2024 Dungeons & Dragons 5th Edition Player's Handbook: Part 1";
+	let spellbook_name_2 =
+	"Every Sepll in the 2024 Dungeons & Dragons 5th Edition Player's Handbook: Part 2";
+	// List of every spell in this folder
+	let spell_list = get_all_spells_in_folder("spells/players_handbook_2024")
+		.expect("Failed to collect spells from folder.");
+	// Split that vec into 2 vecs
+	let spell_list_1 = spell_list[..spell_list.len()/2].to_vec();
+	let spell_list_2 = spell_list[spell_list.len()/2..].to_vec();
+	// Get default spellbook options
+	let
+	(
+		font_paths,
+		font_sizes,
+		font_scalars,
+		spacing_options,
+		text_colors,
+		page_size_options,
+		page_number_options,
+		background_path,
+		background_transform,
+		table_options
+	) = default_spellbook_options();
+	// Create a spellbook with the first half of the spells
+	let (doc_1, _, _) = create_spellbook
+	(
+		spellbook_name_1,
+		&spell_list_1,
+		font_paths.clone(),
+		font_sizes,
+		font_scalars,
+		spacing_options,
+		text_colors,
+		page_size_options,
+		Some(page_number_options),
+		Some((&background_path, background_transform)),
+		table_options
+	).unwrap();
+	// Save the first spellbook to a file
+	let _ = save_spellbook(doc_1, "Player's Handbook 2024 Spells 1.pdf").unwrap();
+	// Create a spellbook with the second half of the spells
+	let (doc_2, _, _) = create_spellbook
+	(
+		spellbook_name_2,
+		&spell_list_2,
+		font_paths,
+		font_sizes,
+		font_scalars,
+		spacing_options,
+		text_colors,
+		page_size_options,
+		Some(page_number_options),
+		Some((&background_path, background_transform)),
+		table_options
+	).unwrap();
+	// Save the second spellbook to a file
+	let _ = save_spellbook(doc_2, "Player's Handbook 2024 Spells 2.pdf").unwrap();
+}
+
 // Create a spellbook with every spell from the 2014 player's handbook
 #[test]
 fn players_handbook_2014()
@@ -179,8 +245,10 @@ fn players_handbook_2014_split()
 {
 	
 	// Spellbook names
-	let spellbook_name_1 = "Every Sepll in the 2014 Dungeons & Dragons 5th Edition Player's Handbook: Part 1";
-	let spellbook_name_2 = "Every Sepll in the 2014 Dungeons & Dragons 5th Edition Player's Handbook: Part 2";
+	let spellbook_name_1 =
+	"Every Sepll in the 2014 Dungeons & Dragons 5th Edition Player's Handbook: Part 1";
+	let spellbook_name_2 =
+	"Every Sepll in the 2014 Dungeons & Dragons 5th Edition Player's Handbook: Part 2";
 	// List of every spell in the player's handbook folder
 	let spell_list = get_all_spells_in_folder("spells/players_handbook_2014")
 		.expect("Failed to collect spells from folder.");

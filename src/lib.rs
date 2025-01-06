@@ -27,5 +27,14 @@ pub use utils::*;
 //		- Finger of Death
 //		- Giant Insect
 //		- Phantom Steed
+//		- Summon Aberration
+//		- Summon Beast
+//		- Summon Celestial
+//		- Summon Construct
+//		- Summon Dragon
+//		- Summon Elemental
+//		- Summon Fey
+//		- Summon Fiend
+//		- Summon Undead
 //	3. Make it so multiple tables / stat blocks can be placed next to each other horizontally
 //	4. Make it so font tags don't have to be their own token separated by whitespace

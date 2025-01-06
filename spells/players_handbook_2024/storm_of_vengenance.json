@@ -1,0 +1,42 @@
+{
+	"name": "Storm of Vengeance",
+	"level":
+	{
+		"Controlled": "Level9"
+	},
+	"school":
+	{
+		"Controlled": "Conjuration"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Dist":
+			{
+				"Miles": 1
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled":
+		{
+			"Minutes": [1, true]
+		}
+	},
+	"description": "A churning storm cloud forms for the duration, centered on a point within range and spreading to a radius of 300 feet. Each creature under the cloud when it appears must succeed on a Constitution saving throw or take 2d6 Thunder damage and have the Deafened condition for the duration.\nAt the start of each of your later turns, the storm produces different effects, as detailed below.\n<bi> Turn 2. <r> Acidic rain falls. Each creature and object under the cloud takes 4d6 Acid damage.\n<bi> Turn 3. <r> You call six bolts of lightning from the cloud to strike six different creatures or objects beneath it. Each target makes a Dexterity saving throw, taking 10d6 Lightning damage on a failed save or half as much damage on a successful one.\n<bi> Turn 4. <r> Hailstones rain down. Each creature under the cloud takes 2d6 Bludgeoning damage.\n<bi> Turns 5-10. <r> Gusts and freezing rain assail the area under the cloud. Each creature there takes 1d6 Cold damage. Until the spell ends, the area is Difficult Terrain and Heavily Obscured, ranged attacks with weapons are impossible there, and strong wind blows through the area.",
+	"upcast_description": null,
+	"tables": []
+}
