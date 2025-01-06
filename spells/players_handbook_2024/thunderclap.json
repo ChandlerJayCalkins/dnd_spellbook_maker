@@ -1,0 +1,42 @@
+{
+	"name": "Thunderclap",
+	"level":
+	{
+		"Controlled": "Cantrip"
+	},
+	"school":
+	{
+		"Controlled": "Evocation"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Yourself":
+			{
+				"Emanation":
+				{
+					"Feet": 5
+				}
+			}
+		}
+	},
+	"has_v_component": false,
+	"has_s_component": true,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled": "Instant"
+	},
+	"description": "Each creature in a 5-foot Emanation originating from you must succeed on a Constitution saving throw or take 1d6 Thunder damage. The spell's thunderous sound can be heard up to 100 feet away.",
+	"upcast_description": "The damage increases by 1d6 when you reach levels 5 (2d6), 11 (3d6), and 17 (4d6).",
+	"tables": []
+}

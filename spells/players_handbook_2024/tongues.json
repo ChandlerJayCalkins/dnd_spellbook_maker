@@ -1,0 +1,36 @@
+{
+	"name": "Tongues",
+	"level":
+	{
+		"Controlled": "Level3"
+	},
+	"school":
+	{
+		"Controlled": "Divination"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled": "Touch"
+	},
+	"has_v_component": true,
+	"has_s_component": false,
+	"m_components": "a miniature ziggurat",
+	"duration":
+	{
+		"Controlled":
+		{
+			"Hours": [1, false]
+		}
+	},
+	"description": "This spell grants the creature you touch the ability to understand any spoken or signed language that it hears or sees. Moreover, when the target communicates by speaking or signing, any creature that knows at least one language can understand it if that creature can hear the speech or see the signing.",
+	"upcast_description": null,
+	"tables": []
+}

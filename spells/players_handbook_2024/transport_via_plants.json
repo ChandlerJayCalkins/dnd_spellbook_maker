@@ -1,0 +1,42 @@
+{
+	"name": "Transport via Plants",
+	"level":
+	{
+		"Controlled": "Level6"
+	},
+	"school":
+	{
+		"Controlled": "Conjuration"
+	},
+	"is_ritual": false,
+	"casting_time":
+	{
+		"Controlled":
+		{
+			"Actions": 1
+		}
+	},
+	"range":
+	{
+		"Controlled":
+		{
+			"Dist":
+			{
+				"Feet": 10
+			}
+		}
+	},
+	"has_v_component": true,
+	"has_s_component": true,
+	"m_components": null,
+	"duration":
+	{
+		"Controlled":
+		{
+			"Rounds": [1, false]
+		}
+	},
+	"description": "This spell creates a magical link between a Large or larger inanimate plant within range and another plant, at any distance, on the same plane of existence. You must have seen or touched the destination plant at least once before. For the duration, any creature can step into the target plant and exit from the destination plant by using 5 feet of movement.",
+	"upcast_description": null,
+	"tables": []
+}
