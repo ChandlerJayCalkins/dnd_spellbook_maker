@@ -1298,8 +1298,7 @@ impl <'a> SpellbookWriter<'a>
 					// If the token is an escaped font tag, remove the first backslash at the start
 					if self.is_escaped_font_tag(tokens[i]) { tokens[i] = &tokens[i][1..]; }
 					// Declare a width variable that will be calculated when the tokens is hyphenated
-					#[allow(unused_assignments)]
-					let mut width = 0.0;
+					let width;
 					// Hyphenate the token if it's too long to fit on a line and compute its width
 					(tokens[i], width) = self.hyphenate_token
 					(
@@ -1314,7 +1313,7 @@ impl <'a> SpellbookWriter<'a>
 					{
 						// Put the token into the line
 						let text_token = TextToken::with_width(tokens[i], width);
-						line.add_text(text_token, self.space_widths());
+						line.add_text(text_token);
 					}
 					// If the line is not empty
 					else if line.width() > 0.0
@@ -1338,7 +1337,8 @@ impl <'a> SpellbookWriter<'a>
 							);
 							// Add the token to the start of the new line
 							let text_token = TextToken::with_width(tokens[i], width);
-							line.add_text(text_token, self.space_widths());
+							line.add_space(self.space_widths());
+							line.add_text(text_token);
 							// Set the max width width to the textbox width in case the previous line was the first
 							// line
 							current_line_max_width = textbox_width;
@@ -1348,7 +1348,8 @@ impl <'a> SpellbookWriter<'a>
 						{
 							// Add this token to the line
 							let text_token = TextToken::with_width(tokens[i], width);
-							line.add_text(text_token, self.space_widths());
+							line.add_space(self.space_widths());
+							line.add_text(text_token);
 						}
 					}
 					// If the line has a negative width
@@ -1486,8 +1487,9 @@ impl <'a> SpellbookWriter<'a>
 			// If the token was hyphenated
 			if index < token.len()
 			{
+				if current_line.width() > 0.0 { current_line.add_space(&self.space_widths()) }
 				// Add the hyphenated part of the token to the current line
-				current_line.add_text(hyphenated_token, self.space_widths());
+				current_line.add_text(hyphenated_token);
 				// Make sure there isn't any extra capacity in the line's token vec
 				current_line.shrink_to_fit();
 			}
@@ -1610,44 +1612,39 @@ impl <'a> SpellbookWriter<'a>
 		if line.is_empty() { return; }
 		// Checks to see if the text should can fit on this page or needs to move to a new page.
 		self.check_for_new_page();
-		// Keeps track of what index in the line to start at when applying tokens to the page
-		let mut last_index = 0;
+		// Get the tokens to loop through
 		let tokens = line.tokens();
+		// Holds the next text to apply to the page
+		// (before a font change or at the end of looping through the tokens to find font changes)
+		let mut next_text = String::with_capacity(line.byte_count());
 		// Loop through all of the tokens to find font tags
 		for index in 0..tokens.len()
 		{
 			match &tokens[index]
 			{
-				// If the current token is a font tag, apply previous text and switch font
+				// If the current token is a font tag
 				Token::FontTag(font_variant) =>
 				{
-					// If the font tag is different than the current font
+					// If the font tag is different than the current font, apply previous text and switch font
 					if *font_variant != *self.current_font_variant()
 					{
-						// Get a vec of strings of all the previous tokens
-						let next_line: &Vec<_> =
-						&tokens[last_index..index].iter().map(|token| token.as_spellbook_string()).collect();
-						// Join those tokens together with spaces and apply them to the page
-						self.apply_text(next_line.join(SPACE).as_str());
-						// If this isn't the last token in the line, apply another space to the page
-						if index < tokens.len() - 1
-						{
-							self.apply_text(SPACE);
-						}
-						// Set the current font variant so the following tokens will be applied correctly
+						self.apply_text(&next_text);
+						// Switch the font to the current font tag
 						self.set_current_font_variant(*font_variant);
-						// Increase the index to start applying tokens at to be after this font tag token
-						last_index = index + 1;
+						// next_text = next_text.split_off(index+1);
+						// Empty the next text string but reserve
+						next_text = String::with_capacity(next_text.capacity() - next_text.len());
 					}
 				},
-				Token::Text(_) => ()
+				// If the token is anything else, add it to the next string of text to be applied
+				_ =>
+				{
+					next_text += &tokens[index].as_spellbook_string();
+				}
 			}
 		}
-		// Get a vec of strings of all the previous tokens
-		let next_line: &Vec<_> =
-		&tokens[last_index..].iter().map(|token| token.as_spellbook_string()).collect();
-		// Join those tokens together withs spaces and apply them to the page
-		self.apply_text(next_line.join(SPACE).as_str());
+		// Apply all remaining text on the line to the page
+		self.apply_text(&next_text);
 	}
 
 	/// Checks if the current layer should move to the next page if the text y position is below given `y_min` value.

@@ -765,6 +765,8 @@ pub enum Token
 	/// A symbol that changes the font variant that the following text uses.
 	// Ex: Regular: "<r>", Bold: "<b>", Italic: "<i>", Bold-Italic: "<bi>" or "<ib>".
 	FontTag(FontVariant),
+	/// A space character
+	Space,
 	/// Tokens that are treated like text and are applied to the page.
 	Text(TextToken)
 }
@@ -779,6 +781,7 @@ impl Token
 		match self
 		{
 			Self::FontTag(_) => EMPTY_STR,
+			Self::Space => SPACE,
 			Self::Text(token) => &token.text()
 		}
 	}
@@ -791,6 +794,7 @@ impl fmt::Display for Token
 		match self
 		{
 			Self::FontTag(tag) => tag.fmt(f),
+			Self::Space => write!(f, "{}", SPACE),
 			Self::Text(token) => token.fmt(f)
 		}
 	}
@@ -846,6 +850,8 @@ impl TextToken
 	pub fn text(&self) -> &str {&self.text.as_str() }
 	// /// Returns the width of the text his object is holding.
 	// pub fn width(&self) -> f32 { self.width }
+	/// Returns the number of bytes in the string of this text.
+	pub fn byte_count(&self) -> usize { self.text.len() }
 }
 
 impl fmt::Display for TextToken
@@ -864,6 +870,8 @@ pub struct TextLine
 	tokens: Vec<Token>,
 	/// The width of the entire line in `printpdf::Mm` units.
 	width: f32,
+	/// The number of bytes the string of this line will take up
+	byte_count: usize,
 	/// Holds the text type of this line (used for calculating space widths)
 	text_type: TextType,
 	/// Holds the current font variant of the line (used for calculating space widths)
@@ -894,6 +902,7 @@ impl TextLine
 		{
 			tokens: Vec::with_capacity(size),
 			width: 0.0,
+			byte_count: 0,
 			text_type: text_type,
 			current_font_variant: current_font_variant,
 			previous_font_variant: current_font_variant
@@ -915,34 +924,51 @@ impl TextLine
 	/// Adds a font tag to the line.
 	pub fn add_font_tag(&mut self, tag: FontVariant)
 	{
+		// If there is at least 1 other token in the line
 		if self.tokens.len() > 0
 		{
+			// Determine the type of the last tag in the line
 			let last_index = self.tokens.len() - 1;
 			match self.tokens[last_index]
 			{
+				// If it's a font tag
 				Token::FontTag(_) => self.tokens[last_index] = Token::FontTag(tag),
-				Token::Text(_) =>
+				// If it's anything else
+				_ =>
 				{
 					self.previous_font_variant = self.current_font_variant;
 					self.tokens.push(Token::FontTag(tag));
 				}
 			}
 		}
+		// If this is the first token in the line, just add it to the line
 		else { self.tokens.push(Token::FontTag(tag)); }
 		self.current_font_variant = tag;
 	}
 
 	/// Adds text to the line.
-	pub fn add_text(&mut self, text: TextToken, space_widths: &SpaceWidths)
+	pub fn add_text(&mut self, text: TextToken)
 	{
-		if self.width > 0.0
-		{
-			self.width += space_widths.get_width_for(self.text_type, self.previous_font_variant);
-		}
+		// Update the current font variant so the line can know which font variants to use for width
+		// calculations
 		self.previous_font_variant = self.current_font_variant;
-		// Adds the width of the token to the line's width before adding the token itself to the line.
+		// Adds the width and length of the token to the line's width and byte count before
+		// adding the token itself to the line.
 		self.width += text.width;
+		self.byte_count += text.byte_count();
+		// Add to line
 		self.tokens.push(Token::Text(text));
+	}
+
+	/// Adds a space character to the line.
+	pub fn add_space(&mut self, space_widths: &SpaceWidths)
+	{
+		// Adds the width and length of the token to the line's width and byte count before
+		// adding the token itself to the line.
+		self.width += space_widths.get_width_for(self.text_type, self.previous_font_variant);
+		self.byte_count += SPACE.len();
+		// Add to line
+		self.tokens.push(Token::Space);
 	}
 
 	// /// Adds extra width to the line (usually used for adding the width of a space character to the line).
@@ -956,6 +982,8 @@ impl TextLine
 	pub fn tokens(&self) -> &Vec<Token> { &self.tokens }
 	/// Returns the width of the line.
 	pub fn width(&self) -> f32 { self.width }
+	/// Returns the number of bytes that the line's chars will take up in string form
+	pub fn byte_count(&self) -> usize { self.byte_count }
 	// /// Returns the number of tokens in the line
 	// pub fn len(&self) -> usize { self.tokens.len() }
 	/// Returns whether or not the vec of tokens in this line is empty.
