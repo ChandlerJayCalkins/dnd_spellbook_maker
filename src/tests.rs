@@ -492,20 +492,30 @@ fn necronomicon()
 // 	// Vec of paths to spell files that will be read from
 // 	let spell_paths = vec!
 // 	[
-// 		"spells/players_handbook_2014/prestidigitation.json",
-// 		"spells/players_handbook_2014/mending.json",
-// 		"spells/players_handbook_2014/mage_hand.json",
-// 		"spells/players_handbook_2014/fire_bolt.json",
-// 		"spells/strixhaven/silvery_barbs.json",
-// 		"spells/players_handbook_2014/color_spray.json",
-// 		"spells/players_handbook_2014/magic_missile.json",
-// 		"spells/xanathars_guide_to_everything/ice_knife.json",
-// 		"spells/players_handbook_2014/mage_armor.json",
-// 		"spells/players_handbook_2014/unseen_servant.json",
-// 		"spells/players_handbook_2014/detect_magic.json",
-// 		"spells/players_handbook_2014/alarm.json",
-// 		"spells/players_handbook_2014/cloud_of_daggers.json",
-// 		"spells/players_handbook_2014/scorching_ray.json"
+// 		"spells/players_handbook_2024/prestidigitation.json",
+// 		"spells/players_handbook_2024/mage_hand.json",
+// 		"spells/players_handbook_2024/mending.json",
+// 		"spells/players_handbook_2024/minor_illusion.json",
+// 		"spells/players_handbook_2024/fire_bolt.json",
+// 		"spells/players_handbook_2024/ray_of_frost.json",
+// 		"spells/players_handbook_2024/shocking_grasp.json",
+// 		"spells/players_handbook_2024/acid_splash.json",
+// 		"spells/players_handbook_2024/mage_armor.json",
+// 		"spells/players_handbook_2024/magic_missile.json",
+// 		"spells/players_handbook_2024/chromatic_orb.json",
+// 		"spells/players_handbook_2024/silent_image.json",
+// 		"spells/players_handbook_2024/sleep.json",
+// 		"spells/players_handbook_2024/disguise_self.json",
+// 		"spells/players_handbook_2024/identify.json",
+// 		"spells/players_handbook_2024/detect_magic.json",
+// 		"spells/players_handbook_2024/unseen_servant.json",
+// 		"spells/players_handbook_2024/comprehend_languages.json",
+// 		"spells/players_handbook_2024/invisibility.json",
+// 		"spells/players_handbook_2024/cloud_of_daggers.json",
+// 		"spells/players_handbook_2024/scorching_ray.json",
+// 		"spells/players_handbook_2024/phantasmal_force.json",
+// 		"spells/players_handbook_2024/detect_thoughts.json",
+// 		"spells/players_handbook_2024/enhance_ability.json",
 // 	];
 // 	// Attempt to loop through each spell file and convert it into a spell struct
 // 	for path in spell_paths
@@ -513,39 +523,39 @@ fn necronomicon()
 // 		println!("{}", path);
 // 		// Convert spell file into spell struct and add it to spell_list vec
 // 		spell_list.push(spells::Spell::from_json_file(path)
-//			.expect(format!("Failed to load spell file {}", path).as_str()));
+// 			.expect(format!("Failed to load spell file {}", path).as_str()));
 // 	}
 // 	// Get default spellbook options
-//	let
-//	(
-//		font_paths,
-//		font_sizes,
-//		font_scalars,
-//		spacing_options,
-//		text_colors,
-//		page_size_options,
-//		page_number_options,
-//		background_path,
-//		background_transform,
-//		table_options
-//	) = default_spellbook_options();
-	// Create the spellbook
-//	let (doc, _, _) = create_spellbook
-//	(
-//		spellbook_name,
-//		&spell_list,
-//		font_paths,
-//		font_sizes,
-//		font_scalars,
-//		spacing_options,
-//		text_colors,
-//		page_size_options,
-//		Some(page_number_options),
-//		Some((&background_path, background_transform)),
-//		table_options
-//	).unwrap();
-//	// Save the spellbook to a file
-//	let _ = save_spellbook(doc, "Spellbook.pdf").unwrap();
+// 	let
+// 	(
+// 		font_paths,
+// 		font_sizes,
+// 		font_scalars,
+// 		spacing_options,
+// 		text_colors,
+// 		page_size_options,
+// 		page_number_options,
+// 		background_path,
+// 		background_transform,
+// 		table_options
+// 	) = default_spellbook_options();
+// 	// Create the spellbook
+// 	let (doc, _, _) = create_spellbook
+// 	(
+// 		spellbook_name,
+// 		&spell_list,
+// 		font_paths,
+// 		font_sizes,
+// 		font_scalars,
+// 		spacing_options,
+// 		text_colors,
+// 		page_size_options,
+// 		Some(page_number_options),
+// 		Some((&background_path, background_transform)),
+// 		table_options
+// 	).unwrap();
+// 	// Save the spellbook to a file
+// 	let _ = save_spellbook(doc, "Spellbook.pdf").unwrap();
 // }
 
 // Makes sure that creating valid spell files works
