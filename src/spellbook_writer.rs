@@ -1337,7 +1337,6 @@ impl <'a> SpellbookWriter<'a>
 							);
 							// Add the token to the start of the new line
 							let text_token = TextToken::with_width(tokens[i], width);
-							line.add_space(self.space_widths());
 							line.add_text(text_token);
 							// Set the max width width to the textbox width in case the previous line was the first
 							// line
