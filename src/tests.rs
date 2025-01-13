@@ -524,7 +524,6 @@ fn personal_spellbook()
 	// Attempt to loop through each spell file and convert it into a spell struct
 	for path in spell_paths
 	{
-		println!("{}", path);
 		// Convert spell file into spell struct and add it to spell_list vec
 		spell_list.push(spells::Spell::from_json_file(path)
 			.expect(format!("Failed to load spell file {}", path).as_str()));
