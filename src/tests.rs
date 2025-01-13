@@ -486,7 +486,7 @@ fn necronomicon()
 fn personal_spellbook()
 {
 	// Spellbook's name
-	let spellbook_name = "Eryn Amastacia's Spellbook";
+	let spellbook_name = "A Spellcaster's Spellbook";
 	// Vec of spells that will be added to spellbook
 	let mut spell_list = Vec::new();
 	// Vec of paths to spell files that will be read from
@@ -510,12 +510,16 @@ fn personal_spellbook()
 		"spells/players_handbook_2024/detect_magic.json",
 		"spells/players_handbook_2024/unseen_servant.json",
 		"spells/players_handbook_2024/comprehend_languages.json",
+		"spells/players_handbook_2024/misty_step.json",
 		"spells/players_handbook_2024/invisibility.json",
 		"spells/players_handbook_2024/cloud_of_daggers.json",
 		"spells/players_handbook_2024/scorching_ray.json",
 		"spells/players_handbook_2024/phantasmal_force.json",
 		"spells/players_handbook_2024/detect_thoughts.json",
 		"spells/players_handbook_2024/enhance_ability.json",
+		"spells/players_handbook_2024/hypnotic_pattern.json",
+		"spells/players_handbook_2024/fireball.json",
+		"spells/players_handbook_2024/fly.json"
 	];
 	// Attempt to loop through each spell file and convert it into a spell struct
 	for path in spell_paths
