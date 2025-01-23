@@ -24,7 +24,7 @@ dnd_spellbook_maker = { git = "https://github.com/ChandlerJayCalkins/dnd_spellbo
 
 This program makes a spellbook. It assumes the directory it is in has the same "spells", "fonts", and "img" folders from this repository with all their contents.
 
-```Rust
+```rust
 use dnd_spellbook_maker;
 
 fn main()
