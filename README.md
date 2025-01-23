@@ -1,9 +1,9 @@
 # dnd_spellbook_maker
 ---
 
-Library for making pdf documents of spells that ressemble 5th edition D&D official source book spell descriptions.
+Library for making pdf documents of 5th edition D&D spells that are formatted like D&D source books.
 
-Documentation at <https://docs.rs/dnd_spellbook_maker>.
+Handy for having a quick way to look up spell rules for a character both on a computer and in person.
 
 # Quickstart
 ---
@@ -160,7 +160,7 @@ To create a spellbook using the `create_spellbook()` function, it needs a vec of
 # Spell JSON Files
 ---
 
-Here are some example spell json files. See the [Spell JSON Formatting Documentation](spell_json_formatting.md) for more info on each field.
+Spells can be created from and stored as JSON files. Below are some example spell JSON files. See the [Spell JSON Formatting Documentation](spell_json_formatting.md) for more info on each field.
 
 ```json
 {

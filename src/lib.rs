@@ -1,4 +1,4 @@
-//! Library for making pdf documents of spells that a 5th edition D&D character has.
+//! Library for making pdf documents of 5th edition D&D spells that are formatted like D&D source books.
 //!
 //! See repository for documentation on spell files.
 //!

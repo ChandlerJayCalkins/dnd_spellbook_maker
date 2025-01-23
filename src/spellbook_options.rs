@@ -35,7 +35,7 @@ impl fmt::Display for FontVariant
 	}
 }
 
-/// File paths to all the font files needed for `generate_spellbook()`.
+/// File paths to all the font files needed for `create_spellbook()`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FontPaths
 {

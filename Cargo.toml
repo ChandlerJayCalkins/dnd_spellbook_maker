@@ -1,14 +1,14 @@
 [package]
 name = "dnd-spellbook-maker"
-version = "1.0.0"
+version = "0.2.0"
 authors = ["Chandler Calkins <chandlerjaycalkins@gmail.com>"]
 edition = "2021"
-description = "Library for making pdf documents of spells that ressemble 5th edition D&D official source book spell descriptions."
+description = "Library for making pdf documents of 5th edition D&D spells that are formatted like D&D source books."
 readme = "README.md"
 documentation = "https://docs.rs/dnd_spellbook_maker"
 repository = "https://github.com/ChandlerJayCalkins/dnd_spellbook_maker"
 homepage = "https://github.com/ChandlerJayCalkins/dnd_spellbook_maker"
-license = "MIT"
+license = "MIT OR Apache-2.0 OR GPL-3.0-or-later"
 keywords = ["dnd", "spells", "spells", "spellbook"]
 exclude = ["spells", "fonts", "img"]
 
