@@ -6,6 +6,7 @@
 
 use std::error::Error;
 use std::ops::Range;
+use std::borrow::Borrow;
 
 extern crate image;
 use printpdf::
@@ -20,7 +21,7 @@ use printpdf::
 	PdfPageIndex,
 	Image
 };
-use regex::Regex;
+use regex::{Regex, Captures};
 
 use crate::spellbook_gen_types::*;
 use crate::spells;
@@ -57,6 +58,7 @@ pub struct SpellbookWriter<'a>
 	// Stored here so the width of various types of spaces doesn't need to be continually recalculated
 	space_widths: SpaceWidths,
 	// Regex patterns are stored since they consume lots of runtime being reconstructed continutally
+	font_tag_regex: Regex,
 	escaped_font_tag_regex: Regex,
 	table_tag_regex: Regex,
 	backslashes_regex: Regex,
@@ -197,6 +199,23 @@ impl <'a> SpellbookWriter<'a>
 		// Calculate the width of each variation of a space character
 		let space_widths = SpaceWidths::new(&font_data);
 		let table_data = TableData::from(table_options);
+		// Create a regex pattern for font tags (that are not escaped)
+		// Ex: "<r>", "<bi>", "<i>", "<b>", "<bi>"
+		let font_tag_pattern = format!
+		(
+			"(?:^|[&\\\\])({}|{}|{}|{}|{})",
+			REGULAR_FONT_TAG,
+			BOLD_FONT_TAG,
+			ITALIC_FONT_TAG,
+			BOLD_ITALIC_FONT_TAG,
+			ITALIC_BOLD_FONT_TAG
+		);
+		let font_tag_regex = Regex::new(&font_tag_pattern)
+		.expect(format!
+		(
+			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::new`",
+			font_tag_pattern
+		).as_str());
 		// Create a regex pattern for escaped font tags (font tags preceeded by backslashes)
 		// Ex: "\<r>", "\\\<bi>", "\\<i>", etc.
 		// Use this regex pattern to remove the first backslash from escaped font tags so that font tags are allowed
@@ -248,6 +267,7 @@ impl <'a> SpellbookWriter<'a>
 			background: background,
 			space_widths: space_widths,
 			table_data: table_data,
+			font_tag_regex: font_tag_regex,
 			escaped_font_tag_regex: escaped_font_tag_regex,
 			table_tag_regex: table_tag_regex,
 			backslashes_regex: backslashes_regex,
@@ -1274,12 +1294,12 @@ impl <'a> SpellbookWriter<'a>
 				// calculated correctly for the following tokens
 				REGULAR_FONT_TAG =>
 				{
-					line.add_font_tag(FontVariant::Regular,);
+					line.add_font_tag(FontVariant::Regular);
 					self.set_current_font_variant(FontVariant::Regular);
 				},
 				BOLD_FONT_TAG =>
 				{
-					line.add_font_tag(FontVariant::Bold,);
+					line.add_font_tag(FontVariant::Bold);
 					self.set_current_font_variant(FontVariant::Bold);
 				},
 				ITALIC_FONT_TAG =>
@@ -1296,13 +1316,22 @@ impl <'a> SpellbookWriter<'a>
 				_ =>
 				{
 					// If the token is an escaped font tag, remove the first backslash at the start
-					if self.is_escaped_font_tag(tokens[i]) { tokens[i] = &tokens[i][1..]; }
+					let backslash_remover = |caps: &Captures|
+					{
+						match caps.get(0)
+						{
+							None => String::new(),
+							Some(m) => String::from(&m.as_str()[1..])
+						}
+					};
+					let token = self.escaped_font_tag_regex.replace_all(tokens[i], backslash_remover);
+					let mut token: &str = token.borrow();
 					// Declare a width variable that will be calculated when the tokens is hyphenated
 					let width;
 					// Hyphenate the token if it's too long to fit on a line and compute its width
-					(tokens[i], width) = self.hyphenate_token
+					(token, width) = self.hyphenate_token
 					(
-						tokens[i],
+						token,
 						&mut current_line_max_width,
 						textbox_width,
 						&mut line,
@@ -1312,7 +1341,7 @@ impl <'a> SpellbookWriter<'a>
 					if line.width() == 0.0
 					{
 						// Put the token into the line
-						let text_token = TextToken::with_width(tokens[i], width);
+						let text_token = TextToken::with_width(token, width);
 						line.add_text(text_token);
 					}
 					// If the line is not empty
@@ -1336,7 +1365,7 @@ impl <'a> SpellbookWriter<'a>
 								*self.current_font_variant()
 							);
 							// Add the token to the start of the new line
-							let text_token = TextToken::with_width(tokens[i], width);
+							let text_token = TextToken::with_width(token, width);
 							line.add_text(text_token);
 							// Set the max width width to the textbox width in case the previous line was the first
 							// line
@@ -1346,7 +1375,7 @@ impl <'a> SpellbookWriter<'a>
 						else
 						{
 							// Add this token to the line
-							let text_token = TextToken::with_width(tokens[i], width);
+							let text_token = TextToken::with_width(token, width);
 							line.add_space(self.space_widths());
 							line.add_text(text_token);
 						}

@@ -597,7 +597,11 @@ To change the font variant being used between regular text, **bold text**, *ital
 - \<bi\>
 - \<ib\>
 
-Font tags will make the text that comes after them their corresponding font variant until either the end of the text or the next font tag, whichever comes first. \<r\> will make the following text regular, \<b\> will make the following text **bold**, \<i\> will make the following text *italic*, and either \<bi\> or \<ib\> will make the following text ***bold-italic***. Font tags must be their own separate token with whitespace around it to be processed.
+Font tags will make the text that comes after them their corresponding font variant until either the end of the text or the next font tag, whichever comes first. \<r\> will make the following text regular, \<b\> will make the following text **bold**, \<i\> will make the following text *italic*, and either \<bi\> or \<ib\> will make the following text ***bold-italic***.
+
+Font tags must be their own separate token with whitespace around it to be processed.
+
+Font tags can be escaped with backslashes. For example, `\<r>` will appear as just `<r>` in a spell description without changing the font. Multiple backslashes can also be used to escape font tags and only the first one will be removed. For example, `\\\<bi>` will appear in a spell description as `\\<bi>`.
 
 This description
 
