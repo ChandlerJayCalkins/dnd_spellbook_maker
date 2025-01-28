@@ -1267,7 +1267,7 @@ impl <'a> SpellbookWriter<'a>
 	{
 		// Get all tokens separated by whitespace
 		// Collects it into a vec so the `is_empty` method can be used without having to clone a new iterator.
-		let mut tokens: Vec<_> = text.split_whitespace().collect();
+		let tokens: Vec<_> = text.split_whitespace().collect();
 		// If there is no text, do nothing
 		if tokens.is_empty() { return Vec::new(); }
 		// Store the font variant at the start so the current font variant can be reset to it after constructing the
@@ -1405,24 +1405,6 @@ impl <'a> SpellbookWriter<'a>
 	// 	let scalar = self.font_data.get_scalar_for(font_variant);
 	// 	TextToken::new(token, font_size_data, self.current_font_scale(), scalar)
 	// }
-
-	/// Returns whether or not a token / string is an escaped font tag (font tag with any amount of backslashes
-	/// before it).
-	fn is_escaped_font_tag(&self, token: &str) -> bool
-	{
-		// Determine whether or not there is an escaped font tag in the token
-		match self.escaped_font_tag_regex.find(token)
-		{
-			// If there is an escaped font tag in the token
-			Some(pat_match) =>
-			{
-				// If the escaped font tag is the entire token
-				if pat_match.range() == (Range { start: 0, end: token.len() }) { true }
-				else { false }
-			},
-			None => false
-		}
-	}
 
 	/// If the given token is too wide to fit on a single line within the given textbox constraints, hyphenate it and
 	/// apply it to the spellbook until the end of it is reached and it can fit in a single line without being
