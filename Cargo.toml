@@ -1,6 +1,6 @@
 [package]
 name = "dnd_spellbook_maker"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Chandler Calkins <chandlerjaycalkins@gmail.com>"]
 edition = "2021"
 description = "Library for making pdf documents of 5th edition D&D spells that are formatted like D&D source books."
