@@ -591,33 +591,31 @@ Text will automatically move to new lines when it doesn't fit on the page anymor
 
 To change the font variant being used between regular text, **bold text**, *italic text*, and ***bold italic text***, use these font tags:
 
-- \<r\>
-- \<b\>
-- \<i\>
-- \<bi\>
-- \<ib\>
+- \<r\> (for regular text)
+- \<b\> (for **bold text**)
+- \<i\> (for *italic text*)
+- \<bi\> (for ***bold italic text***)
+- \<ib\> (also for ***bold italic text***)
 
-Font tags will make the text that comes after them their corresponding font variant until either the end of the text or the next font tag, whichever comes first. \<r\> will make the following text regular, \<b\> will make the following text **bold**, \<i\> will make the following text *italic*, and either \<bi\> or \<ib\> will make the following text ***bold-italic***.
+Font tags will make the text that comes after them the corresponding font variant until either the end of the text or the next font tag, whichever comes first.
 
-Font tags must be their own separate token with whitespace around it to be processed.
-
-Font tags can be escaped with backslashes. For example, `\<r>` will appear as just `<r>` in a spell description without changing the font. Multiple backslashes can also be used to escape font tags and only the first one will be removed. For example, `\\\<bi>` will appear in a spell description as `\\<bi>`.
+Font tags can be escaped with backslashes. For example, `\<r>` will appear as just `<r>` in a spell description without changing the font. Multiple backslashes can also be used to escape font tags and only the last one will be removed. For example, `\\\<bi>` will appear in a spell description as `\\<bi>`.
 
 This description
 
 ```json
-"description": "This text will be regular. <b> This text will be bold. <i> This text will be italic. <bi> This text will be bold-italic. <r> This text will be regular again. <ib> This text will be bold-italic again."
+"description": "This text will be regular. <b> This text will be bold. <i> This text will be italic. <bi> This text will be bold-italic. <r> This text will be regular again. <ib> This text will be bold-italic again. <r> Here is an escaped bold font tag: \\<b>. This will just appear as a plain font tag in the text without actually making the text bold."
 ```
 
 will look similar to this in the spell book:
 
 --
 
-This text will be regular. **This text will be bold.** *This text will be italic.* ***This text will be bold-italic.*** This text will be regular again. ***This text will be bold-italic again.***
+This text will be regular. **This text will be bold.** *This text will be italic.* ***This text will be bold-italic.*** This text will be regular again. ***This text will be bold-italic again.*** Here is an escaped bold font tag: \<b\>. This will just appear as a plain font tag in the text without actually making the text bold.
 
 --
 
-You can also do this with the strings in `Custom` values in spell fields that allow either `Custom` or `Controlled` variants. All text that allows font tag processing will start in the regular font variant by default. Font tags can also be escaped with a backslash ("\\\<r\>", "\\\<i\>", etc.). Any tokens that are just a font tag with backslashes at the front will have the first backslash removed.
+You can also do this with the strings in `Custom` values in spell fields that allow either `Custom` or `Controlled` variants, as well as in tables. Most text that allows font tag processing will start in the regular font variant by default. Some exceptions are spell field names and table column labels (both start in bold).
 
 ## Bullet Point Lists
 

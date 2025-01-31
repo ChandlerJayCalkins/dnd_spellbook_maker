@@ -5,8 +5,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 use std::error::Error;
-use std::ops::Range;
-use std::borrow::Borrow;
 
 extern crate image;
 use printpdf::
@@ -21,7 +19,7 @@ use printpdf::
 	PdfPageIndex,
 	Image
 };
-use regex::{Regex, Captures};
+use regex::{Regex, Match};
 
 use crate::spellbook_gen_types::*;
 use crate::spells;
@@ -36,6 +34,12 @@ const BOLD_FONT_TAG: &str = "<b>";
 const ITALIC_FONT_TAG: &str = "<i>";
 const BOLD_ITALIC_FONT_TAG: &str = "<bi>";
 const ITALIC_BOLD_FONT_TAG: &str = "<ib>";
+
+const REGULAR_TAG_NAME: &str = "r";
+const BOLD_TAG_NAME: &str = "b";
+const ITALIC_TAG_NAME: &str = "i";
+const BOLD_ITALIC_TAG_NAME: &str = "bi";
+const ITALIC_BOLD_TAG_NAME: &str = "ib";
 
 const DOT: &str = "•";
 const DOT_SPACE: &str = "• ";
@@ -59,7 +63,6 @@ pub struct SpellbookWriter<'a>
 	space_widths: SpaceWidths,
 	// Regex patterns are stored since they consume lots of runtime being reconstructed continutally
 	font_tag_regex: Regex,
-	escaped_font_tag_regex: Regex,
 	table_tag_regex: Regex,
 	backslashes_regex: Regex,
 	// Current x position of text
@@ -201,39 +204,38 @@ impl <'a> SpellbookWriter<'a>
 		let table_data = TableData::from(table_options);
 		// Create a regex pattern for font tags (that are not escaped)
 		// Ex: "<r>", "<bi>", "<i>", "<b>", "<bi>"
+		// let font_tag_pattern = format!
+		// (
+		// 	"(?:^|[^\\\\])({}|{}|{}|{}|{})",
+		// 	REGULAR_FONT_TAG,
+		// 	BOLD_FONT_TAG,
+		// 	ITALIC_FONT_TAG,
+		// 	BOLD_ITALIC_FONT_TAG,
+		// 	ITALIC_BOLD_FONT_TAG
+		// );
+		// let font_tag_pattern = format!
+		// (
+		// 	"({}|{}|{}|{}|{})",
+		// 	REGULAR_FONT_TAG,
+		// 	BOLD_FONT_TAG,
+		// 	ITALIC_FONT_TAG,
+		// 	BOLD_ITALIC_FONT_TAG,
+		// 	ITALIC_BOLD_FONT_TAG
+		// );
 		let font_tag_pattern = format!
 		(
-			"(?:^|[&\\\\])({}|{}|{}|{}|{})",
-			REGULAR_FONT_TAG,
-			BOLD_FONT_TAG,
-			ITALIC_FONT_TAG,
-			BOLD_ITALIC_FONT_TAG,
-			ITALIC_BOLD_FONT_TAG
+			"<({}|{}|{}|{}|{})>",
+			REGULAR_TAG_NAME,
+			BOLD_TAG_NAME,
+			ITALIC_TAG_NAME,
+			BOLD_ITALIC_TAG_NAME,
+			ITALIC_BOLD_TAG_NAME
 		);
 		let font_tag_regex = Regex::new(&font_tag_pattern)
 		.expect(format!
 		(
 			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::new`",
 			font_tag_pattern
-		).as_str());
-		// Create a regex pattern for escaped font tags (font tags preceeded by backslashes)
-		// Ex: "\<r>", "\\\<bi>", "\\<i>", etc.
-		// Use this regex pattern to remove the first backslash from escaped font tags so that font tags are allowed
-		// to actually appear in spell text AND not affect the font at all
-		let escaped_font_tag_pattern = format!
-		(
-			"(\\\\)+({}|{}|{}|{}|{})",
-			REGULAR_FONT_TAG,
-			BOLD_FONT_TAG,
-			ITALIC_FONT_TAG,
-			BOLD_ITALIC_FONT_TAG,
-			ITALIC_BOLD_FONT_TAG
-		);
-		let escaped_font_tag_regex = Regex::new(&escaped_font_tag_pattern)
-		.expect(format!
-		(
-			"Failed to build regex pattern \"{}\" in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::new`",
-			escaped_font_tag_pattern
 		).as_str());
 		// Create a regex pattern to find table tags which are used for inserting tables into spell descriptions
 		// Ex: "[table][5]", "[table][0]", "[table][2]", etc.
@@ -268,7 +270,6 @@ impl <'a> SpellbookWriter<'a>
 			space_widths: space_widths,
 			table_data: table_data,
 			font_tag_regex: font_tag_regex,
-			escaped_font_tag_regex: escaped_font_tag_regex,
 			table_tag_regex: table_tag_regex,
 			backslashes_regex: backslashes_regex,
 			x: page_size_data.x_min(),
@@ -1084,10 +1085,10 @@ impl <'a> SpellbookWriter<'a>
 				// Loop through each line in the row and apply a color line for that line
 				for _ in 0..*line_count
 				{
+					// Move the y position down a newline amount (unless its the first row)
+					self.y -= self.current_newline_amount() * newline_scalar;
 					// Check to see if a new page needs to be made
 					self.check_for_new_page();
-					// Mve the y position down a newline amount (unless its the first row)
-					self.y -= self.current_newline_amount() * newline_scalar;
 					// Make it so the y position goes down every line after the first
 					newline_scalar = 1.0;
 					// Apply a color line
@@ -1100,10 +1101,10 @@ impl <'a> SpellbookWriter<'a>
 				// Loop through each line in the row to pass over that space
 				for _ in 0..*line_count
 				{
+					// Move the y position down a newline amount (unless its the first row)
+					self.y -= self.current_newline_amount() * newline_scalar;
 					// Check to see if a new page needs to be made
 					self.check_for_new_page();
-					// Mve the y position down a newline amount (unless its the first row)
-					self.y -= self.current_newline_amount() * newline_scalar;
 					// Make it so the y position goes down every line after the first
 					newline_scalar = 1.0;
 				}
@@ -1288,103 +1289,123 @@ impl <'a> SpellbookWriter<'a>
 		// Loop through each token to measure how many lines there will be and how long each line is
 		for i in 0..tokens.len()
 		{
-			match tokens[i]
+			// Find every font tag in the token
+			let font_tag_matches: Vec<Match> = self.font_tag_regex.find_iter(tokens[i]).collect();
+			// If there are no font tags in the token, just add it to the line / next line
+			if font_tag_matches.is_empty()
 			{
-				// If It's a font tag, add the tag to the line and switch the current font variant so width can be
-				// calculated correctly for the following tokens
-				REGULAR_FONT_TAG =>
+				self.add_text_token_to_lines
+				(
+					tokens[i],
+					&mut line,
+					&mut lines,
+					&mut current_line_max_width,
+					textbox_width,
+					tokens.len() - i,
+					true
+				);
+			}
+			// If there are any font tags within the token, parse them along with any normal text in the token
+			else
+			{
+				// Keeps track of whether any actual text from this token has been added yet or not
+				// This is for making it so only one space gets added before the token at the start upon the first
+				// text being added, and for making it so following text tokens are forced into being hyphenated if
+				// they are too big to fit on the line instead of being moved to the next line if that would make
+				// them fit so that the whole token isn't separated by any unnecessary whitespace
+				let mut text_added = false;
+				// Keeps track of the ending index of the previous font tag so the next part of the token knows where
+				// the next part of the token starts
+				let mut previous_end = 0;
+				// Loop through each font tag match
+				for j in 0..font_tag_matches.len()
 				{
-					line.add_font_tag(FontVariant::Regular);
-					self.set_current_font_variant(FontVariant::Regular);
-				},
-				BOLD_FONT_TAG =>
-				{
-					line.add_font_tag(FontVariant::Bold);
-					self.set_current_font_variant(FontVariant::Bold);
-				},
-				ITALIC_FONT_TAG =>
-				{
-					line.add_font_tag(FontVariant::Italic);
-					self.set_current_font_variant(FontVariant::Italic);
-				},
-				BOLD_ITALIC_FONT_TAG | ITALIC_BOLD_FONT_TAG =>
-				{
-					line.add_font_tag(FontVariant::BoldItalic);
-					self.set_current_font_variant(FontVariant::BoldItalic);
-				},
-				// If it's not a special token, calculate its width and determine what to do from there
-				_ =>
-				{
-					// If the token is an escaped font tag, remove the first backslash at the start
-					let backslash_remover = |caps: &Captures|
+					// If the font tag is escaped (has a backslash before it)
+					// Add all text before the tag (except the last backslash), the tag, and the following text to
+					// the line as a normal text token
+					if font_tag_matches[j].start() > 0 &&
+					tokens[i].chars().nth(font_tag_matches[j].start() - 1) == Some('\\')
 					{
-						match caps.get(0)
+						// Get the index of the next font tag
+						let next_index = j + 1;
+						// Determine where the end index of this text token is
+						// If there is a font tag after this one
+						let end = if next_index < font_tag_matches.len()
 						{
-							None => String::new(),
-							Some(m) => String::from(&m.as_str()[1..])
+							// If the next font tag also has a backslash before it
+							if tokens[i].chars().nth(font_tag_matches[next_index].start() - 1) == Some('\\')
+							{
+								// End this text token right before the next backslash so the next font tag can deal
+								// with it
+								font_tag_matches[next_index].start() - 1
+							}
+							// If there is not backslash before the next font tag, end this token right before the
+							// font tag
+							else { font_tag_matches[next_index].start() }
 						}
-					};
-					let token = self.escaped_font_tag_regex.replace_all(tokens[i], backslash_remover);
-					let mut token: &str = token.borrow();
-					// Declare a width variable that will be calculated when the tokens is hyphenated
-					let width;
-					// Hyphenate the token if it's too long to fit on a line and compute its width
-					(token, width) = self.hyphenate_token
+						// If this is the last font tag, end this text token at the end of the whole token
+						else { tokens[i].len() };
+						// Create the text token that will get added to the line from the text before the font tag to
+						// the text after it (excluding the escaping backslash)
+						let text_token = String::from(&tokens[i][previous_end..font_tag_matches[j].start() - 1]) +
+						&tokens[i][font_tag_matches[j].start()..end];
+						// Add the text token to the line / next line(s)
+						self.add_text_token_to_lines
+						(
+							&text_token,
+							&mut line,
+							&mut lines,
+							&mut current_line_max_width,
+							textbox_width,
+							tokens.len() - i,
+							!text_added
+						);
+						// Confirm that some actual text from this token has been added
+						text_added = true;
+						// Move up the previous end index to the end of this part of the token
+						previous_end = end;
+						// Skip over adding the font tag as a font tag and changing the previous end again
+						continue;
+					}
+					// If there is any normal text that needs to be processed before this font tag
+					else if font_tag_matches[j].start() > previous_end
+					{
+						// Process and add it
+						self.add_text_token_to_lines
+						(
+							&tokens[i][previous_end..font_tag_matches[j].start()], 
+							&mut line, 
+							&mut lines, 
+							&mut current_line_max_width, 
+							textbox_width, 
+							tokens.len() - i,
+							!text_added
+						);
+						// Mark that some normal text has been added to the line
+						text_added = true;
+					}
+					// Add the font tag to the line
+					let _ = self.add_font_change_to_line
 					(
-						token,
+						&tokens[i][font_tag_matches[j].start()..font_tag_matches[j].end()],
+						&mut line
+					);
+					// Move up the previous end to the end of this font tag
+					previous_end = font_tag_matches[j].end();
+				}
+				// If there is any text left after the last font tag, add it to the line / next line(s)
+				if previous_end < tokens[i].len()
+				{
+					self.add_text_token_to_lines
+					(
+						&tokens[i][previous_end..],
+						&mut line,
+						&mut lines,
 						&mut current_line_max_width,
 						textbox_width,
-						&mut line,
-						&mut lines
+						tokens.len() - i,
+						!text_added
 					);
-					// If the line is currently empty
-					if line.width() == 0.0
-					{
-						// Put the token into the line
-						let text_token = TextToken::with_width(token, width);
-						line.add_text(text_token);
-					}
-					// If the line is not empty
-					else if line.width() > 0.0
-					{
-						// Calculate the width of the current token with a space in front of it
-						let padded_width = line.get_last_space_width(self.space_widths()) + width;
-						// If adding this token to the line would make it go outside the textbox,
-						// apply the current line and set it to just the current token
-						if line.width() + padded_width > current_line_max_width
-						{
-							// Make sure the line doesn't have any excess capacity in its vec
-							line.shrink_to_fit();
-							// Add the current line to the vec of lines
-							lines.push(line);
-							// Create a new line with the capacity of the number of remaining tokens
-							line = TextLine::with_capacity
-							(
-								tokens.len() - i,
-								*self.current_text_type(),
-								*self.current_font_variant()
-							);
-							// Add the token to the start of the new line
-							let text_token = TextToken::with_width(token, width);
-							line.add_text(text_token);
-							// Set the max width width to the textbox width in case the previous line was the first
-							// line
-							current_line_max_width = textbox_width;
-						}
-						// If this token can fit on the line, add it to the line
-						else
-						{
-							// Add this token to the line
-							let text_token = TextToken::with_width(token, width);
-							line.add_space(self.space_widths());
-							line.add_text(text_token);
-						}
-					}
-					// If the line has a negative width
-					else
-					{
-						panic!("Line width is less than 0.0 in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::get_textbox_lines`");
-					}
 				}
 			}
 		}
@@ -1406,6 +1427,118 @@ impl <'a> SpellbookWriter<'a>
 	// 	TextToken::new(token, font_size_data, self.current_font_scale(), scalar)
 	// }
 
+	/// Adds a font change token to a line
+	fn add_font_change_to_line(&mut self, token: &str, line: &mut TextLine) -> Result<(), String>
+	{
+		// Determine what kind of font tag it is
+		match token
+		{
+			REGULAR_FONT_TAG =>
+			{
+				// Add the font tag to the line
+				line.add_font_tag(FontVariant::Regular);
+				// Change the font variant to the variant of this font tag
+				self.set_current_font_variant(FontVariant::Regular);
+			},
+			BOLD_FONT_TAG =>
+			{
+				line.add_font_tag(FontVariant::Bold);
+				self.set_current_font_variant(FontVariant::Bold);
+			},
+			ITALIC_FONT_TAG =>
+			{
+				line.add_font_tag(FontVariant::Italic);
+				self.set_current_font_variant(FontVariant::Italic);
+			},
+			BOLD_ITALIC_FONT_TAG | ITALIC_BOLD_FONT_TAG =>
+			{
+				line.add_font_tag(FontVariant::BoldItalic);
+				self.set_current_font_variant(FontVariant::BoldItalic);
+			},
+			// If it wasn't a valid font tag, return an error
+			_ => return Err(String::from("Token must be a font tag."))
+		}
+		Ok(())
+	}
+
+	/// Adds a token of text to a line that is under construction and possibly adds that
+	/// line and any other new ones created to a vec of lines being constructed.
+	fn add_text_token_to_lines
+	(
+		&mut self,
+		mut token: &str,
+		line: &mut TextLine,
+		lines: &mut Vec<TextLine>,
+		current_line_max_width: &mut f32,
+		textbox_width: f32,
+		remaining_tokens: usize,
+		token_start: bool
+	)
+	{
+		// Declare a width variable that will be calculated when the tokens is hyphenated
+		let width;
+		// Hyphenate the token if it's too long to fit on a line and compute its width
+		(token, width) = self.hyphenate_token
+		(
+			token,
+			current_line_max_width,
+			textbox_width,
+			line,
+			lines,
+			!token_start
+		);
+		// If the line is currently empty
+		if line.width() == 0.0
+		{
+			// Put the token into the line
+			let text_token = TextToken::with_width(token, width);
+			line.add_text(text_token);
+		}
+		// If the line is not empty
+		else if line.width() > 0.0
+		{
+			// Calculate the width of the current token with a space in front of it (if a space is desired)
+			let padded_width = if token_start { line.get_last_space_width(self.space_widths()) + width }
+			else { width };
+			// If adding this token to the line would make it go outside the textbox,
+			// apply the current line and set it to just the current token
+			if line.width() + padded_width > *current_line_max_width
+			{
+				// Make sure the line doesn't have any excess capacity in its vec
+				line.shrink_to_fit();
+				// Add the current line to the vec of lines
+				lines.push(line.clone());
+				// Create a new line with the capacity of the number of remaining tokens
+				*line = TextLine::with_capacity
+				(
+					remaining_tokens,
+					*self.current_text_type(),
+					*self.current_font_variant()
+				);
+				// Add the token to the start of the new line
+				let text_token = TextToken::with_width(token, width);
+				line.add_text(text_token);
+				// Set the max width width to the textbox width in case the previous line was the first
+				// line
+				*current_line_max_width = textbox_width;
+			}
+			// If this token can fit on the line, add it to the line
+			else
+			{
+				// Add this token to the line
+				let text_token = TextToken::with_width(token, width);
+				// Add a space before the token if desired
+				if token_start { line.add_space(self.space_widths()); }
+				line.add_text(text_token);
+			}
+		}
+		// If the line has a negative width
+		else
+		{
+			panic!("Line width is less than 0.0 in `dnd_spellbook_maker::spellbook_writer::SpellbookWriter::add_text_token_to_lines`");
+		}
+	}
+
 	/// If the given token is too wide to fit on a single line within the given textbox constraints, hyphenate it and
 	/// apply it to the spellbook until the end of it is reached and it can fit in a single line without being
 	/// hyphenated.
@@ -1421,7 +1554,8 @@ impl <'a> SpellbookWriter<'a>
 		current_line_max_width: &mut f32,
 		textbox_width: f32,
 		current_line: &mut TextLine,
-		lines: &mut Vec<TextLine>
+		lines: &mut Vec<TextLine>,
+		force_hyphenate: bool
 	)
 	-> (&'t str, f32)
 	{
@@ -1437,11 +1571,12 @@ impl <'a> SpellbookWriter<'a>
 				width,
 				*current_line_max_width,
 				current_line,
-				lines
+				lines,
+				false
 			);
 		}
-		// If the token is wider than the textbox width
-		else if width > textbox_width
+		// If the token is wider than the textbox width or a hyphenation is being forced
+		else if width > textbox_width || force_hyphenate
 		{
 			// Hyphenate the token using the remaining width on the current line
 			let remaining_width =
@@ -1452,7 +1587,8 @@ impl <'a> SpellbookWriter<'a>
 				width,
 				remaining_width,
 				current_line,
-				lines
+				lines,
+				!force_hyphenate
 			);
 		}
 		// If the token fits on the current line and doesn't need to be hyphenated, just return it and its width
@@ -1464,7 +1600,7 @@ impl <'a> SpellbookWriter<'a>
 		// Hyphenate the token until just the end of it remains and it can fit on a single line
 		while width > textbox_width
 		{
-			(token, width) = self.hyphenate_once(token, width, textbox_width, current_line, lines);
+			(token, width) = self.hyphenate_once(token, width, textbox_width, current_line, lines, false);
 		}
 		// Return the end of the token and its width
 		(token, width)
@@ -1480,7 +1616,8 @@ impl <'a> SpellbookWriter<'a>
 		mut width: f32,
 		textbox_width: f32,
 		current_line: &mut TextLine,
-		lines: &mut Vec<TextLine>
+		lines: &mut Vec<TextLine>,
+		add_space: bool
 	)
 	-> (&'t str, f32)
 	{
@@ -1497,7 +1634,8 @@ impl <'a> SpellbookWriter<'a>
 			// If the token was hyphenated
 			if index < token.len()
 			{
-				if current_line.width() > 0.0 { current_line.add_space(&self.space_widths()) }
+				// Add a space before the token if spaces are allowed and the line already has text in it
+				if add_space && current_line.width() > 0.0 { current_line.add_space(&self.space_widths()) }
 				// Add the hyphenated part of the token to the current line
 				current_line.add_text(hyphenated_token);
 				// Make sure there isn't any extra capacity in the line's token vec
