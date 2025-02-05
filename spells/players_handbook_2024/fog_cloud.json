@@ -36,7 +36,7 @@
 			"Hours": [1, true]
 		}
 	},
-	"description": "You create a 20-foot-radius Sphere of fog centered on a point within range. The Sphere is Heavily Obscured. It lasts for the duration or until a strong wind (such as one created by <i> Gust of Wind) <r> disperses it.",
+	"description": "You create a 20-foot-radius Sphere of fog centered on a point within range. The Sphere is Heavily Obscured. It lasts for the duration or until a strong wind (such as one created by <i> Gust of Wind<r>) disperses it.",
 	"upcast_description": "The fog's radius increases by 20 feet for each spell slot level above 1.",
 	"tables": []
 }
