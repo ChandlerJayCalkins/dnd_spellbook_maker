@@ -11,7 +11,7 @@ Handy for having a quick way to look up spell rules for a character both on a co
 ## Cargo.toml Dependency
 
 ```toml
-dnd_spellbook_maker = "0.2.0"
+dnd_spellbook_maker = "0.6.0"
 ```
 
 or
