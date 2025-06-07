@@ -247,10 +247,14 @@ impl <'a> FontData<'a>
 		};
 
 		// Parse the fonts from bytes
-		let regular_parsed_font = ParsedFont::from_bytes(&regular_font_bytes, 0, &mut Vec::new()).ok_or(FontParseError)?;
-		let bold_parsed_font = ParsedFont::from_bytes(&regular_font_bytes, 0, &mut Vec::new()).ok_or(FontParseError)?;
-		let italic_parsed_font = ParsedFont::from_bytes(&regular_font_bytes, 0, &mut Vec::new()).ok_or(FontParseError)?;
-		let bold_italic_parsed_font = ParsedFont::from_bytes(&regular_font_bytes, 0, &mut Vec::new()).ok_or(FontParseError)?;
+		let regular_parsed_font =
+		ParsedFont::from_bytes(&regular_font_bytes, 0, &mut Vec::new()).ok_or(FontParseError)?;
+		let bold_parsed_font =
+		ParsedFont::from_bytes(&bold_font_bytes, 0, &mut Vec::new()).ok_or(FontParseError)?;
+		let italic_parsed_font =
+		ParsedFont::from_bytes(&italic_font_bytes, 0, &mut Vec::new()).ok_or(FontParseError)?;
+		let bold_italic_parsed_font =
+		ParsedFont::from_bytes(&bold_italic_font_bytes, 0, &mut Vec::new()).ok_or(FontParseError)?;
 
 		// Add all custom font variants to the document and get their IDs
 		let regular_font_id = doc.add_font(&regular_parsed_font);
@@ -262,8 +266,8 @@ impl <'a> FontData<'a>
 		let font_ids = FontIds
 		{
 			regular: regular_font_id,
-			italic: bold_font_id,
-			bold: italic_font_id,
+			bold: bold_font_id,
+			italic: italic_font_id,
 			bold_italic: bold_italic_font_id
 		};
 
