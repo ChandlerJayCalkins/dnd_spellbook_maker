@@ -106,7 +106,7 @@ fn main()
 	let table_options = dnd_spellbook_maker::TableOptions::new(10.0, 8.0, 4.0, 12.0, 0.12, 4.4, (213, 209, 224))
 		.expect("Failed to create table options.");
 	// Creates the spellbook
-	let (doc, _, _) = dnd_spellbook_maker::create_spellbook
+	let doc = dnd_spellbook_maker::create_spellbook
 	(
 		spellbook_name,
 		&spell_list,
