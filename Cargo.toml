@@ -1,6 +1,6 @@
 [package]
 name = "dnd_spellbook_maker"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Chandler Calkins <chandlerjaycalkins@gmail.com>"]
 edition = "2021"
 description = "Library for making pdf documents of 5th edition D&D spells that are formatted like D&D source books."
@@ -17,8 +17,7 @@ exclude = ["spells", "fonts", "img"]
 [dependencies]
 serde = { version = "1.0.215", features = ["derive"] }
 serde_json = { version = "1.0.133" }
-image = { version = "0.24.7" }
-printpdf = { version = "0.7.0", features = ["embedded_images"] }
+printpdf = { version = "0.8.2", features = ["gif", "jpeg", "png", "pnm", "tiff", "bmp", "ico", "tga", "hdr", "dds", "webp", "rayon"] }
 rusttype = { version = "0.9.3" }
 regex = { version = "1.11.1" }
 # function-timer = { version = "0.9.0" }

@@ -20,7 +20,7 @@ fn default_spellbook_options() ->
 	PageSizeOptions,
 	PageNumberOptions,
 	String,
-	ImageTransform,
+	XObjectTransform,
 	TableOptions
 )
 {
@@ -60,10 +60,8 @@ fn default_spellbook_options() ->
 	// File path to the background image
 	let background_path = String::from("img/parchment.jpg");
 	// Image transform data for the background image
-	let background_transform = ImageTransform
+	let background_transform = XObjectTransform
 	{
-		translate_x: Some(Mm(0.0)),
-		translate_y: Some(Mm(0.0)),
 		scale_x: Some(1.95),
 		scale_y: Some(2.125),
 		..Default::default()
@@ -112,7 +110,7 @@ fn players_handbook_2024()
 		table_options
 	) = default_spellbook_options();
 	// Create the spellbook
-	let (doc, _, _) = create_spellbook
+	let doc = create_spellbook
 	(
 		spellbook_name,
 		&spell_list,
@@ -161,7 +159,7 @@ fn players_handbook_2024_split()
 		table_options
 	) = default_spellbook_options();
 	// Create a spellbook with the first half of the spells
-	let (doc_1, _, _) = create_spellbook
+	let doc_1 = create_spellbook
 	(
 		spellbook_name_1,
 		&spell_list_1,
@@ -178,7 +176,7 @@ fn players_handbook_2024_split()
 	// Save the first spellbook to a file
 	let _ = save_spellbook(doc_1, "Player's Handbook 2024 Spells 1.pdf").unwrap();
 	// Create a spellbook with the second half of the spells
-	let (doc_2, _, _) = create_spellbook
+	let doc_2 = create_spellbook
 	(
 		spellbook_name_2,
 		&spell_list_2,
@@ -220,7 +218,7 @@ fn players_handbook_2014()
 		table_options
 	) = default_spellbook_options();
 	// Create the spellbook
-	let (doc, _, _) = create_spellbook
+	let doc = create_spellbook
 	(
 		spellbook_name,
 		&spell_list,
@@ -270,7 +268,7 @@ fn players_handbook_2014_split()
 		table_options
 	) = default_spellbook_options();
 	// Create a spellbook with the first half of the spells
-	let (doc_1, _, _) = create_spellbook
+	let doc_1 = create_spellbook
 	(
 		spellbook_name_1,
 		&spell_list_1,
@@ -287,7 +285,7 @@ fn players_handbook_2014_split()
 	// Save the first spellbook to a file
 	let _ = save_spellbook(doc_1, "Player's Handbook 2014 Spells 1.pdf").unwrap();
 	// Create a spellbook with the second half of the spells
-	let (doc_2, _, _) = create_spellbook
+	let doc_2 = create_spellbook
 	(
 		spellbook_name_2,
 		&spell_list_2,
@@ -330,7 +328,7 @@ fn xanathars_guide_to_everything()
 		table_options
 	) = default_spellbook_options();
 	// Create the spellbook
-	let (doc, _, _) = create_spellbook
+	let doc = create_spellbook
 	(
 		spellbook_name,
 		&spell_list,
@@ -373,7 +371,7 @@ fn tashas_cauldron_of_everything()
 		table_options
 	) = default_spellbook_options();
 	// Create the spellbook
-	let (doc, _, _) = create_spellbook
+	let doc = create_spellbook
 	(
 		spellbook_name,
 		&spell_list,
@@ -416,7 +414,7 @@ fn strixhaven()
 		table_options
 	) = default_spellbook_options();
 	// Create the spellbook
-	let (doc, _, _) = create_spellbook
+	let doc = create_spellbook
 	(
 		spellbook_name,
 		&spell_list,
@@ -463,7 +461,7 @@ fn necronomicon()
 	(HSide::Left, true, 1, FontVariant::Regular, 12.0, 5.0, (0, 0, 0), 5.0, 4.0)
 		.expect("Failed to create page number options.");
 	// Create the spellbook
-	let (doc, _, _) = create_spellbook
+	let doc = create_spellbook
 	(
 		spellbook_name,
 		&spell_list,
@@ -543,7 +541,7 @@ fn personal_spellbook()
 		table_options
 	) = default_spellbook_options();
 	// Create the spellbook
-	let (doc, _, _) = create_spellbook
+	let doc = create_spellbook
 	(
 		spellbook_name,
 		&spell_list,

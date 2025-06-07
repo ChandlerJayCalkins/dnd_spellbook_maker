@@ -5,9 +5,10 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 use std::fs;
+use std::io::Write;
 use std::error::Error;
 
-pub use printpdf::{PdfDocumentReference, PdfLayerReference, PdfPageIndex};
+pub use printpdf::{PdfDocument, PdfPage};
 
 use crate::spellbook_writer::*;
 
@@ -43,10 +44,10 @@ pub fn create_spellbook
 	text_colors: TextColorOptions,
 	page_size_options: PageSizeOptions,
 	page_number_options: Option<PageNumberOptions>,
-	background: Option<(&str, ImageTransform)>,
+	background: Option<(&str, XObjectTransform)>,
 	table_options: TableOptions
 )
--> Result<(PdfDocumentReference, Vec<PdfLayerReference>, Vec<PdfPageIndex>), Box<dyn Error>>
+-> Result<PdfDocument, Box<dyn Error>>
 {
 	SpellbookWriter::create_spellbook
 	(
@@ -75,10 +76,18 @@ pub fn create_spellbook
 ///
 /// - `Ok` Returns nothing.
 /// - `Err` Returns any errors that occurred.
-pub fn save_spellbook(doc: PdfDocumentReference, file_name: &str) -> Result<(), Box<dyn std::error::Error>>
+pub fn save_spellbook(doc: PdfDocument, file_name: &str) -> Result<(), Box<dyn std::error::Error>>
 {
-	let file = fs::File::create(file_name)?;
-	doc.save(&mut std::io::BufWriter::new(file))?;
+	let save_options = printpdf::serialize::PdfSaveOptions
+	{
+		optimize: true,
+		subset_fonts: true,
+		secure: true,
+		image_optimization: None
+	};
+	let doc_bytes = doc.save(&save_options, &mut Vec::new());
+	let mut file = fs::File::create(file_name)?;
+	file.write_all(&doc_bytes)?;
 	Ok(())
 }
 

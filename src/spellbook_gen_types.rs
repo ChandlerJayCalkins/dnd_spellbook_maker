@@ -5,12 +5,12 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 use std::fs;
+use std::io::{Read, BufReader};
 use std::error::Error;
 use std::fmt;
 
-pub use image::DynamicImage;
 pub use rusttype::{Font, Scale, point};
-pub use printpdf::{PdfDocumentReference, IndirectFontRef, Color, Rgb};
+pub use printpdf::{PdfDocument, font::ParsedFont, FontId, Color, Rgb, image::RawImage, XObjectId};
 
 pub use crate::spellbook_options::*;
 
@@ -53,14 +53,14 @@ pub struct FontBytes
 	pub bold_italic: Vec<u8>
 }
 
-/// Holds references to each font type of a font.
+/// Holds pdf document ids for each font type of a font.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct FontRefs
+pub struct FontIds
 {
-	pub regular: IndirectFontRef,
-	pub bold: IndirectFontRef,
-	pub italic: IndirectFontRef,
-	pub bold_italic: IndirectFontRef
+	pub regular: FontId,
+	pub bold: FontId,
+	pub italic: FontId,
+	pub bold_italic: FontId
 }
 
 /// Holds size data for each font type of a font.
@@ -121,7 +121,7 @@ pub struct FontData<'a>
 	current_font_variant: FontVariant,
 	current_text_type: TextType,
 	font_bytes: FontBytes,
-	font_refs: FontRefs,
+	font_ids: FontIds,
 	font_sizes: FontSizes,
 	scalars: FontScalars,
 	size_data: FontSizeData<'a>,
@@ -143,13 +143,26 @@ impl std::fmt::Display for BytesToFontSizeDataConversionError
 }
 impl std::error::Error for BytesToFontSizeDataConversionError {}
 
+/// Error for when a font cannot be parsed from bytes
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct FontParseError;
+
+impl std::fmt::Display for FontParseError
+{
+	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result
+	{
+		write!(f, "Could not convert bytes to ParsedFont")
+	}
+}
+impl std::error::Error for FontParseError {}
+
 impl <'a> FontData<'a>
 {
 	/// Constructor
 	///
 	/// # Parameters
 	///
-	/// - `doc` Reference to the pdf document that this font will be used in.
+	/// - `doc` The pdf document that these fonts will be used in.
 	/// - `font_paths` File paths to the font files.
 	/// - `font_sizes` The sizes of each type of text.
 	/// - `font_scalars` Scalar values for each font variant so their sizes can be calculated correctly.
@@ -157,7 +170,7 @@ impl <'a> FontData<'a>
 	/// - `text_colors` RGB color values for each type of text.
 	pub fn new
 	(
-		doc: &PdfDocumentReference,
+		doc: &mut PdfDocument,
 		font_paths: FontPaths,
 		font_sizes: FontSizes,
 		font_scalars: FontScalars,
@@ -233,19 +246,25 @@ impl <'a> FontData<'a>
 			table_body: table_body_font_scale
 		};
 
-		// Add all custom font variants to the document and get references to them
-		let regular_font_ref = doc.add_external_font(&*regular_font_bytes)?;
-		let bold_font_ref = doc.add_external_font(&*bold_font_bytes)?;
-		let italic_font_ref = doc.add_external_font(&*italic_font_bytes)?;
-		let bold_italic_font_ref = doc.add_external_font(&*bold_italic_font_bytes)?;
+		// Parse the fonts from bytes
+		let regular_parsed_font = ParsedFont::from_bytes(&regular_font_bytes, 0, &mut Vec::new()).ok_or(FontParseError)?;
+		let bold_parsed_font = ParsedFont::from_bytes(&regular_font_bytes, 0, &mut Vec::new()).ok_or(FontParseError)?;
+		let italic_parsed_font = ParsedFont::from_bytes(&regular_font_bytes, 0, &mut Vec::new()).ok_or(FontParseError)?;
+		let bold_italic_parsed_font = ParsedFont::from_bytes(&regular_font_bytes, 0, &mut Vec::new()).ok_or(FontParseError)?;
 
-		// Combine all font references into one struct
-		let font_refs = FontRefs
+		// Add all custom font variants to the document and get their IDs
+		let regular_font_id = doc.add_font(&regular_parsed_font);
+		let bold_font_id = doc.add_font(&bold_parsed_font);
+		let italic_font_id = doc.add_font(&italic_parsed_font);
+		let bold_italic_font_id = doc.add_font(&bold_italic_parsed_font);
+
+		// Combine all font ids into one struct
+		let font_ids = FontIds
 		{
-			regular: regular_font_ref,
-			italic: italic_font_ref,
-			bold: bold_font_ref,
-			bold_italic: bold_italic_font_ref
+			regular: regular_font_id,
+			italic: bold_font_id,
+			bold: italic_font_id,
+			bold_italic: bold_italic_font_id
 		};
 
 		// Construct and return
@@ -255,7 +274,7 @@ impl <'a> FontData<'a>
 			current_font_variant: FontVariant::Regular,
 			current_text_type: TextType::Title,
 			font_bytes: font_bytes,
-			font_refs: font_refs,
+			font_ids: font_ids,
 			font_sizes: font_sizes,
 			scalars: font_scalars,
 			size_data: size_data,
@@ -270,7 +289,7 @@ impl <'a> FontData<'a>
 	pub fn current_font_variant(&self) -> &FontVariant { &self.current_font_variant }
 	pub fn current_text_type(&self) -> &TextType { &self.current_text_type }
 	pub fn bytes(&self) -> &FontBytes { &self.font_bytes }
-	pub fn all_font_refs(&self) -> &FontRefs { &self.font_refs }
+	pub fn all_font_ids(&self) -> &FontIds { &self.font_ids }
 	// pub fn all_font_sizes(&self) -> &FontSizes { &self.font_sizes }
 	pub fn all_scalars(&self) -> &FontScalars { &self.scalars }
 	// pub fn all_size_data(&self) -> &FontSizeData { &self.size_data }
@@ -315,15 +334,15 @@ impl <'a> FontData<'a>
 	// 	}
 	// }
 
-	/// Returns the font ref to the current font variant bring used.
-	pub fn current_font_ref(&self) -> &IndirectFontRef
+	/// Returns the font id to the current font variant bring used.
+	pub fn current_font_id(&self) -> &FontId
 	{
 		match self.current_font_variant
 		{
-			FontVariant::Regular => &self.font_refs.regular,
-			FontVariant::Bold => &self.font_refs.bold,
-			FontVariant::Italic => &self.font_refs.italic,
-			FontVariant::BoldItalic => &self.font_refs.bold_italic
+			FontVariant::Regular => &self.font_ids.regular,
+			FontVariant::Bold => &self.font_ids.bold,
+			FontVariant::Italic => &self.font_ids.italic,
+			FontVariant::BoldItalic => &self.font_ids.bold_italic
 		}
 	}
 
@@ -553,7 +572,7 @@ pub struct PageNumberData<'a>
 {
 	options: PageNumberOptions,
 	current_side: HSide,
-	font_ref: IndirectFontRef,
+	font_id: FontId,
 	font_scalar: f32,
 	font_size_data: Font<'a>,
 	font_scale: Scale,
@@ -572,11 +591,11 @@ impl <'a> PageNumberData<'a>
 	-> Result<Self, Box<dyn std::error::Error>>
 	{
 		// Gets copies of all of the font data the page numbers need based on the font variant they will use.
-		let (font_ref, font_scalar, font_size_data) = match options.font_variant()
+		let (font_id, font_scalar, font_size_data) = match options.font_variant()
 		{
 			FontVariant::Regular =>
 			(
-				font_data.all_font_refs().regular.clone(),
+				font_data.all_font_ids().regular.clone(),
 				font_data.all_scalars().regular_scalar(),
 				// Create new font size data for this struct since it has problems with holding references
 				// to font_data's fields
@@ -589,7 +608,7 @@ impl <'a> PageNumberData<'a>
 			),
 			FontVariant::Bold =>
 			(
-				font_data.all_font_refs().bold.clone(),
+				font_data.all_font_ids().bold.clone(),
 				font_data.all_scalars().bold_scalar(),
 				// Create new font size data for this struct since it has problems with holding references
 				// to font_data's fields
@@ -602,7 +621,7 @@ impl <'a> PageNumberData<'a>
 			),
 			FontVariant::Italic =>
 			(
-				font_data.all_font_refs().italic.clone(),
+				font_data.all_font_ids().italic.clone(),
 				font_data.all_scalars().italic_scalar(),
 				// Create new font size data for this struct since it has problems with holding references
 				// to font_data's fields
@@ -615,7 +634,7 @@ impl <'a> PageNumberData<'a>
 			),
 			FontVariant::BoldItalic =>
 			(
-				font_data.all_font_refs().bold_italic.clone(),
+				font_data.all_font_ids().bold_italic.clone(),
 				font_data.all_scalars().bold_italic_scalar(),
 				// Create new font size data for this struct since it has problems with holding references
 				// to font_data's fields
@@ -636,7 +655,7 @@ impl <'a> PageNumberData<'a>
 		{
 			options: options,
 			current_side: options.starting_side(),
-			font_ref: font_ref,
+			font_id: font_id,
 			font_scalar: font_scalar,
 			font_size_data: font_size_data,
 			font_scale: font_scale,
@@ -656,7 +675,7 @@ impl <'a> PageNumberData<'a>
 	pub fn bottom_margin(&self) -> f32 { self.options.bottom_margin() }
 	// pub fn options(&self) -> &PageNumberOptions { &self.options }
 	pub fn current_side(&self) -> HSide { self.current_side }
-	pub fn font_ref(&self) -> &IndirectFontRef { &self.font_ref }
+	pub fn font_id(&self) -> &FontId { &self.font_id }
 	pub fn font_scalar(&self) -> f32 { self.font_scalar }
 	pub fn font_size_data(&self) -> &Font { &self.font_size_data }
 	pub fn font_scale(&self) -> &Scale { &self.font_scale }
@@ -672,8 +691,8 @@ impl <'a> PageNumberData<'a>
 #[derive(Debug, Clone, PartialEq)]
 pub struct BackgroundImage
 {
-	image: DynamicImage,
-	transform: ImageTransform
+	image_id: XObjectId,
+	transform: XObjectTransform
 }
 
 impl BackgroundImage
@@ -682,6 +701,7 @@ impl BackgroundImage
 	///
 	/// # Parameters
 	///
+	/// - `doc` The pdf document that this image will be used in.
 	/// - `image_path` A filepath to an image to use.
 	/// - `transform` Transform data for how the image should be placed on pages (positioning, size, rotation, etc.).
 	///
@@ -689,21 +709,31 @@ impl BackgroundImage
 	///
 	/// - `Ok` A `BackgroundImage` instance.
 	/// - `Err` Any errors that occured.
-	pub fn new(image_path: &str, transform: ImageTransform) -> Result<Self, Box<dyn Error>>
+	pub fn new(doc: &mut PdfDocument, image_path: &str, transform: XObjectTransform) -> Result<Self, Box<dyn Error>>
 	{
+		// Buffer of bytes to hold image data in
+		let mut image_bytes = Vec::new();
+		// Open the image file to read it with a buffer reader
+		let image_file = fs::File::open(image_path)?;
+		let mut reader = BufReader::new(image_file);
+		// Read the entire image file and place it in the bytes buffer
+		let _ = reader.read_to_end(&mut image_bytes);
+		// Parse the raw image data from bytes
+		let raw_image = RawImage::decode_from_bytes(&image_bytes, &mut Vec::new())?;
+		// Add the image to the document and get the image's id in the document
+		let image_id = doc.add_image(&raw_image);
 		// Construct and return
 		Ok(Self
 		{
-			// Constructs a `image::DynamicImage` from the file at the given filepath
-			image: image::open(image_path)?,
+			image_id: image_id,
 			transform: transform
 		})
 	}
 
 	// Getters
 
-	pub fn image(&self) -> &DynamicImage { &self.image }
-	pub fn transform(&self) -> &ImageTransform { &self.transform }
+	pub fn image_id(&self) -> &XObjectId { &self.image_id }
+	pub fn transform(&self) -> &XObjectTransform { &self.transform }
 }
 
 /// Holds the extra data needed for making tables inside of spellbooks.

@@ -6,7 +6,7 @@
 
 use std::fmt;
 
-pub use printpdf::{ImageTransform, ImageRotation, Mm};
+pub use printpdf::{xobject::XObjectTransform, units::Mm};
 
 /// Conveys which variant of a font is being used.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

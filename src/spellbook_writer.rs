@@ -6,27 +6,22 @@
 
 use std::error::Error;
 
-extern crate image;
 use printpdf::
 {
-	PdfDocumentReference,
 	PdfDocument,
-	PdfLayerReference,
-	IndirectFontRef,
-	Color,
-	Point,
-	Line,
-	PdfPageIndex,
-	Image
+	text::TextItem,
+	FontId,
+	color::Color,
+	graphics::{Point, Line, LinePoint},
+	ops::{PdfPage, Op},
+	units::Pt
 };
 use regex::{Regex, Match};
 
 use crate::spellbook_gen_types::*;
 use crate::spells;
 
-const LAYER_NAME_PREFIX: &str = "Page";
 const DEFAULT_SPELLBOOK_TITLE: &str = "Spellbook";
-const TITLE_LAYER_NAME: &str = "Title Layer";
 const TITLE_PAGE_NAME: &str = "Title Page";
 
 const REGULAR_FONT_TAG: &str = "<r>";
@@ -46,12 +41,10 @@ const DOT_SPACE: &str = "• ";
 const DASH: &str = "-";
 
 /// All data needed to write spells to a pdf document.
-// Can't derive clone or debug unfortunately.
+#[derive(Clone, Debug)]
 pub struct SpellbookWriter<'a>
 {
-	doc: PdfDocumentReference,
-	layers: Vec<PdfLayerReference>,
-	pages: Vec<PdfPageIndex>,
+	doc: PdfDocument,
 	current_page_index: usize,
 	current_page_num: i64,
 	font_data: FontData<'a>,
@@ -102,10 +95,10 @@ impl <'a> SpellbookWriter<'a>
 		text_colors: TextColorOptions,
 		page_size_options: PageSizeOptions,
 		page_number_options: Option<PageNumberOptions>,
-		background: Option<(&str, ImageTransform)>,
+		background: Option<(&str, XObjectTransform)>,
 		table_options: TableOptions
 	)
-	-> Result<(PdfDocumentReference, Vec<PdfLayerReference>, Vec<PdfPageIndex>), Box<dyn Error>>
+	-> Result<PdfDocument, Box<dyn Error>>
 	{
 		// Construct a spellbook writer
 		let mut writer = SpellbookWriter::new
@@ -126,7 +119,7 @@ impl <'a> SpellbookWriter<'a>
 		// Add each spell to the spellbook
 		for spell in spells { writer.add_spell(spell); }
 		// Return the document that was created, its layers, and its pages
-		Ok((writer.doc, writer.layers, writer.pages))
+		Ok(writer.doc)
 	}
 
 	/// Constructor
@@ -159,19 +152,18 @@ impl <'a> SpellbookWriter<'a>
 		text_colors: TextColorOptions,
 		page_size_options: PageSizeOptions,
 		page_number_options: Option<PageNumberOptions>,
-		background: Option<(&str, ImageTransform)>,
+		background: Option<(&str, XObjectTransform)>,
 		table_options: TableOptions
 	)
 	-> Result<Self, Box<dyn Error>>
 	{
 		// Gets a new document and title page.
-		let (doc, title_page, title_layer) =
-		Self::create_new_doc(title, page_size_options.width(), page_size_options.height());
+		let mut doc = PdfDocument::new(title);
 
 		// Combined data for all font options along with font references to the pdf doc
 		let font_data = FontData::new
 		(
-			&doc,
+			&mut doc,
 			font_paths,
 			font_sizes,
 			font_scalars,
@@ -195,7 +187,7 @@ impl <'a> SpellbookWriter<'a>
 		let background = match background 
 		{
 			// If it is, construct background image data from the options given
-			Some((file_path, transform)) => Some(BackgroundImage::new(file_path, transform)?),
+			Some((file_path, transform)) => Some(BackgroundImage::new(&mut doc, file_path, transform)?),
 			// If no background image was given, don't use a background
 			None => None
 		};
@@ -259,8 +251,6 @@ impl <'a> SpellbookWriter<'a>
 		Ok(Self
 		{
 			doc: doc,
-			layers: vec![title_layer],
-			pages: vec![title_page],
 			current_page_index: 0,
 			current_page_num: starting_page_num,
 			font_data: font_data,
@@ -277,38 +267,15 @@ impl <'a> SpellbookWriter<'a>
 		})
 	}
 
-	/// Creates a new pdf document with a given title and width / height dimensions and returns the reference to
-	/// it and layer for the title page. Returns the pdf document and the layer for the first page.
-	fn create_new_doc(title: &str, width: f32, height: f32)
-	-> (PdfDocumentReference, PdfPageIndex, PdfLayerReference)
-	{
-		// Create the pdf document and the first page
-		let (doc, title_page, title_layer_index) =
-		// If no title was given for the spellbook (the given title string is empty)
-		if title.is_empty()
-		{
-			// Create pdf document with a default title
-			PdfDocument::new(DEFAULT_SPELLBOOK_TITLE, Mm(width), Mm(height), TITLE_LAYER_NAME)
-		}
-		else
-		{
-			// Create pdf document with the given title
-			PdfDocument::new(title, Mm(width), Mm(height), TITLE_LAYER_NAME)
-		};
-
-		// Get PdfLayerReference (title_layer_ref) from PdfLayerIndex (title_layer_index)
-		let title_layer_ref = doc.get_page(title_page).get_layer(title_layer_index);
-
-		(doc, title_page, title_layer_ref)
-	}
-
 	/// Turns the current page into a title page with the given title.
 	fn make_title_page(&mut self, mut title: &str)
 	{
 		// Use the default spellbook title if none was given
 		if title.is_empty() { title = DEFAULT_SPELLBOOK_TITLE; }
+		// Create the actual title page
+		self.make_new_page();
 		// Create bookmark for title page
-		self.doc.add_bookmark(TITLE_PAGE_NAME, self.pages[self.current_page_index]);
+		self.doc.add_bookmark(TITLE_PAGE_NAME, self.current_page_index + 1);
 		// Adds a background image to the page (if they are desired)
 		self.add_background();
 		// Store the page number data and set it to None so page numbers don't appear in any title pages created
@@ -326,7 +293,7 @@ impl <'a> SpellbookWriter<'a>
 		// Make a new page for the spell
 		self.make_new_page();
 		// Add a bookmark for the first page of this spell
-		self.doc.add_bookmark(spell.name.clone(), self.pages[self.current_page_index]);
+		self.doc.add_bookmark(&spell.name, self.current_page_index + 1);
 
 		// Writes the spell name to the document
 		self.set_current_text_type(TextType::Header);
@@ -1119,25 +1086,55 @@ impl <'a> SpellbookWriter<'a>
 	/// Applies a single table color line to the table.
 	fn apply_table_color_line(&mut self, line_height: f32, x_min: f32, x_max: f32, y_adjust: f32)
 	{
+		// Precalculate the y value of the line
+		let adjusted_y = self.y + y_adjust;
 		// Creates the points of each end of the line (a bit higher than normal to compensate for all lines being a
 		// bit off vertically)
-		let points = vec!
-		[
-			(Point::new(Mm(x_min), Mm(self.y + y_adjust)), false),
-			(Point::new(Mm(x_max), Mm(self.y + y_adjust)), false)
-		];
+		let point_1 = LinePoint
+		{
+			p: Point
+			{
+				x: Mm(x_min).into(),
+				y: Mm(adjusted_y).into()
+			},
+			bezier: false
+		};
+		let point_2 = LinePoint
+		{
+			p: Point
+			{
+				x: Mm(x_max).into(),
+				y: Mm(adjusted_y).into()
+			},
+			bezier: false
+		};
 		// Create the line
 		let line = Line
 		{
-			points: points,
+			points: vec![point_1, point_2],
 			is_closed: false
 		};
-		// Set the color of the line
-		self.current_layer().set_outline_color(self.table_off_row_color().clone());
-		// Set the thickness of the line
-		self.current_layer().set_outline_thickness(line_height * self.table_off_row_color_lines_height_scalar());
-		// Apply the line to the page
-		self.current_layer().add_line(line);
+		// Create the operations for adding the line to the page
+		let ops = vec!
+		[
+			// Set the color of the line
+			Op::SetOutlineColor
+			{
+				col: self.table_off_row_color().clone()
+			},
+			// Set the thickness of the line
+			Op::SetOutlineThickness
+			{
+				pt: Pt(line_height * self.table_off_row_color_lines_height_scalar())
+			},
+			// Apply the line to the page
+			Op::DrawLine
+			{
+				line: line
+			}
+		];
+		// Add the operations to the page
+		self.doc.pages[self.current_page_index].ops.extend_from_slice(&ops);
 	}
 
 	/// Applies the text within the cells of a table to the spellbook.
@@ -1754,6 +1751,7 @@ impl <'a> SpellbookWriter<'a>
 	}
 
 	/// Applies a single line of text to the current page in the spellbook.
+	/// Moves text down to a new page if the y position below the min y value.
 	fn apply_text_line(&mut self, line: &TextLine)
 	{
 		// If the line is empty, do nothing
@@ -1810,7 +1808,7 @@ impl <'a> SpellbookWriter<'a>
 		// Increase the current page index to the layer for the next page
 		self.current_page_index += 1;
 		// If the index is beyond the number of layers in the document
-		if self.current_page_index >= self.layers.len()
+		if self.current_page_index >= self.doc.pages.len()
 		{
 			// Create a new page
 			self.make_new_page();
@@ -1824,19 +1822,11 @@ impl <'a> SpellbookWriter<'a>
 	fn make_new_page(&mut self)
 	{
 		// Create a new page
-		let (page, layer) = self.doc.add_page
-		(
-			Mm(self.page_width()),
-			Mm(self.page_height()),
-			format!("{} {}", LAYER_NAME_PREFIX, self.layers.len())
-		);
-		// Get the layer for the new page
-		let layer_ref = self.doc.get_page(page).get_layer(layer);
-		// Add the new layer and page to the vecs holding them
-		self.layers.push(layer_ref);
-		self.pages.push(page);
+		let page = PdfPage::new(Mm(self.page_width()), Mm(self.page_height()), Vec::new());
+		// Add the page to the document
+		self.doc.pages.push(page);
 		// Update the current page index to point to the new page
-		self.current_page_index = self.layers.len() - 1;
+		self.current_page_index = self.doc.pages.len() - 1;
 		// Add a background image (if there is a background to add)
 		self.add_background();
 		// Adds a page number to the new page (if there are page numbers)
@@ -1851,12 +1841,14 @@ impl <'a> SpellbookWriter<'a>
 		// If there is a background image
 		if let Some(background) = &self.background
 		{
-			// Construct a `printpdf::Image` from the `image::DynamicImage`
-			// Note: Cannot store a `printpdf::Image` in the background struct because of ownership issues and
-			// lacking implementations of the `printpdf::Image` struct from the `printpdf` crate.
-			let image = Image::from_dynamic_image(&background.image().clone());
-			// Add the image to the current layer with the given transform data
-			image.add_to_layer(self.current_layer().clone(), *background.transform());
+			// Construct an operation to add the background image to the page
+			let add_image_op = Op::UseXobject
+			{
+				id: background.image_id().clone(),
+				transform: background.transform().clone()
+			};
+			// Add the operation to the page
+			self.doc.pages[self.current_page_index].ops.push(add_image_op);
 		}
 	}
 
@@ -1884,16 +1876,15 @@ impl <'a> SpellbookWriter<'a>
 						self.page_width() - data.side_margin() - text_width
 					}
 				};
-				// Set the page fill color to the color of the page numbers
-				self.layers[self.current_page_index].set_fill_color(data.color().clone());
-				// Apply the page number to the document
-				self.layers[self.current_page_index].use_text
+				// Apply the page number to the page using custom text parameters according to the page number data.
+				self.apply_text_with
 				(
 					&text,
+					x,
+					data.bottom_margin(),
 					data.font_size(),
-					Mm(x),
-					Mm(data.bottom_margin()),
-					data.font_ref()
+					data.font_id().clone(),
+					data.color().clone()
 				);
 			},
 			// Do nothing if there are no page numbers
@@ -1910,23 +1901,62 @@ impl <'a> SpellbookWriter<'a>
 	}
 
 	/// Writes a line of text to a page.
-	/// Moves to a new page / creates a new page if the text is below a certain y value.
 	fn apply_text(&mut self, text: &str)
+	{
+		self.apply_text_with
+		(
+			text,
+			self.x,
+			self.y,
+			self.current_font_size(),
+			self.current_font_id().clone(),
+			self.current_text_color().clone()
+		);
+	}
+
+	/// Writes a line of text to a page using a specific parameters rather than the current SpellbookWriter
+	/// Settings.
+	fn apply_text_with(&mut self, text: &str, x: f32, y: f32, font_size: f32, font: FontId, color: Color)
 	{
 		// If there is no text to apply, do nothing
 		if text.is_empty() { return; }
-		// Create a new text section on the page
-		self.layers[self.current_page_index].begin_text_section();
-		// Set the text cursor to the current x and y position of the text
-		self.layers[self.current_page_index].set_text_cursor(Mm(self.x), Mm(self.y));
-		// Set the font and font size of the text
-		self.layers[self.current_page_index].set_font(self.current_font_ref(), self.current_font_size());
-		// Set the text color
-		self.layers[self.current_page_index].set_fill_color(self.current_text_color().clone());
-		// Write the text to the page
-		self.layers[self.current_page_index].write_text(text, self.current_font_ref());
-		// End the text section on the page
-		self.layers[self.current_page_index].end_text_section();
+		// Create a vec of the operations to add the text to the page
+		let ops = vec!
+		[
+			// Start a text section (required for text ops)
+			Op::StartTextSection,
+			// Place the text cursor in the correct x and y values
+			Op::SetTextCursor
+			{
+				pos: Point
+				{
+					// Convert from Mm to Pt
+					x: Mm(x).into(),
+					y: Mm(y).into()
+				}
+			},
+			// Set the font size
+			Op::SetFontSize
+			{
+				size: Pt(font_size),
+				font: font.clone()
+			},
+			// Set the color of the text
+			Op::SetFillColor
+			{
+				col: color
+			},
+			// Apply the text to the page
+			Op::WriteText
+			{
+				items: vec![TextItem::Text(String::from(text))],
+				font: font
+			},
+			// End the text section
+			Op::EndTextSection
+		];
+		// Add the operations to the page
+		self.doc.pages[self.current_page_index].ops.extend_from_slice(&ops);
 		// Move the x position to be at the end of the newly applied line
 		self.x += self.calc_text_width(&text);
 	}
@@ -1973,7 +2003,7 @@ impl <'a> SpellbookWriter<'a>
 
 	// General Field Getters
 
-	// fn document(&self) -> &PdfDocumentReference { &self.doc }
+	// fn document(&self) -> &PdfDocument { &self.doc }
 	// fn layers(&self) -> &Vec<PdfLayerReference> { &self.layers }
 	// fn pages(&self) -> &Vec<PdfPageIndex> { &self.pages }
 	fn current_page_index(&self) -> usize { self.current_page_index }
@@ -1989,21 +2019,14 @@ impl <'a> SpellbookWriter<'a>
 	// /// Current y position of the text
 	// fn y(&self) -> &f32 { &self.y }
 
-	// Layer Getters
-
-	fn current_layer(&self) -> &PdfLayerReference
-	{
-		&self.layers[self.current_page_index]
-	}
-
 	// Font Getters
 
 	/// The current font variant being used to write text (regular, bold, italic, bold-italic).
 	fn current_font_variant(&self) -> &FontVariant { self.font_data.current_font_variant() }
 	/// The current type of text being written.
 	fn current_text_type(&self) -> &TextType { self.font_data.current_text_type() }
-	// /// `IndirectFontRefs` for each font variant (regular, bold, italic, bold-italic).
-	// fn all_font_refs(&self) -> &FontRefs { self.font_data.all_font_refs() }
+	// /// `FontIds` for each font variant (regular, bold, italic, bold-italic).
+	// fn all_font_ids(&self) -> &FontIds { self.font_data.all_font_ids() }
 	// /// Font sizes for each type of text.
 	// fn all_font_sizes(&self) -> &FontSizes { self.font_data.all_font_sizes() }
 	// /// Scalar values for each font variant (regular, bold, italic, bold-italic).
@@ -2019,7 +2042,7 @@ impl <'a> SpellbookWriter<'a>
 	/// Tab size in pringpdf Mm.
 	fn tab_amount(&self) -> f32 { self.font_data.tab_amount() }
 	/// The font object for the current font variant being used.
-	fn current_font_ref(&self) -> &IndirectFontRef { self.font_data.current_font_ref() }
+	fn current_font_id(&self) -> &FontId { self.font_data.current_font_id() }
 	/// Font size of the current type of text being used.
 	fn current_font_size(&self) -> f32 { self.font_data.current_font_size() }
 	/// Scalar value of the current font variant being used (regular, bold, italic, bold-italic).
