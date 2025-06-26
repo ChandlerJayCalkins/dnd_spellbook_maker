@@ -1,8 +1,8 @@
 [package]
 name = "dnd_spellbook_maker"
-version = "0.6.0"
+version = "0.7.0"
 authors = ["Chandler Calkins <chandlerjaycalkins@gmail.com>"]
-edition = "2021"
+edition = "2024"
 description = "Library for making pdf documents of 5th edition D&D spells that are formatted like D&D source books."
 readme = "README.md"
 documentation = "https://docs.rs/dnd_spellbook_maker"
